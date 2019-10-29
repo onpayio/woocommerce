@@ -54,7 +54,7 @@ function init_onpay() {
             $this->title        = $this->method_title;
             $this->icon         = 'logo.png';
             $this->has_fields   = false;
-            $this->method_description = 'Allow payments with cards and more through OnPay.io';
+            $this->method_description = __('Recieve payments with cards and more through OnPay.io', 'wc-onpay');
 
             $this->supports = array(
                 'subscriptions',
@@ -83,10 +83,39 @@ function init_onpay() {
 
         public function init_form_fields() {
             $this->form_fields = array(
-				self::SETTING_ONPAY_GATEWAY_ID => array(
-                    'title' => __('Gateway ID', 'wc-onpay'),
-                    'type' => 'text',
-                    'disabled' => true,
+				self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD => array(
+                    'title' => __('Card', 'wc-onpay'),
+                    'label' => __('Enable card as payment method', 'wc-onpay'),
+                    'type' => 'checkbox',
+                    'default' => 'yes',
+                ),
+				self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY => array(
+                    'title' => __('MobilePay Online', 'wc-onpay'),
+                    'label' => __('Enable MobilePay Online as payment method', 'wc-onpay'),
+                    'type' => 'checkbox',
+                    'default' => 'no',
+                ),
+				self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL => array(
+                    'title' => __('ViaBill', 'wc-onpay'),
+                    'label' => __('Enable ViaBill as payment method', 'wc-onpay'),
+                    'type' => 'checkbox',
+                    'default' => 'no',
+                ),
+				self::SETTING_ONPAY_PAYMENTWINDOW_DESIGN => array(
+                    'title' => __('Payment window design', 'wc-onpay'),
+                    'type' => 'select',
+                    'options' => $this->getPaymentWindowDesignOptions(),
+                ),
+				self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE => array(
+                    'title' => __('Payment window language', 'wc-onpay'),
+                    'type' => 'select',
+                    'options' => $this->getPaymentWindowLanguageOptions(),
+                ),
+				self::SETTING_ONPAY_TESTMODE => array(
+                    'title' => __('Test Mode', 'wc-onpay'),
+                    'label' => ' ',
+                    'type' => 'checkbox',
+                    'default' => 'no',
                 ),
             );
 		}
@@ -94,34 +123,44 @@ function init_onpay() {
         public function admin_options() {
             $onpayApi = $this->getOnpayClient(true);
 
-            // Handle callback from OAUTH flow
-            if($this->getQueryValue('code') && !$onpayApi->isAuthorized()) {
-                // We're not authorized with the API, and we have a 'code' value at hand. 
-                // Let's authorize, and save the gatewayID and secret accordingly.
-                $onpayApi->finishAuthorize($this->getQueryValue('code'));
-                if ($onpayApi->isAuthorized()) {
-                    $this->update_option(self::SETTING_ONPAY_GATEWAY_ID, $onpayApi->gateway()->getInformation()->gatewayId);
-                    $this->update_option(self::SETTING_ONPAY_SECRET, $onpayApi->gateway()->getPaymentWindowIntegrationSettings()->secret);
-                }
-                wp_redirect($this->generateUrl(array(
-                    'page' => 'wc-settings',
-                    'tab' => 'checkout',
-                    'section' => 'wc_onpay',
-                )));
-                exit;
-            }
-
+            $this->handleOauthCallback();
+            $this->handleDetach();
+            
             $html = '';
 			$html .=  '<h3>OnPay</h3>';
-            $html .=  '<p>WooCommerce payment plugin for OnPay.io</p>';
+            $html .=  '<p>' . __('Recieve payments with cards and more through OnPay.io', 'wc-onpay') . '</p>';
+            $html .= '<hr />';
 
             if (!$onpayApi->isAuthorized()) {
-                $html .=  '<a href="' . $onpayApi->authorize() . '" class="button-primary">Login with OnPay</a>';
+                $html .=  '<a href="' . $onpayApi->authorize() . '" class="button-primary">' . __('Log in with OnPay', 'wc-onpay') . '</a>';
                 $GLOBALS['hide_save_button'] = true; // We won't be needing the global save settings button right now
             } else {
                 $html .= '<table class="form-table">';
                 $html .= $this->generate_settings_html(array(), false);
                 $html .= '</table>';
+                
+                $html .= '<hr />';
+                $html .= '<table class="form-table"><tbody>';
+
+                $html .= '<tr valign="top">';
+                $html .= '<th class="titledesc" scope="row"><label>' . __('Gateway ID', 'wc-onpay') . '</label></th>';
+                $html .= '<td class="forminp"><fieldset><input type="text" readonly="true" value="' . $this->get_option(self::SETTING_ONPAY_GATEWAY_ID) . '"></fieldset></td>';
+                $html .= '</tr>';
+
+                $html .= '<tr valign="top">';
+                $html .= '<th class="titledesc" scope="row"><label>' . __('Secret', 'wc-onpay') . '</label></th>';
+                $html .= '<td class="forminp"><fieldset><input type="text" readonly="true" value="' . $this->get_option(self::SETTING_ONPAY_SECRET) . '"></fieldset></td>';
+                $html .= '</tr>';
+
+                $html .= '<tr valign="top">';
+                $html .= '<th class="titledesc" scope="row"></th>';
+                $html .= '<td><button class="button-secondary" onclick="logoutClick()">' . __('Log out from OnPay', 'wc-onpay') . '</button></td>';
+                $html .= '</tr>';
+
+                $html .= '</tbody></table>';
+                $html .= '<hr />';
+
+                $html .= '<script>function logoutClick(){event.preventDefault(); if(confirm(\''. __('Are you sure you want to logout from Onpay?', 'wc-onpay') . '\')) {window.location.href = window.location.href+"&detach=1";}}</script>';
             }
             
             echo ent2ncr($html);
@@ -147,6 +186,90 @@ function init_onpay() {
                 'redirect_uri' => $url,
             ]);
             return $onPayAPI;
+        }
+
+        /**
+         * Handle callback in oauth flow
+         */
+        private function handleOauthCallback() {
+            $onpayApi = $this->getOnpayClient(true);
+            if(null !== $this->getQueryValue('code') && !$onpayApi->isAuthorized()) {
+                // We're not authorized with the API, and we have a 'code' value at hand. 
+                // Let's authorize, and save the gatewayID and secret accordingly.
+                $onpayApi->finishAuthorize($this->getQueryValue('code'));
+                if ($onpayApi->isAuthorized()) {
+                    $this->update_option(self::SETTING_ONPAY_GATEWAY_ID, $onpayApi->gateway()->getInformation()->gatewayId);
+                    $this->update_option(self::SETTING_ONPAY_SECRET, $onpayApi->gateway()->getPaymentWindowIntegrationSettings()->secret);
+                }
+                wp_redirect($this->generateUrl(array('page' => 'wc-settings','tab' => 'checkout','section' => 'wc_onpay')));
+                exit;
+            }
+        }
+
+        private function handleDetach() {
+            $onpayApi = $this->getOnpayClient(true);
+            if(null !== $this->getQueryValue('detach') && $onpayApi->isAuthorized()) {
+                update_option('woocommerce_onpay_token', null);
+                $this->update_option(self::SETTING_ONPAY_GATEWAY_ID, null);
+                $this->update_option(self::SETTING_ONPAY_SECRET, null);
+                $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY, null);
+                $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL, null);
+                $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD, null);
+                $this->update_option(self::SETTING_ONPAY_PAYMENTWINDOW_DESIGN, null);
+                $this->update_option(self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE, null);
+                $this->update_option(self::SETTING_ONPAY_TESTMODE, null);
+
+                wp_redirect($this->generateUrl(array('page' => 'wc-settings','tab' => 'checkout','section' => 'wc_onpay')));
+                exit;
+            }
+        }
+
+        /**
+         * Gets a list of payment window designs available from API
+         */
+        private function getPaymentWindowDesignOptions() {
+            try {
+                $onpayApi = $this->getOnpayClient();
+            } catch (InvalidArgumentException $exception) {
+                return array();
+            }
+            if(!$onpayApi->isAuthorized()) {
+                return [];
+            }
+            $designs = $onpayApi->gateway()->getPaymentWindowDesigns()->paymentWindowDesigns;
+            $options = array_map(function(\OnPay\API\Gateway\SimplePaymentWindowDesign $design) {
+                return [
+                    'name' => $design->name,
+                    'id' => $design->name,
+                ];
+            }, $designs);
+            array_unshift($options, ['name' => __('Default design', 'wc-onpay'), 'id' => 'ONPAY_DEFAULT_WINDOW']);
+            $selectOptions = [];
+            foreach ($options as $option) {
+                $selectOptions[$option['id']] = $option['name'];
+            }
+            return $selectOptions;
+        }
+
+        /**
+         * Returns a prepared list of available payment window languages
+         *
+         * @return array
+         */
+        private function getPaymentWindowLanguageOptions() {
+            return array(
+                'en' => __('English', 'wc-onpay'),
+                'da' => __('Danish', 'wc-onpay'),
+                'nl' => __('Dutch', 'wc-onpay'),
+                'fo' => __('Faroese', 'wc-onpay'),
+                'fr' => __('French', 'wc-onpay'),
+                'de' => __('German', 'wc-onpay'),
+                'it' => __('Italian', 'wc-onpay'),
+                'no' => __('Norwegian', 'wc-onpay'),
+                'pl' => __('Polish', 'wc-onpay'),
+                'es' => __('Spanish', 'wc-onpay'),
+                'sv' => __('Swedish', 'wc-onpay')
+            );
         }
 
         /**
