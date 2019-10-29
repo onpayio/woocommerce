@@ -42,6 +42,6 @@ class TokenStorage implements \OnPay\TokenStorageInterface
      * @return mixed
      */
     public function saveToken($token) {
-        add_option('woocommerce_onpay_token', $token);
+        update_option('woocommerce_onpay_token', $token);
     }
 }
