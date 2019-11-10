@@ -51,12 +51,10 @@ function init_onpay() {
         public function __construct() {
             $this->id           = 'onpay';
             $this->method_title = 'OnPay';
-            $this->title        = $this->method_title;
-            $this->icon         = 'logo.png';
             $this->has_fields   = false;
             $this->method_description = __('Recieve payments with cards and more through OnPay.io', 'wc-onpay');
 
-            $this->supports = array(
+            $this->supports = [
                 'subscriptions',
 				'products',
 				'subscription_cancellation',
@@ -69,55 +67,106 @@ function init_onpay() {
 				'refunds',
 				'multiple_subscriptions',
 				'pre-orders',
-            );
+            ];
 
             $this->init_form_fields();
             $this->init_settings();
+
+            $this->title        = $this->getActiveMethodsString('title');
+            $this->description  = $this->getActiveMethodsString('description');
+        }
+
+        public function is_available() {
+            $onpayApi = $this->getOnpayClient();
+            if (!$onpayApi->isAuthorized()) {
+                return false;
+            }
+
+            if ($this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD) !== 'yes' &&
+                $this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY) !== 'yes' &&
+                $this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL) !== 'yes'
+                ) {
+                return false;
+            }
+
+            return true;
+        }
+
+        public function needs_setup() {
+            $onpayApi = $this->getOnpayClient();
+            if (!$onpayApi->isAuthorized()) {
+                return true;
+            }
+            return false;
         }
 
         public function init_hooks() {
             if (is_admin()) {
-                add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options') );
+                add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options'] );
             }
+            add_action( 'woocommerce_receipt_' . $this->id, [$this, 'checkout']);
+        }
+
+        public function process_payment( $order_id ) {
+            $order = new WC_Order( $order_id );
+            return array(
+                'result' => 'success',
+                'redirect' => $order->get_checkout_payment_url(true)
+            );
+        }
+
+        public function checkout($order_id) {
+            $order = new WC_Order($order_id);
+            $paymentWindow = $this->getPaymentWindow($order);
+            $formFields = $paymentWindow->getFormFields();
+
+            echo '<p>' . __( 'Redirecting to payment window', 'wc-onpay' ) . '</p>';
+            wc_enqueue_js('document.getElementById("onpay_form").submit();');
+        
+            echo '<form action="' . $paymentWindow->getActionUrl() . '" method="post" target="_top" id="onpay_form">';
+            foreach($paymentWindow->getFormFields() as $key => $formField) {
+                echo '<input type="hidden" name="' . $key . '" value="' . $formField . '">';
+            }
+            echo '</form>';
         }
 
         public function init_form_fields() {
-            $this->form_fields = array(
-				self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD => array(
+            $this->form_fields = [
+				self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD => [
                     'title' => __('Card', 'wc-onpay'),
                     'label' => __('Enable card as payment method', 'wc-onpay'),
                     'type' => 'checkbox',
                     'default' => 'yes',
-                ),
-				self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY => array(
+                ],
+				self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY => [
                     'title' => __('MobilePay Online', 'wc-onpay'),
                     'label' => __('Enable MobilePay Online as payment method', 'wc-onpay'),
                     'type' => 'checkbox',
                     'default' => 'no',
-                ),
-				self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL => array(
+                ],
+				self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL => [
                     'title' => __('ViaBill', 'wc-onpay'),
                     'label' => __('Enable ViaBill as payment method', 'wc-onpay'),
                     'type' => 'checkbox',
                     'default' => 'no',
-                ),
-				self::SETTING_ONPAY_PAYMENTWINDOW_DESIGN => array(
+                ],
+				self::SETTING_ONPAY_PAYMENTWINDOW_DESIGN => [
                     'title' => __('Payment window design', 'wc-onpay'),
                     'type' => 'select',
                     'options' => $this->getPaymentWindowDesignOptions(),
-                ),
-				self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE => array(
+                ],
+				self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE => [
                     'title' => __('Payment window language', 'wc-onpay'),
                     'type' => 'select',
                     'options' => $this->getPaymentWindowLanguageOptions(),
-                ),
-				self::SETTING_ONPAY_TESTMODE => array(
+                ],
+				self::SETTING_ONPAY_TESTMODE => [
                     'title' => __('Test Mode', 'wc-onpay'),
                     'label' => ' ',
                     'type' => 'checkbox',
                     'default' => 'no',
-                ),
-            );
+                ],
+            ];
 		}
 
         public function admin_options() {
@@ -136,7 +185,7 @@ function init_onpay() {
                 $GLOBALS['hide_save_button'] = true; // We won't be needing the global save settings button right now
             } else {
                 $html .= '<table class="form-table">';
-                $html .= $this->generate_settings_html(array(), false);
+                $html .= $this->generate_settings_html([], false);
                 $html .= '</table>';
                 
                 $html .= '<hr />';
@@ -165,6 +214,38 @@ function init_onpay() {
             
             echo ent2ncr($html);
         }
+
+        private function getActiveMethodsString(string $string) {
+            $methods = $this->getActiveMethods();
+            $methodsString = '';
+            $totalMethods = count($methods);
+            if ($totalMethods > 1) {
+                $methodsString = implode(', ', array_slice($methods, 0, $totalMethods-1)) . __(' or ', 'wc-onpay') . end($methods);
+            } else {
+                $methodsString = implode(', ', $methods);
+            }
+
+            if ($string === 'title') {
+                return __('Pay with', 'wc-onpay') . ' ' . $methodsString;
+            } else if ($string === 'description') {
+                return __('Pay through OnPay using', 'wc-onpay') . ' ' . $methodsString;
+            }
+            return null;
+        }
+
+        private function getActiveMethods() {
+            $methods = [];
+            if ($this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD) === 'yes') {
+                $methods[] = 'Card';
+            }
+            if ($this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY) === 'yes') {
+                $methods[] = 'MobilePay';
+            }
+            if ($this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL) === 'yes') {
+                $methods[] = 'ViaBill';
+            }
+            return $methods;
+        }
         
         /**
          * Returns an instantiated OnPay API client
@@ -173,7 +254,7 @@ function init_onpay() {
          */
         private function getOnpayClient($prepareRedirectUri = false) {
             $tokenStorage = new TokenStorage();
-            $params = array();
+            $params = [];
             // AdminToken cannot be generated on payment pages
             if($prepareRedirectUri) {
                 $params['page'] = 'wc-settings';
@@ -186,6 +267,43 @@ function init_onpay() {
                 'redirect_uri' => $url,
             ]);
             return $onPayAPI;
+        }
+
+        private function getPaymentWindow($order) {
+            if (!$order instanceof WC_Order) {
+                return null;
+            }
+
+            $CurrencyHelper = new CurrencyHelper();
+
+            // We'll need to find out details about the currency, and format the order total amount accordingly
+            $isoCurrency = $CurrencyHelper->fromAlpha3($order->get_data()['currency']);
+            $orderTotal = number_format($this->get_order_total(), $isoCurrency->exp, '', '');
+
+            $paymentWindow = new \OnPay\API\PaymentWindow();
+            $paymentWindow->setGatewayId($this->get_option(self::SETTING_ONPAY_GATEWAY_ID));
+            $paymentWindow->setSecret($this->get_option(self::SETTING_ONPAY_SECRET));
+            $paymentWindow->setCurrency($isoCurrency->alpha3);
+            $paymentWindow->setAmount($orderTotal);
+            $paymentWindow->setReference($order->get_data()['order_key']);
+            $paymentWindow->setType("payment");
+            $paymentWindow->setAcceptUrl($this->get_return_url($order));
+            // $paymentWindow->setAcceptUrl($this->context->link->getModuleLink('onpay', 'payment', ['accept' => 1], Configuration::get('PS_SSL_ENABLED')));
+            // $paymentWindow->setDeclineUrl($this->context->link->getModuleLink('onpay', 'payment', [], Configuration::get('PS_SSL_ENABLED')));
+            // $paymentWindow->setCallbackUrl($this->context->link->getModuleLink('onpay', 'callback', [], Configuration::get('PS_SSL_ENABLED'), null));
+            if($this->get_option(self::SETTING_ONPAY_PAYMENTWINDOW_DESIGN)) {
+                $paymentWindow->setDesign($this->get_option(self::SETTING_ONPAY_PAYMENTWINDOW_DESIGN));
+            }
+            if($this->get_option(self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE)) {
+                $paymentWindow->setLanguage($this->get_option(self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE));
+            }
+            // Enable testmode
+            if($this->get_option(self::SETTING_ONPAY_TESTMODE) === 'yes') {
+                $paymentWindow->setTestMode(1);
+            } else {
+                $paymentWindow->setTestMode(0);
+            }
+            return $paymentWindow;
         }
 
         /**
@@ -201,7 +319,7 @@ function init_onpay() {
                     $this->update_option(self::SETTING_ONPAY_GATEWAY_ID, $onpayApi->gateway()->getInformation()->gatewayId);
                     $this->update_option(self::SETTING_ONPAY_SECRET, $onpayApi->gateway()->getPaymentWindowIntegrationSettings()->secret);
                 }
-                wp_redirect($this->generateUrl(array('page' => 'wc-settings','tab' => 'checkout','section' => 'wc_onpay')));
+                wp_redirect($this->generateUrl(['page' => 'wc-settings','tab' => 'checkout','section' => 'wc_onpay']));
                 exit;
             }
         }
@@ -219,7 +337,7 @@ function init_onpay() {
                 $this->update_option(self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE, null);
                 $this->update_option(self::SETTING_ONPAY_TESTMODE, null);
 
-                wp_redirect($this->generateUrl(array('page' => 'wc-settings','tab' => 'checkout','section' => 'wc_onpay')));
+                wp_redirect($this->generateUrl(['page' => 'wc-settings','tab' => 'checkout','section' => 'wc_onpay']));
                 exit;
             }
         }
@@ -231,7 +349,7 @@ function init_onpay() {
             try {
                 $onpayApi = $this->getOnpayClient();
             } catch (InvalidArgumentException $exception) {
-                return array();
+                return [];
             }
             if(!$onpayApi->isAuthorized()) {
                 return [];
@@ -257,7 +375,7 @@ function init_onpay() {
          * @return array
          */
         private function getPaymentWindowLanguageOptions() {
-            return array(
+            return [
                 'en' => __('English', 'wc-onpay'),
                 'da' => __('Danish', 'wc-onpay'),
                 'nl' => __('Dutch', 'wc-onpay'),
@@ -269,7 +387,7 @@ function init_onpay() {
                 'pl' => __('Polish', 'wc-onpay'),
                 'es' => __('Spanish', 'wc-onpay'),
                 'sv' => __('Swedish', 'wc-onpay')
-            );
+            ];
         }
 
         /**
@@ -313,9 +431,9 @@ function init_onpay() {
     // Add action links to OnPay plugin on plugin overview
     add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'wc_onpay_action_links' );
     function wc_onpay_action_links($links) {
-        $plugin_links = array(
+        $plugin_links = [
             '<a href="' . admin_url('admin.php?page=wc-settings&tab=checkout&section=wc_onpay') . '">' . __('Settings', 'woo_onpay') . '</a>',
-        );
+        ];
         return array_merge( $plugin_links, $links );
     }
 
