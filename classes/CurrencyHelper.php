@@ -86,4 +86,17 @@ class CurrencyHelper
             return null;
         }
     }
+    /**
+     * @param $alpha3
+     * @return object
+     */
+    public function fromAlpha3($alpha3) {
+        try {
+            return (object)$this->converter->getByAlpha3($alpha3);
+        } catch(\DomainException $e) {
+            return null;
+        } catch(\OutOfBoundsException $e) {
+            return null;
+        }
+    }
 }
