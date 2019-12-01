@@ -85,17 +85,17 @@ function init_onpay() {
 
             $this->supports = [
                 'subscriptions',
-				'products',
-				'subscription_cancellation',
-				'subscription_reactivation',
-				'subscription_suspension',
-				'subscription_amount_changes',
-				'subscription_date_changes',
-				'subscription_payment_method_change_admin',
-				'subscription_payment_method_change_customer',
-				'refunds',
-				'multiple_subscriptions',
-				'pre-orders',
+                'products',
+                'subscription_cancellation',
+                'subscription_reactivation',
+                'subscription_suspension',
+                'subscription_amount_changes',
+                'subscription_date_changes',
+                'subscription_payment_method_change_admin',
+                'subscription_payment_method_change_customer',
+                'refunds',
+                'multiple_subscriptions',
+                'pre-orders',
             ];
 
             $this->init_form_fields();
@@ -180,35 +180,35 @@ function init_onpay() {
 
         public function init_form_fields() {
             $this->form_fields = [
-				self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD => [
+                self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD => [
                     'title' => __('Card', 'wc-onpay'),
                     'label' => __('Enable card as payment method', 'wc-onpay'),
                     'type' => 'checkbox',
                     'default' => 'yes',
                 ],
-				self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY => [
+                self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY => [
                     'title' => __('MobilePay Online', 'wc-onpay'),
                     'label' => __('Enable MobilePay Online as payment method', 'wc-onpay'),
                     'type' => 'checkbox',
                     'default' => 'no',
                 ],
-				self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL => [
+                self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL => [
                     'title' => __('ViaBill', 'wc-onpay'),
                     'label' => __('Enable ViaBill as payment method', 'wc-onpay'),
                     'type' => 'checkbox',
                     'default' => 'no',
                 ],
-				self::SETTING_ONPAY_PAYMENTWINDOW_DESIGN => [
+                self::SETTING_ONPAY_PAYMENTWINDOW_DESIGN => [
                     'title' => __('Payment window design', 'wc-onpay'),
                     'type' => 'select',
                     'options' => $this->getPaymentWindowDesignOptions(),
                 ],
-				self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE => [
+                self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE => [
                     'title' => __('Payment window language', 'wc-onpay'),
                     'type' => 'select',
                     'options' => $this->getPaymentWindowLanguageOptions(),
                 ],
-				self::SETTING_ONPAY_TESTMODE => [
+                self::SETTING_ONPAY_TESTMODE => [
                     'title' => __('Test Mode', 'wc-onpay'),
                     'label' => ' ',
                     'type' => 'checkbox',
@@ -224,7 +224,7 @@ function init_onpay() {
             $this->handleDetach();
             
             $html = '';
-			$html .=  '<h3>OnPay</h3>';
+            $html .=  '<h3>OnPay</h3>';
             $html .=  '<p>' . __('Recieve payments with cards and more through OnPay.io', 'wc-onpay') . '</p>';
             $html .= '<hr />';
 
@@ -492,8 +492,8 @@ function init_onpay() {
     // Add OnPay as payment method to WooCommerce
     add_filter( 'woocommerce_payment_gateways', 'wc_onpay_add_to_woocommerce' );
     function wc_onpay_add_to_woocommerce($methods) {
-		$methods[] = 'WC_OnPay';
-		return $methods;
+        $methods[] = 'WC_OnPay';
+        return $methods;
     }
     
     // Add action links to OnPay plugin on plugin overview
