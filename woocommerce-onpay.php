@@ -77,6 +77,9 @@ function init_onpay() {
 			return self::$_instance;
         }
         
+        /**
+         * Constructor
+         */
         public function __construct() {
             $this->id           = 'onpay';
             $this->method_title = 'OnPay';
@@ -89,13 +92,17 @@ function init_onpay() {
             if (is_admin()) {
                 $this->title = $this->method_title;
             } else {
-                $this->title        = $this->getActiveMethodsString('title');
-                $this->description  = $this->getActiveMethodsString('description');
+                $this->title        = $this->get_active_methods_string('title');
+                $this->description  = $this->get_active_methods_string('description');
             }
         }
 
+        /**
+         * Tells WooCommerce whether gateway is available for use.
+         * Returns true if gateway is authorized and either card, mpo or viabill is activated.
+         */
         public function is_available() {
-            $onpayApi = $this->getOnpayClient();
+            $onpayApi = $this->get_onpay_client();
             if (!$onpayApi->isAuthorized()) {
                 return false;
             }
@@ -110,24 +117,34 @@ function init_onpay() {
             return true;
         }
 
+        /**
+         * Tells WooCommerce whether plugin needs setup
+         * Returns false if gateway is authorized.
+         */
         public function needs_setup() {
-            $onpayApi = $this->getOnpayClient();
+            $onpayApi = $this->get_onpay_client();
             if (!$onpayApi->isAuthorized()) {
                 return true;
             }
             return false;
         }
 
+        /**
+         * Initialize hooks
+         */
         public function init_hooks() {
             if (is_admin()) {
                 add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options'] );
             }
             add_action('woocommerce_receipt_' . $this->id, [$this, 'checkout']);
             add_action('woocommerce_api_'. $this->id . '_callback', [$this, 'callback']);
-            add_action('post_updated', [$this, 'order_metabox_post']);
+            add_action('post_updated', [$this, 'handle_order_metabox']);
             add_action('add_meta_boxes', [$this, 'meta_boxes']);
         }
 
+        /**
+         * Forward cardholder/customer to reciept page, for further forwarding.
+         */
         public function process_payment( $order_id ) {
             $order = new WC_Order($order_id);
             return array(
@@ -136,9 +153,12 @@ function init_onpay() {
             );
         }
 
+        /**
+         * Method for injecting payment window form into reciept page, and automatically posting form to OnPay.
+         */
         public function checkout($order_id) {
             $order = new WC_Order($order_id);
-            $paymentWindow = $this->getPaymentWindow($order);
+            $paymentWindow = $this->get_payment_window($order);
             $formFields = $paymentWindow->getFormFields();
 
             echo '<p>' . __( 'Redirecting to payment window', 'wc-onpay' ) . '</p>';
@@ -151,20 +171,26 @@ function init_onpay() {
             echo '</form>';
         }
 
+        /**
+         * Method used for callbacks from OnPay. Validates orders using OnPay as method.
+         */
         public function callback() {
             $paymentWindow = new \OnPay\API\PaymentWindow();
             $paymentWindow->setSecret($this->get_option(self::SETTING_ONPAY_SECRET));
             if (!$paymentWindow->validatePayment($_GET)) {
-                $this->jsonResponse('Invalid values', true, 400);
+                $this->json_response('Invalid values', true, 400);
             }
-            $order = new WC_Order($this->getQueryValue('onpay_reference'));
+            $order = new WC_Order($this->get_query_value('onpay_reference'));
             if ($order->has_status('pending')) {
-                $order->payment_complete($this->getQueryValue('onpay_number'));
+                $order->payment_complete($this->get_query_value('onpay_number'));
                 $order->add_order_note( __( 'Transaction authorized in OnPay. Remember to capture amount.', 'wc-onpay' ));
             }
-            $this->jsonResponse('Order validated');
+            $this->json_response('Order validated');
         }
 
+        /**
+         * Initialize form fields for settings page.
+         */
         public function init_form_fields() {
             $this->form_fields = [
                 self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD => [
@@ -188,12 +214,12 @@ function init_onpay() {
                 self::SETTING_ONPAY_PAYMENTWINDOW_DESIGN => [
                     'title' => __('Payment window design', 'wc-onpay'),
                     'type' => 'select',
-                    'options' => $this->getPaymentWindowDesignOptions(),
+                    'options' => $this->get_payment_window_design_options(),
                 ],
                 self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE => [
                     'title' => __('Payment window language', 'wc-onpay'),
                     'type' => 'select',
-                    'options' => $this->getPaymentWindowLanguageOptions(),
+                    'options' => $this->get_payment_window_language_options(),
                 ],
                 self::SETTING_ONPAY_TESTMODE => [
                     'title' => __('Test Mode', 'wc-onpay'),
@@ -204,15 +230,18 @@ function init_onpay() {
             ];
 		}
 
+        /**
+         * Method that renders payment gateway settings page in woocommerce
+         */
         public function admin_options() {
-            $onpayApi = $this->getOnpayClient(true);
+            $onpayApi = $this->get_onpay_client(true);
 
-            $this->handleOauthCallback();
-            $this->handleDetach();
+            $this->handle_oauth_callback();
+            $this->handle_detach();
             
             $html = '';
             $html .=  '<h3>OnPay</h3>';
-            $html .=  '<p>' . __('Recieve payments with cards and more through OnPay.io', 'wc-onpay') . '</p>';
+            $html .=  '<p>' . __('Receive payments with cards and more through OnPay.io', 'wc-onpay') . '</p>';
             $html .= '<hr />';
 
             if (!$onpayApi->isAuthorized()) {
@@ -267,9 +296,8 @@ function init_onpay() {
         /**
          * Method that handles postback of OnPay order meta box
          */
-        public function order_metabox_post() {
+        public function handle_order_metabox() {
             global $post;
-            $postValues = $_POST;
 
             // Determine that we're on the correct controller
             if ($post->post_type === 'shop_order') {
@@ -277,23 +305,23 @@ function init_onpay() {
                 // Determine that the required data for getting transaction is available.
                 if ($order->get_payment_method() === $this->id && $order->get_transaction_id() !== '') {
                     // Get the transaction from API
-                    $transaction = $this->getOnpayClient()->transaction()->getTransaction($order->get_transaction_id());
+                    $transaction = $this->get_onpay_client()->transaction()->getTransaction($order->get_transaction_id());
                     $currencyHelper = new CurrencyHelper();
 
-                    if (array_key_exists('onpay_capture', $postValues) && array_key_exists('onpay_capture_amount', $postValues)) { // If transaction is requested captured.
-                        $value = str_replace(',', '.', $postValues['onpay_capture_amount']);
+                    if (null !== $this->get_post_value('onpay_capture') && null !== $this->get_post_value('onpay_capture_amount')) { // If transaction is requested captured.
+                        $value = str_replace(',', '.', $this->get_post_value('onpay_capture_amount'));
                         $amount = $currencyHelper->majorToMinor($value, $transaction->currencyCode, '.');
-                        $this->getOnpayClient()->transaction()->captureTransaction($transaction->uuid, $amount);
+                        $this->get_onpay_client()->transaction()->captureTransaction($transaction->uuid, $amount);
                         $order->add_order_note( __( 'Amount captured on transaction in OnPay.', 'wc-onpay' ));
 
-                    } else if (array_key_exists('onpay_refund', $postValues) && array_key_exists('onpay_refund_amount', $postValues)) { // If transaction is requested refunded.
-                        $value = str_replace('.', ',', $postValues['onpay_refund_amount']);
+                    } else if (null !== $this->get_post_value('onpay_refund') && null !== $this->get_post_value('onpay_refund_amount')) { // If transaction is requested refunded.
+                        $value = str_replace('.', ',', $this->get_post_value('onpay_refund_amount'));
                         $amount = $currencyHelper->majorToMinor($value, $transaction->currencyCode, ',');
-                        $this->getOnpayClient()->transaction()->refundTransaction($transaction->uuid, $amount);
+                        $this->get_onpay_client()->transaction()->refundTransaction($transaction->uuid, $amount);
                         $order->add_order_note( __( 'Amount refunded on transaction in OnPay.', 'wc-onpay' ));
 
-                    } else if (array_key_exists('onpay_cancel', $postValues)) { // If transaction is requested cancelled.
-                        $this->getOnpayClient()->transaction()->cancelTransaction($transaction->uuid);
+                    } else if (null !== $this->get_post_value('onpay_cancel')) { // If transaction is requested cancelled.
+                        $this->get_onpay_client()->transaction()->cancelTransaction($transaction->uuid);
                         $order->add_order_note( __( 'Transaction finished/cancelled in OnPay.', 'wc-onpay' ));
 
                     }
@@ -308,15 +336,17 @@ function init_onpay() {
             $order = $meta['args']['order'];
             $html = '';
 
-            // If no transaction id is set on order, we can't find the transaction in OnPays API.
-            if ($order->get_transaction_id() === '') { 
-                if ($order->has_status('pending')) {
-                    $html .= __('Pending payment', 'wc-onpay');
-                } else {
-                    $html .= __('No transaction found in OnPay', 'wc-onpay');
-                }
+            // If order is pending, no need to find the transaction.
+            if ($order->has_status('pending')) {
+                echo __('Pending payment', 'wc-onpay');
             } else {
-                $transaction = $this->getOnpayClient()->transaction()->getTransaction($order->get_transaction_id());
+                try {
+                    $transaction = $this->get_onpay_client()->transaction()->getTransaction($order->get_transaction_id());
+                } catch (OnPay\API\Exception\ApiException $exception) {
+                    echo __('Error: ', 'wc-onpay') . $exception->getMessage();
+                    exit;
+                }
+                
                 $currencyHelper = new CurrencyHelper();
                 $currency = $currencyHelper->fromNumeric($transaction->currencyCode);
 
@@ -332,6 +362,7 @@ function init_onpay() {
                     $html .= '</div>';
                 }
 
+                // Shows info and history of transaction in split view
                 $html .= '<div style="overflow-x: auto;"><table style="width: 100%;"><tr>';
                 $html .= '<td style="vertical-align: top;">';
                 $html .= '<p><strong>' . __('Transaction details', 'wc-onpay') . ':</strong></p>';
@@ -369,6 +400,7 @@ function init_onpay() {
 
                 $html .= '<br /><hr />';
 
+                // Add buttons for handling transaction
                 $html .= '<div id="onpay_action_buttons">';
                 if ($transaction->charged < $transaction->amount && $transaction->status === 'active') {
                     $html .= '<button class="button-primary" id="button_onpay_capture_reveal">' . __('Capture', 'wc-onpay') . '</button>&nbsp;';
@@ -386,7 +418,7 @@ function init_onpay() {
                 }
                 $html .= '</div>';
 
-                // Capture
+                // Hidden capture form, revealed by button above
                 $html .= '<div id="onpay_action_capture" style="display: none;">';
                 $html .= '<p>' . __('Please enter amount to capture', 'wc-onpay') . '</p>';
                 $html .= '<input type="text" name="onpay_capture_amount" value="' . $availableAmount . '">';
@@ -396,7 +428,7 @@ function init_onpay() {
                 $html .= '</div>';
                 wc_enqueue_js('$("#button_onpay_capture_hide").on("click", function(event) {event.preventDefault(); $("#onpay_action_capture").slideUp(); $("#onpay_action_buttons").slideDown(); })');
                 
-                // Refund
+                // Hidden refund form, revealed by button above
                 $html .= '<div id="onpay_action_refund" style="display: none;">';
                 $html .= '<p>' . __('Please enter amount to refund', 'wc-onpay') . '</p>';
                 $html .= '<input type="text" name="onpay_refund_amount" value="' . $availableCharged . '">';
@@ -406,9 +438,9 @@ function init_onpay() {
                 $html .= '</div>';
                 wc_enqueue_js('$("#button_onpay_refund_hide").on("click", function(event) {event.preventDefault(); $("#onpay_action_refund").slideUp(); $("#onpay_action_buttons").slideDown(); })');
 
-                // Cancel/finish
+                // Hidden cancel/finish form, revealed by button above
                 $html .= '<div id="onpay_action_cancel" style="display: none;">';
-                $html .= '<p>' . __('When finishing or cancelling a transaction, no further actions will be possible on transaction.', 'wc-onpay') . '</p>';
+                $html .= '<p>' . __('When finishing or cancelling a transaction, no further capturing of amount will be possible on transaction.', 'wc-onpay') . '</p>';
                 $html .= '<hr />';
                 $html .= '<input class="button-primary" type="submit" name="onpay_cancel" value="' . ($transaction->charged === 0 ? __('Cancel transaction', 'wc-onpay') : __('Finish transaction', 'wc-onpay')) . '">&nbsp;';
                 $html .= '<button class="button-secondary" id="button_onpay_cancel_hide">' . __('Cancel', 'wc-onpay') . '</button>';
@@ -421,8 +453,8 @@ function init_onpay() {
         /**
          * Returns formatted string based on active methods.
          */
-        private function getActiveMethodsString(string $string) {
-            $methods = $this->getActiveMethods();
+        private function get_active_methods_string(string $string) {
+            $methods = $this->get_active_methods();
             $methodsString = '';
             $totalMethods = count($methods);
             if ($totalMethods > 1) {
@@ -442,7 +474,7 @@ function init_onpay() {
         /**
          * Returns an array of active payment methods
          */
-        private function getActiveMethods() {
+        private function get_active_methods() {
             $methods = [];
             if ($this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD) === 'yes') {
                 $methods[] = 'Card';
@@ -461,7 +493,7 @@ function init_onpay() {
          *
          * @return \OnPay\OnPayAPI
          */
-        private function getOnpayClient($prepareRedirectUri = false) {
+        private function get_onpay_client($prepareRedirectUri = false) {
             $tokenStorage = new TokenStorage();
             $params = [];
             // AdminToken cannot be generated on payment pages
@@ -470,7 +502,7 @@ function init_onpay() {
                 $params['tab'] = 'checkout';
                 $params['section'] = 'wc_onpay';
             }
-            $url = $this->generateUrl($params);
+            $url = $this->generate_url($params);
             $onPayAPI = new \OnPay\OnPayAPI($tokenStorage, [
                 'client_id' => 'Onpay WooCommerce',
                 'redirect_uri' => $url,
@@ -478,7 +510,10 @@ function init_onpay() {
             return $onPayAPI;
         }
 
-        private function getPaymentWindow($order) {
+        /**
+         * Returns instance of PaymentWindow based on WC_Order
+         */
+        private function get_payment_window($order) {
             if (!$order instanceof WC_Order) {
                 return null;
             }
@@ -517,27 +552,28 @@ function init_onpay() {
         /**
          * Handle callback in oauth flow
          */
-        private function handleOauthCallback() {
-            $onpayApi = $this->getOnpayClient(true);
-            if(null !== $this->getQueryValue('code') && !$onpayApi->isAuthorized()) {
+        private function handle_oauth_callback() {
+            $onpayApi = $this->get_onpay_client(true);
+            if(null !== $this->get_query_value('code') && !$onpayApi->isAuthorized()) {
                 // We're not authorized with the API, and we have a 'code' value at hand. 
                 // Let's authorize, and save the gatewayID and secret accordingly.
-                $onpayApi->finishAuthorize($this->getQueryValue('code'));
+                $onpayApi->finishAuthorize($this->get_query_value('code'));
                 if ($onpayApi->isAuthorized()) {
                     $this->update_option(self::SETTING_ONPAY_GATEWAY_ID, $onpayApi->gateway()->getInformation()->gatewayId);
                     $this->update_option(self::SETTING_ONPAY_SECRET, $onpayApi->gateway()->getPaymentWindowIntegrationSettings()->secret);
                 }
-                wp_redirect($this->generateUrl(['page' => 'wc-settings','tab' => 'checkout','section' => 'wc_onpay']));
+                wp_redirect($this->generate_url(['page' => 'wc-settings','tab' => 'checkout','section' => 'wc_onpay']));
                 exit;
             }
         }
 
         /**
          * Handles detach request on settings page
+         * Nulls all plugin settings essentially terminating authorization with OnPay API
          */
-        private function handleDetach() {
-            $onpayApi = $this->getOnpayClient(true);
-            if(null !== $this->getQueryValue('detach') && $onpayApi->isAuthorized()) {
+        private function handle_detach() {
+            $onpayApi = $this->get_onpay_client(true);
+            if(null !== $this->get_query_value('detach') && $onpayApi->isAuthorized()) {
                 update_option('woocommerce_onpay_token', null);
                 $this->update_option(self::SETTING_ONPAY_GATEWAY_ID, null);
                 $this->update_option(self::SETTING_ONPAY_SECRET, null);
@@ -548,7 +584,7 @@ function init_onpay() {
                 $this->update_option(self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE, null);
                 $this->update_option(self::SETTING_ONPAY_TESTMODE, null);
 
-                wp_redirect($this->generateUrl(['page' => 'wc-settings','tab' => 'checkout','section' => 'wc_onpay']));
+                wp_redirect($this->generate_url(['page' => 'wc-settings','tab' => 'checkout','section' => 'wc_onpay']));
                 exit;
             }
         }
@@ -556,9 +592,9 @@ function init_onpay() {
         /**
          * Gets a list of payment window designs available from API
          */
-        private function getPaymentWindowDesignOptions() {
+        private function get_payment_window_design_options() {
             try {
-                $onpayApi = $this->getOnpayClient();
+                $onpayApi = $this->get_onpay_client();
             } catch (InvalidArgumentException $exception) {
                 return [];
             }
@@ -585,7 +621,7 @@ function init_onpay() {
          *
          * @return array
          */
-        private function getPaymentWindowLanguageOptions() {
+        private function get_payment_window_language_options() {
             return [
                 'en' => __('English', 'wc-onpay'),
                 'da' => __('Danish', 'wc-onpay'),
@@ -606,7 +642,7 @@ function init_onpay() {
          * @param $params
          * @return string
          */
-        private function generateUrl($params) {
+        private function generate_url($params) {
             if (is_ssl()) {
                 $currentPage = 'https://';
             } else {
@@ -624,7 +660,7 @@ function init_onpay() {
          * @param string $query
          * @return string|null
          */
-        private function getQueryValue($query) {
+        private function get_query_value($query) {
             if (isset($query, $_GET)) {
                 return $_GET[$query];
             }
@@ -636,7 +672,7 @@ function init_onpay() {
          * @param string $key
          * @return string|null
          */
-        private function getPostValue($key) {
+        private function get_post_value($key) {
             if (isset($key, $_POST)) {
                 return $_POST[$key];
             }
@@ -644,9 +680,9 @@ function init_onpay() {
         }
 
         /**
-         * Prints a jsonResponse
+         * Prints a json response
          */
-        private function jsonResponse($message, $error = false, $responseCode = 200) {
+        private function json_response($message, $error = false, $responseCode = 200) {
             header('Content-Type: application/json');
             http_response_code($responseCode);
             $response = [];
