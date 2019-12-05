@@ -24,9 +24,8 @@
  */
 
 /**
-* Plugin Name: WooCommerce OnPay.io
-* Plugin URI: https://onpay.io/
-* Description: WooCommerce payment plugin for OnPay.io.
+* Plugin Name: OnPay.io for WooCommerce
+* Description: OnPay.io payment plugin for WooCommerce
 * Author: OnPay.io
 * Author URI: https://onpay.io/
 * Text Domain: wc-onpay
