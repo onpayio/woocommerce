@@ -37,8 +37,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/classes/CurrencyHelper.php';
-require_once __DIR__ . '/classes/TokenStorage.php';
+require_once __DIR__ . '/classes/currency-helper.php';
+require_once __DIR__ . '/classes/token-storage.php';
 
 add_action('plugins_loaded', 'init_onpay', 0);
 
@@ -176,7 +176,7 @@ function init_onpay() {
         public function callback() {
             $paymentWindow = new \OnPay\API\PaymentWindow();
             $paymentWindow->setSecret($this->get_option(self::SETTING_ONPAY_SECRET));
-            if (!$paymentWindow->validatePayment($_GET)) {
+            if (!$paymentWindow->validatePayment($this->get_query())) {
                 $this->json_response('Invalid values', true, 400);
             }
             $order = new WC_Order($this->get_query_value('onpay_reference'));
@@ -305,7 +305,7 @@ function init_onpay() {
                 if ($order->get_payment_method() === $this->id && $order->get_transaction_id() !== '') {
                     // Get the transaction from API
                     $transaction = $this->get_onpay_client()->transaction()->getTransaction($order->get_transaction_id());
-                    $currencyHelper = new CurrencyHelper();
+                    $currencyHelper = new wc_onpay_currency_helper();
 
                     if (null !== $this->get_post_value('onpay_capture') && null !== $this->get_post_value('onpay_capture_amount')) { // If transaction is requested captured.
                         $value = str_replace(',', '.', $this->get_post_value('onpay_capture_amount'));
@@ -346,7 +346,7 @@ function init_onpay() {
                     exit;
                 }
                 
-                $currencyHelper = new CurrencyHelper();
+                $currencyHelper = new wc_onpay_currency_helper();
                 $currency = $currencyHelper->fromNumeric($transaction->currencyCode);
 
                 $amount = $currencyHelper->minorToMajor($transaction->amount, $currency->numeric);
@@ -493,7 +493,7 @@ function init_onpay() {
          * @return \OnPay\OnPayAPI
          */
         private function get_onpay_client($prepareRedirectUri = false) {
-            $tokenStorage = new TokenStorage();
+            $tokenStorage = new wc_onpay_token_storage();
             $params = [];
             // AdminToken cannot be generated on payment pages
             if($prepareRedirectUri) {
@@ -517,7 +517,7 @@ function init_onpay() {
                 return null;
             }
 
-            $CurrencyHelper = new CurrencyHelper();
+            $CurrencyHelper = new wc_onpay_currency_helper();
 
             // We'll need to find out details about the currency, and format the order total amount accordingly
             $isoCurrency = $CurrencyHelper->fromAlpha3($order->get_data()['currency']);
@@ -660,10 +660,22 @@ function init_onpay() {
          * @return string|null
          */
         private function get_query_value($query) {
-            if (isset($query, $_GET)) {
-                return $_GET[$query];
+            if (isset($_GET[$query])) {
+                return sanitize_text_field($_GET[$query]);
             }
             return null;
+        }
+
+        /**
+         * Get all query values sanitized in array.
+         * @return array
+         */
+        private function get_query() {
+            $query = [];
+            foreach ($_GET as $key => $get) {
+                $query[$key] = sanitize_text_field($get);
+            }
+            return $query;
         }
 
         /**
@@ -672,8 +684,8 @@ function init_onpay() {
          * @return string|null
          */
         private function get_post_value($key) {
-            if (isset($key, $_POST)) {
-                return $_POST[$key];
+            if (isset($_POST[$key])) {
+                return sanitize_text_field($_POST[$key]);
             }
             return null;
         }
