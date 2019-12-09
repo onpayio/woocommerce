@@ -22,8 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-class CurrencyHelper
-{
+class wc_onpay_currency_helper {
     /** @var ISO4217 $converter */
     private $converter;
     public function __construct()
