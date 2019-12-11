@@ -30,5 +30,10 @@ Plugin for WooCommerce, based on the official OnPay PHP SDK. The plugin adds the
 
 == Changelog ==
 
+= 1.0.1 =
+Added README.txt for use by Wordpress.org
+Sanitize and escape values when getting query and post values directly from PHP.
+Updated class names to a format unique for plugin and similar to the rest of Wordpress' naming scheme.
+
 = 1.0.0 =
 Initial release
