@@ -85,7 +85,6 @@ function init_onpay() {
             $this->has_fields   = false;
             $this->method_description = __('Receive payments with cards and more through OnPay.io', 'wc-onpay');
 
-            $this->init_form_fields();
             $this->init_settings();
 
             if (is_admin()) {
@@ -233,6 +232,8 @@ function init_onpay() {
          * Method that renders payment gateway settings page in woocommerce
          */
         public function admin_options() {
+            $this->init_form_fields();
+
             $onpayApi = $this->get_onpay_client(true);
 
             $this->handle_oauth_callback();
@@ -277,6 +278,13 @@ function init_onpay() {
             
             echo ent2ncr($html);
         }
+
+        public function process_admin_options() {
+            $this->init_form_fields();
+
+            parent::process_admin_options();
+        }
+
 
         /**
          * Method for setting meta boxes in admin
