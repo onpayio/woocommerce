@@ -29,7 +29,7 @@
 * Author: OnPay.io
 * Author URI: https://onpay.io/
 * Text Domain: wc-onpay
-* Version: 1.0.1
+* Version: 1.0.2
 **/
 
 if ( ! defined( 'ABSPATH' ) ) {

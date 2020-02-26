@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2020-02-26
+-Only initialize the settings fields on the settings page
+-Updated the OnPay SDK, with the latest version that resolves a issue with invalid oauth tokens
+
 ## [1.0.1] - 2019-11-12
 - Added README.txt for use by Wordpress.org
 - Sanitize and escape values when getting query and post values directly from PHP.
