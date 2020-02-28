@@ -101,7 +101,7 @@ function init_onpay() {
          */
         public function is_available() {
             $onpayApi = $this->get_onpay_client();
-            if (!$onpayApi->isAuthorized()) {
+            if (!$this->is_onpay_client_connected($onpayApi) || !$onpayApi->isAuthorized()) {
                 return false;
             }
 
@@ -232,10 +232,15 @@ function init_onpay() {
          * Method that renders payment gateway settings page in woocommerce
          */
         public function admin_options() {
-            $this->init_form_fields();
-
             $onpayApi = $this->get_onpay_client(true);
 
+            if (!$this->is_onpay_client_connected($onpayApi)) {
+                echo ent2ncr('<h3>No connection to OnPay</h3>');
+                $GLOBALS['hide_save_button'] = true;
+                return;
+            }
+
+            $this->init_form_fields();
             $this->handle_oauth_callback();
             $this->handle_detach();
             
@@ -340,6 +345,14 @@ function init_onpay() {
          * Method that renders the meta box for OnPay transactions on order page.
          */
         public function order_meta_box($post, array $meta) {
+            $onpayApi = $this->get_onpay_client();
+
+            if (!$this->is_onpay_client_connected($onpayApi)) {
+                echo ent2ncr('<h3>No connection to OnPay</h3>');
+                $GLOBALS['hide_save_button'] = true;
+                return;
+            }
+
             $order = $meta['args']['order'];
             $html = '';
 
@@ -348,7 +361,7 @@ function init_onpay() {
                 echo __('Pending payment', 'wc-onpay');
             } else {
                 try {
-                    $transaction = $this->get_onpay_client()->transaction()->getTransaction($order->get_transaction_id());
+                    $transaction = $onpayApi->transaction()->getTransaction($order->get_transaction_id());
                 } catch (OnPay\API\Exception\ApiException $exception) {
                     echo __('Error: ', 'wc-onpay') . $exception->getMessage();
                     exit;
@@ -515,6 +528,22 @@ function init_onpay() {
                 'redirect_uri' => $url,
             ]);
             return $onPayAPI;
+        }
+
+        /**
+         * @var \OnPay\OnPayAPI $onpayClient
+         * @return boolean
+         */
+        private function is_onpay_client_connected($onpayClient) {
+            if (!$onpayClient instanceof \OnPay\OnPayAPI) {
+                return false;
+            }
+            try {
+                $onpayClient->ping();
+            } catch (OnPay\API\Exception\ConnectionException $exception) {
+                return false;
+            }
+            return true;
         }
 
         /**
