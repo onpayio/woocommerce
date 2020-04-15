@@ -234,25 +234,32 @@ function init_onpay() {
         public function admin_options() {
             $onpayApi = $this->get_onpay_client(true);
 
-            if (!$this->is_onpay_client_connected($onpayApi)) {
-                echo ent2ncr('<h3>No connection to OnPay</h3>');
+            $html = '';
+            $html .=  '<h3>OnPay</h3>';
+            $html .=  '<p>' . __('Receive payments with cards and more through OnPay.io', 'wc-onpay') . '</p>';
+            $html .= '<hr />';
+            echo ent2ncr($html);
+
+            $hideForm = false;
+            
+            try {
+                $onpayApi->ping();
+            } catch (OnPay\API\Exception\ConnectionException $exception) { // No connection to OnPay API
+                echo ent2ncr('<h3>' . __('No connection to OnPay', 'wc-onpay') . '</h3>');
                 $GLOBALS['hide_save_button'] = true;
                 return;
+            } catch (OnPay\API\Exception\TokenException $exception) { // Something's wrong with the token, print link to reauth
+                echo ent2ncr('<a href="' . $onpayApi->authorize() . '" class="button-primary">' . __('Log in with OnPay', 'wc-onpay') . '</a>');
+                $GLOBALS['hide_save_button'] = true;
+                $hideForm = true;
             }
 
             $this->init_form_fields();
             $this->handle_oauth_callback();
             $this->handle_detach();
-            
-            $html = '';
-            $html .=  '<h3>OnPay</h3>';
-            $html .=  '<p>' . __('Receive payments with cards and more through OnPay.io', 'wc-onpay') . '</p>';
-            $html .= '<hr />';
 
-            if (!$onpayApi->isAuthorized()) {
-                $html .=  '<a href="' . $onpayApi->authorize() . '" class="button-primary">' . __('Log in with OnPay', 'wc-onpay') . '</a>';
-                $GLOBALS['hide_save_button'] = true; // We won't be needing the global save settings button right now
-            } else {
+            if (!$hideForm) {
+                $html = '';
                 $html .= '<table class="form-table">';
                 $html .= $this->generate_settings_html([], false);
                 $html .= '</table>';
@@ -279,9 +286,9 @@ function init_onpay() {
                 $html .= '<hr />';
 
                 wc_enqueue_js('$("#button_onpay_apilogout").on("click", function(event) {event.preventDefault(); if(confirm(\''. __('Are you sure you want to logout from Onpay?', 'wc-onpay') . '\')) {window.location.href = window.location.href+"&detach=1";}})');
-            }
             
-            echo ent2ncr($html);
+                echo ent2ncr($html);
+            }
         }
 
         public function process_admin_options() {
@@ -347,9 +354,13 @@ function init_onpay() {
         public function order_meta_box($post, array $meta) {
             $onpayApi = $this->get_onpay_client();
 
-            if (!$this->is_onpay_client_connected($onpayApi)) {
-                echo ent2ncr('<h3>No connection to OnPay</h3>');
-                $GLOBALS['hide_save_button'] = true;
+            try {
+                $onpayApi->ping();
+            } catch (OnPay\API\Exception\ConnectionException $exception) { // No connection to OnPay API
+                echo ent2ncr('<h3>' . __('No connection to OnPay', 'wc-onpay') . '</h3>');
+                return;
+            } catch (OnPay\API\Exception\TokenException $exception) { // Something's wrong with the token, print link to reauth
+                echo ent2ncr('<h3>' . __('Invalid OnPay token, please login on settings page', 'wc-onpay') . '</h3>');
                 return;
             }
 
