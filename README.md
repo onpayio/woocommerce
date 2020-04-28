@@ -1,4 +1,4 @@
-# OnPay - WooCommerce 3.8.1 plugin
+# OnPay - WooCommerce plugin
 
 Plugin for WooCommerce, based on the official OnPay PHP SDK.
 The plugin adds the following functionality to WooCommerce:
