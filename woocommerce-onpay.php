@@ -101,7 +101,7 @@ function init_onpay() {
          */
         public function is_available() {
             $onpayApi = $this->get_onpay_client();
-            if (!$onpayApi->isAuthorized()) {
+            if (!$this->is_onpay_client_connected($onpayApi) || !$onpayApi->isAuthorized()) {
                 return false;
             }
 
@@ -232,22 +232,34 @@ function init_onpay() {
          * Method that renders payment gateway settings page in woocommerce
          */
         public function admin_options() {
-            $this->init_form_fields();
-
             $onpayApi = $this->get_onpay_client(true);
 
-            $this->handle_oauth_callback();
-            $this->handle_detach();
-            
             $html = '';
             $html .=  '<h3>OnPay</h3>';
             $html .=  '<p>' . __('Receive payments with cards and more through OnPay.io', 'wc-onpay') . '</p>';
             $html .= '<hr />';
+            echo ent2ncr($html);
 
-            if (!$onpayApi->isAuthorized()) {
-                $html .=  '<a href="' . $onpayApi->authorize() . '" class="button-primary">' . __('Log in with OnPay', 'wc-onpay') . '</a>';
-                $GLOBALS['hide_save_button'] = true; // We won't be needing the global save settings button right now
-            } else {
+            $hideForm = false;
+            
+            try {
+                $onpayApi->ping();
+            } catch (OnPay\API\Exception\ConnectionException $exception) { // No connection to OnPay API
+                echo ent2ncr('<h3>' . __('No connection to OnPay', 'wc-onpay') . '</h3>');
+                $GLOBALS['hide_save_button'] = true;
+                return;
+            } catch (OnPay\API\Exception\TokenException $exception) { // Something's wrong with the token, print link to reauth
+                echo ent2ncr('<a href="' . $onpayApi->authorize() . '" class="button-primary">' . __('Log in with OnPay', 'wc-onpay') . '</a>');
+                $GLOBALS['hide_save_button'] = true;
+                $hideForm = true;
+            }
+
+            $this->init_form_fields();
+            $this->handle_oauth_callback();
+            $this->handle_detach();
+
+            if (!$hideForm) {
+                $html = '';
                 $html .= '<table class="form-table">';
                 $html .= $this->generate_settings_html([], false);
                 $html .= '</table>';
@@ -274,9 +286,9 @@ function init_onpay() {
                 $html .= '<hr />';
 
                 wc_enqueue_js('$("#button_onpay_apilogout").on("click", function(event) {event.preventDefault(); if(confirm(\''. __('Are you sure you want to logout from Onpay?', 'wc-onpay') . '\')) {window.location.href = window.location.href+"&detach=1";}})');
-            }
             
-            echo ent2ncr($html);
+                echo ent2ncr($html);
+            }
         }
 
         public function process_admin_options() {
@@ -340,6 +352,18 @@ function init_onpay() {
          * Method that renders the meta box for OnPay transactions on order page.
          */
         public function order_meta_box($post, array $meta) {
+            $onpayApi = $this->get_onpay_client();
+
+            try {
+                $onpayApi->ping();
+            } catch (OnPay\API\Exception\ConnectionException $exception) { // No connection to OnPay API
+                echo ent2ncr('<h3>' . __('No connection to OnPay', 'wc-onpay') . '</h3>');
+                return;
+            } catch (OnPay\API\Exception\TokenException $exception) { // Something's wrong with the token, print link to reauth
+                echo ent2ncr('<h3>' . __('Invalid OnPay token, please login on settings page', 'wc-onpay') . '</h3>');
+                return;
+            }
+
             $order = $meta['args']['order'];
             $html = '';
 
@@ -348,7 +372,7 @@ function init_onpay() {
                 echo __('Pending payment', 'wc-onpay');
             } else {
                 try {
-                    $transaction = $this->get_onpay_client()->transaction()->getTransaction($order->get_transaction_id());
+                    $transaction = $onpayApi->transaction()->getTransaction($order->get_transaction_id());
                 } catch (OnPay\API\Exception\ApiException $exception) {
                     echo __('Error: ', 'wc-onpay') . $exception->getMessage();
                     exit;
@@ -515,6 +539,22 @@ function init_onpay() {
                 'redirect_uri' => $url,
             ]);
             return $onPayAPI;
+        }
+
+        /**
+         * @var \OnPay\OnPayAPI $onpayClient
+         * @return boolean
+         */
+        private function is_onpay_client_connected($onpayClient) {
+            if (!$onpayClient instanceof \OnPay\OnPayAPI) {
+                return false;
+            }
+            try {
+                $onpayClient->ping();
+            } catch (OnPay\API\Exception\ConnectionException $exception) {
+                return false;
+            }
+            return true;
         }
 
         /**
