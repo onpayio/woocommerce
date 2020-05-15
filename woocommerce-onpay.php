@@ -508,13 +508,13 @@ function init_onpay() {
         private function get_active_methods() {
             $methods = [];
             if ($this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD) === 'yes') {
-                $methods[] = 'Card';
+                $methods[] = __('Card', 'wc-onpay');
             }
             if ($this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY) === 'yes') {
-                $methods[] = 'MobilePay';
+                $methods[] = __('MobilePay', 'wc-onpay');
             }
             if ($this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL) === 'yes') {
-                $methods[] = 'ViaBill';
+                $methods[] = __('ViaBill', 'wc-onpay');
             }
             return $methods;
         }
