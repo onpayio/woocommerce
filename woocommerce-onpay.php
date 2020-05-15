@@ -30,7 +30,7 @@
 * Author URI: https://onpay.io/
 * Text Domain: wc-onpay
 * Domain Path: /languages
-* Version: 1.0.3
+* Version: 1.0.4
 **/
 
 if ( ! defined( 'ABSPATH' ) ) {

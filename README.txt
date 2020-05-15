@@ -4,7 +4,7 @@ Tags: onpay, gateway, payment, payment gateway, woocommerce, psp
 Requires at least: 5.3
 Tested up to: 5.4
 Requires PHP: 5.6
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: MIT
 License URI: https://mit-license.org/
 
@@ -29,6 +29,10 @@ Plugin for WooCommerce, based on the official OnPay PHP SDK. The plugin adds the
 2. WooCommerce >= 3.8.1
 
 == Changelog ==
+
+= [1.0.4] =
+Added missing translatable strings
+Added danish translation of plugin
 
 = [1.0.3] =
 Tested compatibility for Wordpress 5.4 and WooCommerce 4.0.1
