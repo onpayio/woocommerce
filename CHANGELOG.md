@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Added missing translatable strings
+- Added danish translation of plugin
 
 ## [1.0.3] - 2020-04-28
 - Tested compatibility for Wordpress 5.4 and WooCommerce 4.0.1
