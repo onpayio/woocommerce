@@ -29,6 +29,7 @@
 * Author: OnPay.io
 * Author URI: https://onpay.io/
 * Text Domain: wc-onpay
+* Domain Path: /languages
 * Version: 1.0.3
 **/
 
@@ -93,6 +94,8 @@ function init_onpay() {
                 $this->title        = $this->get_active_methods_string('title');
                 $this->description  = $this->get_active_methods_string('description');
             }
+
+            load_plugin_textdomain( 'wc-onpay', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
         }
 
         /**

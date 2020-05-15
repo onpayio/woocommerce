@@ -1,0 +1,281 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: OnPay.io for WooCommerce\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-15 09:20+0000\n"
+"PO-Revision-Date: 2020-05-15 09:29+0000\n"
+"Language-Team: Dansk\n"
+"Language: da_DK\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: woocommerce-onpay.php:492
+msgid " or "
+msgstr " eller "
+
+#: woocommerce-onpay.php:414
+msgid "Action"
+msgstr "Handling"
+
+#: woocommerce-onpay.php:404 woocommerce-onpay.php:415
+msgid "Amount"
+msgstr "Beløb"
+
+#: woocommerce-onpay.php:334
+msgid "Amount captured on transaction in OnPay."
+msgstr "Beløbet blev hævet på transaktionen i OnPay"
+
+#: woocommerce-onpay.php:340
+msgid "Amount refunded on transaction in OnPay."
+msgstr "Beløbet blev refunderet på transaktionen i OnPay"
+
+#: woocommerce-onpay.php:288
+msgid "Are you sure you want to logout from Onpay?"
+msgstr "Er du sikker på at du ønsker at logge ud fra OnPay"
+
+#: woocommerce-onpay.php:458 woocommerce-onpay.php:468
+#: woocommerce-onpay.php:477
+msgid "Cancel"
+msgstr "Annuller "
+
+#: woocommerce-onpay.php:447 woocommerce-onpay.php:476
+msgid "Cancel transaction"
+msgstr "Annuller transaktion"
+
+#: woocommerce-onpay.php:437 woocommerce-onpay.php:457
+msgid "Capture"
+msgstr "Hæv"
+
+#: woocommerce-onpay.php:195 woocommerce-onpay.php:511
+msgid "Card"
+msgstr "Kort"
+
+#: woocommerce-onpay.php:402
+msgid "Card type"
+msgstr "Kort type"
+
+#: woocommerce-onpay.php:405
+msgid "Charged"
+msgstr "Hævet"
+
+#: woocommerce-onpay.php:674
+msgid "Danish"
+msgstr "Dansk"
+
+#: woocommerce-onpay.php:413
+msgid "Date & Time"
+msgstr "Tid og dato"
+
+#: woocommerce-onpay.php:658
+msgid "Default design"
+msgstr "Standard design"
+
+#: woocommerce-onpay.php:675
+msgid "Dutch"
+msgstr "Hollandsk"
+
+#: woocommerce-onpay.php:196
+msgid "Enable card as payment method"
+msgstr "Aktivér kort som betalingsmulighed"
+
+#: woocommerce-onpay.php:202
+msgid "Enable MobilePay Online as payment method"
+msgstr "Aktivér MobilePay Online som betalingsmulighed"
+
+#: woocommerce-onpay.php:208
+msgid "Enable ViaBill as payment method"
+msgstr "Aktivér ViaBill som betalingsmulighed"
+
+#: woocommerce-onpay.php:673
+msgid "English"
+msgstr "Engelsk"
+
+#: woocommerce-onpay.php:377
+msgid "Error: "
+msgstr "Fejl: "
+
+#: woocommerce-onpay.php:676
+msgid "Faroese"
+msgstr "Færøsk"
+
+#: woocommerce-onpay.php:447 woocommerce-onpay.php:476
+msgid "Finish transaction"
+msgstr "Fuldfør transaktion"
+
+#: woocommerce-onpay.php:677
+msgid "French"
+msgstr "Fransk"
+
+#: woocommerce-onpay.php:271
+msgid "Gateway ID"
+msgstr "Gateway ID"
+
+#: woocommerce-onpay.php:678
+msgid "German"
+msgstr "Tysk"
+
+#. Author URI of the plugin
+msgid "https://onpay.io/"
+msgstr "https://onpay.io/"
+
+#: woocommerce-onpay.php:363
+msgid "Invalid OnPay token, please login on settings page"
+msgstr "Ugyldig OnPay token, log ind igen under plugin indstillinger"
+
+#: woocommerce-onpay.php:417
+msgid "IP"
+msgstr "IP"
+
+#: woocommerce-onpay.php:679
+msgid "Italian"
+msgstr "Italiensk"
+
+#: woocommerce-onpay.php:252
+msgid "Log in with OnPay"
+msgstr "Log ind med OnPay"
+
+#: woocommerce-onpay.php:282
+msgid "Log out from OnPay"
+msgstr "Log ud fra OnPay"
+
+#: woocommerce-onpay.php:514
+msgid "MobilePay"
+msgstr "MobilePay"
+
+#: woocommerce-onpay.php:201
+msgid "MobilePay Online"
+msgstr "MobilePay Online"
+
+#: woocommerce-onpay.php:248 woocommerce-onpay.php:360
+msgid "No connection to OnPay"
+msgstr "Ingen forbindelse til OnPay"
+
+#: woocommerce-onpay.php:680
+msgid "Norwegian"
+msgstr "Norsk"
+
+#: woocommerce-onpay.php:498
+msgid "OnPay - Pay with"
+msgstr "OnPay - Betal med"
+
+#. Author of the plugin
+msgid "OnPay.io"
+msgstr "OnPay.io"
+
+#. Name of the plugin
+msgid "OnPay.io for WooCommerce"
+msgstr "OnPay.io til WooCommerce"
+
+#. Description of the plugin
+msgid "OnPay.io payment plugin for WooCommerce"
+msgstr "OnPay.io betalings plugin for WooCommerce"
+
+#: woocommerce-onpay.php:500
+msgid "Pay through OnPay using"
+msgstr "Betal igennem OnPay med"
+
+#: woocommerce-onpay.php:213
+msgid "Payment window design"
+msgstr "Betalingsvindue design"
+
+#: woocommerce-onpay.php:218
+msgid "Payment window language"
+msgstr "Betalingsvindue sprog"
+
+#: woocommerce-onpay.php:372
+msgid "Pending payment"
+msgstr "Afventende betaling"
+
+#: woocommerce-onpay.php:454
+msgid "Please enter amount to capture"
+msgstr "Indtast beløb der skal hæves"
+
+#: woocommerce-onpay.php:464
+msgid "Please enter amount to refund"
+msgstr "Indtast beløb der skal refunderes"
+
+#: woocommerce-onpay.php:681
+msgid "Polish"
+msgstr "Polsk"
+
+#: woocommerce-onpay.php:86 woocommerce-onpay.php:239
+msgid "Receive payments with cards and more through OnPay.io"
+msgstr "Modtag betalinger med kreditkort mm. igennem OnPay.io"
+
+#: woocommerce-onpay.php:162
+msgid "Redirecting to payment window"
+msgstr "Viderestiller til betalingsvindue"
+
+#: woocommerce-onpay.php:442 woocommerce-onpay.php:467
+msgid "Refund"
+msgstr "Refunder"
+
+#: woocommerce-onpay.php:406
+msgid "Refunded"
+msgstr "Refunderet"
+
+#: woocommerce-onpay.php:276
+msgid "Secret"
+msgstr "Secret"
+
+#: woocommerce-onpay.php:768
+msgid "Settings"
+msgstr "Indstillinger"
+
+#: woocommerce-onpay.php:682
+msgid "Spanish"
+msgstr "Spansk"
+
+#: woocommerce-onpay.php:401
+msgid "Status"
+msgstr "Status"
+
+#: woocommerce-onpay.php:683
+msgid "Swedish"
+msgstr "Svensk"
+
+#: woocommerce-onpay.php:223
+msgid "Test Mode"
+msgstr "Test-tilstand"
+
+#: woocommerce-onpay.php:392
+msgid "This transaction was performed in testmode."
+msgstr "Denne transaktion blev gennemført i test-tilstand"
+
+#: woocommerce-onpay.php:184
+msgid "Transaction authorized in OnPay. Remember to capture amount."
+msgstr "Transaktion autoriseret i Onpay. Husk at hæve beløb."
+
+#: woocommerce-onpay.php:399
+msgid "Transaction details"
+msgstr "Transaktion detaljer"
+
+#: woocommerce-onpay.php:344
+msgid "Transaction finished/cancelled in OnPay."
+msgstr "Transaktion afsluttet/annulleret i OnPay"
+
+#: woocommerce-onpay.php:411
+msgid "Transaction history"
+msgstr "Transaktion historik"
+
+#: woocommerce-onpay.php:403
+msgid "Transaction number"
+msgstr "Transaktionsnummer"
+
+#: woocommerce-onpay.php:416
+msgid "User"
+msgstr "Bruger"
+
+#: woocommerce-onpay.php:207 woocommerce-onpay.php:517
+msgid "ViaBill"
+msgstr "ViaBill"
+
+#: woocommerce-onpay.php:474
+msgid ""
+"When finishing or cancelling a transaction, no further capturing of amount "
+"will be possible on transaction."
+msgstr ""
+"Ved fuldførelse eller annullering af en transaktion, vil ingen yderligere "
+"handlinger være mulige efterfølgende."
