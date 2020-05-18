@@ -325,7 +325,7 @@ function init_onpay() {
             if ($post->post_type === 'shop_order') {
                 $order = new WC_Order($post->ID);
                 // Determine that the required data for getting transaction is available.
-                if ($order->get_payment_method() === $this->id && $order->get_transaction_id() !== '') {
+                if ($order->get_payment_method() === $this->id && null !== $order->get_transaction_id() && $order->get_transaction_id() !== '') {
                     // Get the transaction from API
                     $transaction = $this->get_onpay_client()->transaction()->getTransaction($order->get_transaction_id());
                     $currencyHelper = new wc_onpay_currency_helper();
@@ -371,7 +371,7 @@ function init_onpay() {
             $html = '';
 
             // If order is pending, no need to find the transaction.
-            if ($order->has_status('pending')) {
+            if (null === $order->get_transaction_id() || $order->get_transaction_id() === '' || $order->has_status('pending')) {
                 echo __('Pending payment', 'wc-onpay');
             } else {
                 try {
