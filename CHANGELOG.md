@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.0.5] - 2020-05-19
+- Fixed issue with transaction_id null value being used to fetch transaction, resulting in an error.
 - Confirmed working on Wordpress 5.4.1 and WooCommerce 4.1.0
 
 ## [1.0.4] - 2020-05-15
