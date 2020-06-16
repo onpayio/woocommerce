@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Fix incompatibility with PHP 5.6
+- Update composer dependencies to latest versions
 
 ## [1.0.5] - 2020-05-19
 - Fixed issue with transaction_id null value being used to fetch transaction, resulting in an error.
