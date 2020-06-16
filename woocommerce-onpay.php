@@ -487,7 +487,7 @@ function init_onpay() {
         /**
          * Returns formatted string based on active methods.
          */
-        private function get_active_methods_string(string $string) {
+        private function get_active_methods_string($string) {
             $methods = $this->get_active_methods();
             $methodsString = '';
             $totalMethods = count($methods);
