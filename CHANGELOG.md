@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.0.6] - 2020-06-18
 - Confirmed working on Wordpress 5.4.2 and WooCommerce 4.2.0
 - Fix incompatibility with PHP 5.6
 - Update composer dependencies to latest versions
