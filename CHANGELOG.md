@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.0.7] - 2020-08-27
 - Confirmed working on Wordpress 5.5 and WooCommerce 4.4.1
 - Added prefix to dependency namespaces during build, to prevent any overlap with dependency versions from other plugins that might be installed
 
