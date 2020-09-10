@@ -139,6 +139,7 @@ function init_onpay() {
             }
             add_action('woocommerce_receipt_' . $this->id, [$this, 'checkout']);
             add_action('woocommerce_api_'. $this->id . '_callback', [$this, 'callback']);
+            add_action('woocommerce_before_checkout_form', [$this, 'declinedReturnMessage']);
             add_action('post_updated', [$this, 'handle_order_metabox']);
             add_action('add_meta_boxes', [$this, 'meta_boxes']);
         }
@@ -187,6 +188,18 @@ function init_onpay() {
                 $order->add_order_note( __( 'Transaction authorized in OnPay. Remember to capture amount.', 'wc-onpay' ));
             }
             $this->json_response('Order validated');
+        }
+
+        public function declinedReturnMessage() {
+            $paymentWindow = new \OnPay\API\PaymentWindow();
+            $paymentWindow->setSecret($this->get_option(self::SETTING_ONPAY_SECRET));
+            $order = new WC_Order($this->get_query_value('onpay_reference'));
+            $isDeclined = $this->get_query_value('declined_from_onpay');
+            if (!$order->is_paid() && $isDeclined === '1' && $paymentWindow->validatePayment($_GET)) {
+                // Order is not paid yet and user is returned through declined url from OnPay.
+                // Valid OnPay URL params are also present, which indicates that user did not simply quit payment, but an actual error was encountered.
+                echo '<div class="woocommerce-error">' . __('The payment failed. Please try again.', 'wc-onpay') . '</div>';
+            }
         }
 
         /**
@@ -573,6 +586,8 @@ function init_onpay() {
             // We'll need to find out details about the currency, and format the order total amount accordingly
             $isoCurrency = $CurrencyHelper->fromAlpha3($order->get_data()['currency']);
             $orderTotal = number_format($this->get_order_total(), $isoCurrency->exp, '', '');
+            $declineUrl = get_permalink(woocommerce_get_page_id('checkout'));
+            $declineUrl = add_query_arg('declined_from_onpay', '1', $declineUrl);
 
             $paymentWindow = new \OnPay\API\PaymentWindow();
             $paymentWindow->setGatewayId($this->get_option(self::SETTING_ONPAY_GATEWAY_ID));
@@ -582,7 +597,7 @@ function init_onpay() {
             $paymentWindow->setReference($order->get_data()['id']);
             $paymentWindow->setType("payment");
             $paymentWindow->setAcceptUrl($order->get_checkout_order_received_url());
-            $paymentWindow->setDeclineUrl($order->get_checkout_order_received_url());
+            $paymentWindow->setDeclineUrl($declineUrl);
             $paymentWindow->setCallbackUrl(WC()->api_request_url($this->id . '_callback'));
             if($this->get_option(self::SETTING_ONPAY_PAYMENTWINDOW_DESIGN)) {
                 $paymentWindow->setDesign($this->get_option(self::SETTING_ONPAY_PAYMENTWINDOW_DESIGN));
