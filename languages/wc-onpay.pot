@@ -145,7 +145,7 @@ msgstr ""
 msgid "MobilePay"
 msgstr ""
 
-#: woocommerce-onpay.php:201
+#: woocommerce-onpay.php:217
 msgid "MobilePay Online"
 msgstr ""
 
@@ -239,6 +239,10 @@ msgstr ""
 
 #: woocommerce-onpay.php:223
 msgid "Test Mode"
+msgstr ""
+
+#: woocommerce-onpay.php:201
+msgid "The payment failed. Please try again."
 msgstr ""
 
 #: woocommerce-onpay.php:392
