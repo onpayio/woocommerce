@@ -555,22 +555,6 @@ function init_onpay() {
         }
 
         /**
-         * @var \OnPay\OnPayAPI $onpayClient
-         * @return boolean
-         */
-        private function is_onpay_client_connected($onpayClient) {
-            if (!$onpayClient instanceof \OnPay\OnPayAPI) {
-                return false;
-            }
-            try {
-                $onpayClient->ping();
-            } catch (OnPay\API\Exception\ConnectionException $exception) {
-                return false;
-            }
-            return true;
-        }
-
-        /**
          * Returns instance of PaymentWindow based on WC_Order
          */
         private function get_payment_window($order) {
