@@ -104,9 +104,6 @@ function init_onpay() {
          */
         public function is_available() {
             $onpayApi = $this->get_onpay_client();
-            if (!$this->is_onpay_client_connected($onpayApi) || !$onpayApi->isAuthorized()) {
-                return false;
-            }
 
             if ($this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD) !== 'yes' &&
                 $this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY) !== 'yes' &&
@@ -555,22 +552,6 @@ function init_onpay() {
                 'redirect_uri' => $url,
             ]);
             return $onPayAPI;
-        }
-
-        /**
-         * @var \OnPay\OnPayAPI $onpayClient
-         * @return boolean
-         */
-        private function is_onpay_client_connected($onpayClient) {
-            if (!$onpayClient instanceof \OnPay\OnPayAPI) {
-                return false;
-            }
-            try {
-                $onpayClient->ping();
-            } catch (OnPay\API\Exception\ConnectionException $exception) {
-                return false;
-            }
-            return true;
         }
 
         /**
