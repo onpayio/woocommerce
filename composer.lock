@@ -112,16 +112,16 @@
         },
         {
             "name": "onpayio/php-sdk",
-            "version": "1.0.9",
+            "version": "1.0.10",
             "source": {
                 "type": "git",
                 "url": "https://github.com/onpayio/php-sdk.git",
-                "reference": "bc4fdc60bfa8ad4dba4361cec2ab6bcdc845f8c1"
+                "reference": "9dfacc9debbc376d6b08d76c0ad4ceb05c966e73"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/onpayio/php-sdk/zipball/bc4fdc60bfa8ad4dba4361cec2ab6bcdc845f8c1",
-                "reference": "bc4fdc60bfa8ad4dba4361cec2ab6bcdc845f8c1",
+                "url": "https://api.github.com/repos/onpayio/php-sdk/zipball/9dfacc9debbc376d6b08d76c0ad4ceb05c966e73",
+                "reference": "9dfacc9debbc376d6b08d76c0ad4ceb05c966e73",
                 "shasum": ""
             },
             "require": {
