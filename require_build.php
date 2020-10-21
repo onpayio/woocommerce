@@ -15,11 +15,13 @@
 
     class_alias('WoocommerceOnpay\OnPay\API\GatewayService', 'OnPay\API\GatewayService');
     class_alias('WoocommerceOnpay\OnPay\API\PaymentWindow', 'OnPay\API\PaymentWindow');
+    class_alias('WoocommerceOnpay\OnPay\API\PaymentWindow\PaymentInfo', 'OnPay\API\PaymentWindow\PaymentInfo');
     class_alias('WoocommerceOnpay\OnPay\API\SubscriptionService', 'OnPay\API\SubscriptionService');
     class_alias('WoocommerceOnpay\OnPay\API\TransactionService', 'OnPay\API\TransactionService');
 
     class_alias('WoocommerceOnpay\OnPay\API\Exception\ApiException', 'OnPay\API\Exception\ApiException');
     class_alias('WoocommerceOnpay\OnPay\API\Exception\ConnectionException', 'OnPay\API\Exception\ConnectionException');
+    class_alias('WoocommerceOnpay\OnPay\API\Exception\InvalidFormatException', 'OnPay\API\Exception\InvalidFormatException');
     class_alias('WoocommerceOnpay\OnPay\API\Exception\TokenException', 'OnPay\API\Exception\TokenException');
 
     class_alias('WoocommerceOnpay\OnPay\API\Gateway\Information', 'OnPay\API\Gateway\Information');

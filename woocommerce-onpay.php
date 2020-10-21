@@ -586,6 +586,52 @@ function init_onpay() {
             if($this->get_option(self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE)) {
                 $paymentWindow->setLanguage($this->get_option(self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE));
             }
+
+            $customer = new WC_Customer($order->data['customer_id']);
+
+            // Adding available info fields
+            $paymentInfo = new \OnPay\API\PaymentWindow\PaymentInfo();
+
+            $this->setPaymentInfoParameter($paymentInfo, 'AccountId', $customer->get_id());
+            $this->setPaymentInfoParameter($paymentInfo, 'AccountDateCreated',  wc_format_datetime($customer->get_date_created(), 'Y-m-d'));
+            $this->setPaymentInfoParameter($paymentInfo, 'AccountDateChange', wc_format_datetime($customer->get_date_modified(), 'Y-m-d'));
+
+            $billingName = $customer->get_billing_first_name() . ' ' . $customer->get_billing_last_name();
+            $shippingName = $customer->get_shipping_first_name() . ' ' . $customer->get_shipping_last_name();
+
+            if ($billingName === $shippingName) {
+                $this->setPaymentInfoParameter($paymentInfo, 'AccountShippingIdenticalName', 'Y');
+            } else {
+                $this->setPaymentInfoParameter($paymentInfo, 'AccountShippingIdenticalName', 'N');
+            }
+                
+            if ($this->isAddressesIdentical($customer->get_billing(), $customer->get_shipping())) {
+                $this->setPaymentInfoParameter($paymentInfo, 'AddressIdenticalShipping', 'Y');
+            } else {
+                $this->setPaymentInfoParameter($paymentInfo, 'AddressIdenticalShipping', 'N');
+            }
+
+            $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressCity', $customer->get_billing_city());
+            $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressCountry', $customer->get_billing_country());
+            $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressLine1', $customer->get_billing_address_1());
+            $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressLine2', $customer->get_billing_address_2());
+            $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressPostalCode', $customer->get_billing_postcode());
+            $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressState', $customer->get_billing_state());
+
+            $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressCity', $customer->get_shipping_city());
+            $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressCountry', $customer->get_shipping_country());
+            $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressLine1', $customer->get_shipping_address_1());
+            $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressLine2', $customer->get_shipping_address_2());
+            $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressPostalCode', $customer->get_shipping_postcode());
+            $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressState', $customer->get_shipping_state());
+
+            $this->setPaymentInfoParameter($paymentInfo, 'Name', $billingName);
+            $this->setPaymentInfoParameter($paymentInfo, 'Email', $customer->get_billing_email());
+            $this->setPaymentInfoParameter($paymentInfo, 'PhoneHome',  [null, $customer->get_billing_phone()]);
+            $this->setPaymentInfoParameter($paymentInfo, 'DeliveryEmail', $customer->get_billing_email());
+
+            $paymentWindow->setInfo($paymentInfo);
+
             // Enable testmode
             if($this->get_option(self::SETTING_ONPAY_TESTMODE) === 'yes') {
                 $paymentWindow->setTestMode(1);
@@ -593,6 +639,59 @@ function init_onpay() {
                 $paymentWindow->setTestMode(0);
             }
             return $paymentWindow;
+        }
+
+        /**
+         * Method used for setting a payment info parameter. The value is attempted set, if this fails we'll ignore the value and do nothing.
+         * $value can be a single value or an array of values passed on as arguments.
+         * Validation of value happens directly in the SDK.
+         *
+         * @param $paymentInfo
+         * @param $parameter
+         * @param $value
+         */
+        private function setPaymentInfoParameter($paymentInfo, $parameter, $value) {
+            if ($paymentInfo instanceof \OnPay\API\PaymentWindow\PaymentInfo) {
+                $method = 'set'.$parameter;
+                if (method_exists($paymentInfo, $method)) {
+                    try {
+                        if (is_array($value)) {
+                            call_user_func_array([$paymentInfo, $method], $value);
+                        } else {
+                            call_user_func([$paymentInfo, $method], $value);
+                        }
+                    } catch (\OnPay\API\Exception\InvalidFormatException $e) {
+                        // No need to do anything. If the value fails, we'll simply ignore the value.
+                    }
+                }
+            }
+        }
+
+        /**
+         * Compares fields of two woocommerce addresses, and determines whether they are the same. 
+         * 
+         * @param $address1
+         * @param $address2
+         * @return bool
+         */
+        private function isAddressesIdentical($address1, $address2) {
+            $comparisonFields = [
+                'first_name',
+                'last_name',
+                'company',
+                'address_1',
+                'address_2',
+                'city',
+                'postcode',
+                'country',
+                'state'
+            ];
+            foreach ($comparisonFields as $field) {
+                if ($address1[$field] !== $address2[$field]) {
+                    return false;
+                }  
+            }
+            return true;
         }
 
         /**
