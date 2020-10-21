@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.9] - 2020-21-10
+## [1.0.9] - 2020-10-21
 - Fix bug with invalid token crashing whole site
 - Updated dependencies, PHP SDK and onpayio oauth2 dependency
 - Implemented paymentinfo for paymentwindow, setting available values
