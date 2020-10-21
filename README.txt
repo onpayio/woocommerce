@@ -4,7 +4,7 @@ Tags: onpay, gateway, payment, payment gateway, woocommerce, psp
 Requires at least: 5.3
 Tested up to: 5.5.1
 Requires PHP: 5.6
-Stable tag: 1.0.8
+Stable tag: 1.0.9
 License: MIT
 License URI: https://mit-license.org/
 
@@ -29,6 +29,12 @@ Plugin for WooCommerce, based on the official OnPay PHP SDK. The plugin adds the
 2. WooCommerce >= 3.8.1
 
 == Changelog ==
+
+= [1.0.9] =
+Fix bug with invalid token crashing whole site
+Updated dependencies, PHP SDK and onpayio oauth2 dependency
+Implemented paymentinfo for paymentwindow, setting available values
+Confirmed working on Wordpress 5.5.1 and WooCommerce 4.6.0
 
 = [1.0.8] =
 When users are sent to the payment window, the value for declineUrl has been set to the url for the checkout page. If user returns to declineUrl because of an error encountered in OnPay, an error message will be shown.
