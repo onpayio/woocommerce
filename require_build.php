@@ -47,4 +47,3 @@
      * Other Classes
      */
     class_alias('WoocommerceOnpay\Alcohol\ISO4217', 'Alcohol\ISO4217');
-    
