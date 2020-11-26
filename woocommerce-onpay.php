@@ -532,6 +532,7 @@ function init_onpay() {
                 if ($onpayApi->isAuthorized()) {
                     $this->update_option(self::SETTING_ONPAY_GATEWAY_ID, $onpayApi->gateway()->getInformation()->gatewayId);
                     $this->update_option(self::SETTING_ONPAY_SECRET, $onpayApi->gateway()->getPaymentWindowIntegrationSettings()->secret);
+                    $this->update_option(self::SETTING_ONPAY_CARDLOGOS, ['mastercard', 'visa']);
                 }
                 wp_redirect(wc_onpay_query_helper::generate_url(['page' => 'wc-settings','tab' => 'checkout','section' => $this::WC_ONPAY_ID]));
                 exit;
@@ -554,6 +555,7 @@ function init_onpay() {
                 $this->update_option(self::SETTING_ONPAY_PAYMENTWINDOW_DESIGN, null);
                 $this->update_option(self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE, null);
                 $this->update_option(self::SETTING_ONPAY_TESTMODE, null);
+                $this->update_option(self::SETTING_ONPAY_CARDLOGOS, null);
 
                 wp_redirect(wc_onpay_query_helper::generate_url(['page' => 'wc-settings','tab' => 'checkout','section' => $this::WC_ONPAY_ID]));
                 exit;
