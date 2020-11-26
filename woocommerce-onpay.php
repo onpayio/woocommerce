@@ -37,10 +37,6 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly
 }
 
-require_once __DIR__ . '/require.php';
-require_once __DIR__ . '/classes/currency-helper.php';
-require_once __DIR__ . '/classes/token-storage.php';
-
 add_action('plugins_loaded', 'init_onpay', 0);
 
 function init_onpay() {
@@ -49,7 +45,16 @@ function init_onpay() {
     if (!defined('WC_VERSION') || !class_exists('WC_Payment_Gateway')) {
 		return;
     }
-    
+    include_once __DIR__ . '/require.php';
+
+    include_once __DIR__ . '/classes/currency-helper.php';
+    include_once __DIR__ . '/classes/query-helper.php';
+    include_once __DIR__ . '/classes/token-storage.php';
+
+    include_once __DIR__ . '/classes/gateway-card.php';
+    include_once __DIR__ . '/classes/gateway-mobilepay.php';
+    include_once __DIR__ . '/classes/gateway-viabill.php';
+
     class WC_OnPay extends WC_Payment_Gateway {
         const SETTING_ONPAY_GATEWAY_ID = 'gateway_id';
         const SETTING_ONPAY_SECRET = 'secret';
@@ -59,6 +64,10 @@ function init_onpay() {
         const SETTING_ONPAY_PAYMENTWINDOW_DESIGN = 'paymentwindow_design';
         const SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE = 'paymentwindow_language';
         const SETTING_ONPAY_TESTMODE = 'testmode_enabled';
+        const SETTING_ONPAY_CARDLOGOS = 'card_logos';
+
+        const WC_ONPAY_ID = 'wc_onpay';
+        const WC_ONPAY_SETTINGS_ID = 'onpay';
 
         /**
          * @var WC_OnPay
@@ -81,19 +90,12 @@ function init_onpay() {
          * Constructor
          */
         public function __construct() {
-            $this->id           = 'onpay';
-            $this->method_title = 'OnPay';
+            $this->id = $this::WC_ONPAY_ID;
+            $this->method_title = __('OnPay.io', 'wc-onpay');
             $this->has_fields   = false;
             $this->method_description = __('Receive payments with cards and more through OnPay.io', 'wc-onpay');
 
             $this->init_settings();
-
-            if (is_admin()) {
-                $this->title = $this->method_title;
-            } else {
-                $this->title        = $this->get_active_methods_string('title');
-                $this->description  = $this->get_active_methods_string('description');
-            }
 
             load_plugin_textdomain( 'wc-onpay', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
         }
@@ -103,16 +105,7 @@ function init_onpay() {
          * Returns true if gateway is authorized and either card, mpo or viabill is activated.
          */
         public function is_available() {
-            $onpayApi = $this->get_onpay_client();
-
-            if ($this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD) !== 'yes' &&
-                $this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY) !== 'yes' &&
-                $this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL) !== 'yes'
-                ) {
-                return false;
-            }
-
-            return true;
+            return false;
         }
 
         /**
@@ -131,43 +124,18 @@ function init_onpay() {
          * Initialize hooks
          */
         public function init_hooks() {
-            if (is_admin()) {
-                add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options'] );
-            }
-            add_action('woocommerce_receipt_' . $this->id, [$this, 'checkout']);
+            add_action('woocommerce_settings_checkout_'. $this->id, [$this, 'admin_options'] );
+            add_action('woocommerce_update_options_checkout_'. $this->id, [$this, 'process_admin_options']);
             add_action('woocommerce_api_'. $this->id . '_callback', [$this, 'callback']);
             add_action('woocommerce_before_checkout_form', [$this, 'declinedReturnMessage']);
             add_action('post_updated', [$this, 'handle_order_metabox']);
             add_action('add_meta_boxes', [$this, 'meta_boxes']);
+            add_action('wp_enqueue_scripts', [$this, 'register_styles']);
         }
 
-        /**
-         * Forward cardholder/customer to reciept page, for further forwarding.
-         */
-        public function process_payment( $order_id ) {
-            $order = new WC_Order($order_id);
-            return array(
-                'result' => 'success',
-                'redirect' => $order->get_checkout_payment_url(true)
-            );
-        }
-
-        /**
-         * Method for injecting payment window form into reciept page, and automatically posting form to OnPay.
-         */
-        public function checkout($order_id) {
-            $order = new WC_Order($order_id);
-            $paymentWindow = $this->get_payment_window($order);
-            $formFields = $paymentWindow->getFormFields();
-
-            echo '<p>' . __( 'Redirecting to payment window', 'wc-onpay' ) . '</p>';
-            wc_enqueue_js('document.getElementById("onpay_form").submit();');
-        
-            echo '<form action="' . $paymentWindow->getActionUrl() . '" method="post" target="_top" id="onpay_form">';
-            foreach($paymentWindow->getFormFields() as $key => $formField) {
-                echo '<input type="hidden" name="' . $key . '" value="' . $formField . '">';
-            }
-            echo '</form>';
+        public function register_styles() {
+            wp_register_style(WC_OnPay::WC_ONPAY_ID . '_style', plugin_dir_url(__FILE__) . 'assets/css/front.css');
+            wp_enqueue_style(WC_OnPay::WC_ONPAY_ID . '_style');
         }
 
         /**
@@ -176,22 +144,24 @@ function init_onpay() {
         public function callback() {
             $paymentWindow = new \OnPay\API\PaymentWindow();
             $paymentWindow->setSecret($this->get_option(self::SETTING_ONPAY_SECRET));
-            if (!$paymentWindow->validatePayment($this->get_query())) {
+            if (!$paymentWindow->validatePayment(wc_onpay_query_helper::get_query())) {
                 $this->json_response('Invalid values', true, 400);
             }
-            $order = new WC_Order($this->get_query_value('onpay_reference'));
+            $order = new WC_Order(wc_onpay_query_helper::get_query_value('onpay_reference'));
             if ($order->has_status('pending')) {
-                $order->payment_complete($this->get_query_value('onpay_number'));
+                $order->payment_complete(wc_onpay_query_helper::get_query_value('onpay_number'));
                 $order->add_order_note( __( 'Transaction authorized in OnPay. Remember to capture amount.', 'wc-onpay' ));
+                $order->add_meta_data($this::WC_ONPAY_ID . '_test_mode', wc_onpay_query_helper::get_query_value('onpay_testmode'));
+                $order->save_meta_data();
             }
             $this->json_response('Order validated');
         }
 
         public function declinedReturnMessage() {
             $paymentWindow = new \OnPay\API\PaymentWindow();
-            $paymentWindow->setSecret($this->get_option(self::SETTING_ONPAY_SECRET));
-            $order = new WC_Order($this->get_query_value('onpay_reference'));
-            $isDeclined = $this->get_query_value('declined_from_onpay');
+            $paymentWindow->setSecret($this->get_option($this::SETTING_ONPAY_SECRET));
+            $order = new WC_Order(wc_onpay_query_helper::get_query_value('onpay_reference'));
+            $isDeclined = wc_onpay_query_helper::get_query_value('declined_from_onpay');
             if (!$order->is_paid() && $isDeclined === '1' && $paymentWindow->validatePayment($_GET)) {
                 // Order is not paid yet and user is returned through declined url from OnPay.
                 // Valid OnPay URL params are also present, which indicates that user did not simply quit payment, but an actual error was encountered.
@@ -238,6 +208,18 @@ function init_onpay() {
                     'type' => 'checkbox',
                     'default' => 'no',
                 ],
+                self::SETTING_ONPAY_CARDLOGOS => [
+                    'title' => __( 'Card logos', 'wc-onpay' ),
+                    'type' => 'multiselect',
+                    'description' => __( 'Card logos shown for the Card payment method.', 'wc-onpay' ),
+                    'desc_tip' => true,
+                    'class'             => 'wc-enhanced-select',
+                    'custom_attributes' => [
+                        'data-placeholder' => __( 'Select logos', 'wc-onpay' )
+                    ],
+                    'default' => '',
+                    'options' => $this->get_card_logo_options(),
+                ],
             ];
 		}
 
@@ -248,7 +230,7 @@ function init_onpay() {
             $onpayApi = $this->get_onpay_client(true);
 
             $html = '';
-            $html .=  '<h3>OnPay</h3>';
+            $html .=  '<h3>' . __('OnPay.io', 'wc-onpay') .'</h3>';
             $html .=  '<p>' . __('Receive payments with cards and more through OnPay.io', 'wc-onpay') . '</p>';
             $html .= '<hr />';
             echo ent2ncr($html);
@@ -319,8 +301,8 @@ function init_onpay() {
             // Determine that we're on the correct controller
             if ($post->post_type === 'shop_order') {
                 $order = new WC_Order($post->ID);
-                if ($order->get_payment_method() === $this->id) {
-                    add_meta_box('mv_other_fields', $this->method_title, [$this,'order_meta_box'], 'shop_order', 'advanced', 'high', ['order' => $order]);
+                if ($this->isOnPayMethod($order->get_payment_method())) {
+                    add_meta_box('mv_other_fields', __('OnPay.io', 'wc-onpay'), [$this,'order_meta_box'], 'shop_order', 'advanced', 'high', ['order' => $order]);
                 }
             }
         }
@@ -335,24 +317,24 @@ function init_onpay() {
             if ($post->post_type === 'shop_order') {
                 $order = new WC_Order($post->ID);
                 // Determine that the required data for getting transaction is available.
-                if ($order->get_payment_method() === $this->id && null !== $order->get_transaction_id() && $order->get_transaction_id() !== '') {
+                if ($this->isOnPayMethod($order->get_payment_method()) && null !== $order->get_transaction_id() && $order->get_transaction_id() !== '') {
                     // Get the transaction from API
                     $transaction = $this->get_onpay_client()->transaction()->getTransaction($order->get_transaction_id());
                     $currencyHelper = new wc_onpay_currency_helper();
 
-                    if (null !== $this->get_post_value('onpay_capture') && null !== $this->get_post_value('onpay_capture_amount')) { // If transaction is requested captured.
-                        $value = str_replace(',', '.', $this->get_post_value('onpay_capture_amount'));
+                    if (null !== wc_onpay_query_helper::get_post_value('onpay_capture') && null !== wc_onpay_query_helper::get_post_value('onpay_capture_amount')) { // If transaction is requested captured.
+                        $value = str_replace(',', '.', wc_onpay_query_helper::get_post_value('onpay_capture_amount'));
                         $amount = $currencyHelper->majorToMinor($value, $transaction->currencyCode, '.');
                         $this->get_onpay_client()->transaction()->captureTransaction($transaction->uuid, $amount);
                         $order->add_order_note( __( 'Amount captured on transaction in OnPay.', 'wc-onpay' ));
 
-                    } else if (null !== $this->get_post_value('onpay_refund') && null !== $this->get_post_value('onpay_refund_amount')) { // If transaction is requested refunded.
-                        $value = str_replace('.', ',', $this->get_post_value('onpay_refund_amount'));
+                    } else if (null !== wc_onpay_query_helper::get_post_value('onpay_refund') && null !== wc_onpay_query_helper::get_post_value('onpay_refund_amount')) { // If transaction is requested refunded.
+                        $value = str_replace('.', ',', wc_onpay_query_helper::get_post_value('onpay_refund_amount'));
                         $amount = $currencyHelper->majorToMinor($value, $transaction->currencyCode, ',');
                         $this->get_onpay_client()->transaction()->refundTransaction($transaction->uuid, $amount);
                         $order->add_order_note( __( 'Amount refunded on transaction in OnPay.', 'wc-onpay' ));
 
-                    } else if (null !== $this->get_post_value('onpay_cancel')) { // If transaction is requested cancelled.
+                    } else if (null !== wc_onpay_query_helper::get_post_value('onpay_cancel')) { // If transaction is requested cancelled.
                         $this->get_onpay_client()->transaction()->cancelTransaction($transaction->uuid);
                         $order->add_order_note( __( 'Transaction finished/cancelled in OnPay.', 'wc-onpay' ));
 
@@ -400,7 +382,7 @@ function init_onpay() {
                 $availableCharged = $currencyHelper->minorToMajor($transaction->charged - $transaction->refunded, $currency->numeric);
                 $refunded = $currencyHelper->minorToMajor($transaction->refunded, $currency->numeric);
 
-                if ($transaction->acquirer === 'test') {
+                if ($transaction->acquirer === 'test' || $order->get_meta($this::WC_ONPAY_ID . '_test_mode')) {
                     $html .= '<div style="background: #ffe595; padding: 10px;">';
                     $html .= __('This transaction was performed in testmode.', 'wc-onpay');
                     $html .= '</div>';
@@ -412,7 +394,14 @@ function init_onpay() {
                 $html .= '<p><strong>' . __('Transaction details', 'wc-onpay') . ':</strong></p>';
                 $html .= '<table class="widefat striped"><tbody>';
                 $html .= '<tr><td><strong>' . __('Status', 'wc-onpay') . '</strong></td><td>' . $transaction->status . '</td></tr>';
-                $html .= '<tr><td><strong>' . __('Card type', 'wc-onpay') . '</strong></td><td>' . $transaction->cardType . '</td></tr>';
+
+                $cardType = $transaction->cardType;
+                if ($cardType === null) {
+                    $cardType = $transaction->acquirer;
+                }
+
+                $html .= '<tr><td><strong>' . __('Card type', 'wc-onpay') . '</strong></td><td>' . $cardType . '</td></tr>';
+
                 $html .= '<tr><td><strong>' . __('Transaction number', 'wc-onpay') . '</strong></td><td>' . $transaction->transactionNumber . '</td></tr>';
                 $html .= '<tr><td><strong>' . __('Amount', 'wc-onpay') . '</strong></td><td>' . $currency->alpha3 . ' ' . $amount . '</td></tr>';
                 $html .= '<tr><td><strong>' . __('Charged', 'wc-onpay') . '</strong></td><td>' . $currency->alpha3 . ' ' . $charged . '</td></tr>';
@@ -495,41 +484,18 @@ function init_onpay() {
         }
 
         /**
-         * Returns formatted string based on active methods.
+         * @param $paymentMethod
+         * @return bool
          */
-        private function get_active_methods_string($string) {
-            $methods = $this->get_active_methods();
-            $methodsString = '';
-            $totalMethods = count($methods);
-            if ($totalMethods > 1) {
-                $methodsString = implode(', ', array_slice($methods, 0, $totalMethods-1)) . __(' or ', 'wc-onpay') . end($methods);
-            } else {
-                $methodsString = implode(', ', $methods);
+        private function isOnPayMethod($paymentMethod) {
+            if (in_array($paymentMethod, [
+                wc_onpay_gateway_card::WC_ONPAY_GATEWAY_CARD_ID,
+                wc_onpay_gateway_mobilepay::WC_ONPAY_GATEWAY_MOBILEPAY_ID,
+                wc_onpay_gateway_viabill::WC_ONPAY_GATEWAY_VIABILL_ID,
+            ])) {
+                return true;
             }
-
-            if ($string === 'title') {
-                return __('OnPay - Pay with', 'wc-onpay') . ' ' . $methodsString;
-            } else if ($string === 'description') {
-                return __('Pay through OnPay using', 'wc-onpay') . ' ' . $methodsString;
-            }
-            return null;
-        }
-
-        /**
-         * Returns an array of active payment methods
-         */
-        private function get_active_methods() {
-            $methods = [];
-            if ($this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD) === 'yes') {
-                $methods[] = __('Card', 'wc-onpay');
-            }
-            if ($this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY) === 'yes') {
-                $methods[] = __('MobilePay', 'wc-onpay');
-            }
-            if ($this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL) === 'yes') {
-                $methods[] = __('ViaBill', 'wc-onpay');
-            }
-            return $methods;
+            return false;
         }
         
         /**
@@ -544,9 +510,9 @@ function init_onpay() {
             if($prepareRedirectUri) {
                 $params['page'] = 'wc-settings';
                 $params['tab'] = 'checkout';
-                $params['section'] = 'wc_onpay';
+                $params['section'] = $this::WC_ONPAY_ID;
             }
-            $url = $this->generate_url($params);
+            $url = wc_onpay_query_helper::generate_url($params);
             $onPayAPI = new \OnPay\OnPayAPI($tokenStorage, [
                 'client_id' => 'Onpay WooCommerce',
                 'redirect_uri' => $url,
@@ -555,159 +521,19 @@ function init_onpay() {
         }
 
         /**
-         * Returns instance of PaymentWindow based on WC_Order
-         */
-        private function get_payment_window($order) {
-            if (!$order instanceof WC_Order) {
-                return null;
-            }
-
-            $CurrencyHelper = new wc_onpay_currency_helper();
-
-            // We'll need to find out details about the currency, and format the order total amount accordingly
-            $isoCurrency = $CurrencyHelper->fromAlpha3($order->get_data()['currency']);
-            $orderTotal = number_format($this->get_order_total(), $isoCurrency->exp, '', '');
-            $declineUrl = get_permalink(woocommerce_get_page_id('checkout'));
-            $declineUrl = add_query_arg('declined_from_onpay', '1', $declineUrl);
-
-            $paymentWindow = new \OnPay\API\PaymentWindow();
-            $paymentWindow->setGatewayId($this->get_option(self::SETTING_ONPAY_GATEWAY_ID));
-            $paymentWindow->setSecret($this->get_option(self::SETTING_ONPAY_SECRET));
-            $paymentWindow->setCurrency($isoCurrency->alpha3);
-            $paymentWindow->setAmount($orderTotal);
-            $paymentWindow->setReference($order->get_data()['id']);
-            $paymentWindow->setType("payment");
-            $paymentWindow->setAcceptUrl($order->get_checkout_order_received_url());
-            $paymentWindow->setDeclineUrl($declineUrl);
-            $paymentWindow->setCallbackUrl(WC()->api_request_url($this->id . '_callback'));
-            if($this->get_option(self::SETTING_ONPAY_PAYMENTWINDOW_DESIGN)) {
-                $paymentWindow->setDesign($this->get_option(self::SETTING_ONPAY_PAYMENTWINDOW_DESIGN));
-            }
-            if($this->get_option(self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE)) {
-                $paymentWindow->setLanguage($this->get_option(self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE));
-            }
-
-            $customer = new WC_Customer($order->data['customer_id']);
-
-            // Adding available info fields
-            $paymentInfo = new \OnPay\API\PaymentWindow\PaymentInfo();
-
-            $this->setPaymentInfoParameter($paymentInfo, 'AccountId', $customer->get_id());
-            $this->setPaymentInfoParameter($paymentInfo, 'AccountDateCreated',  wc_format_datetime($customer->get_date_created(), 'Y-m-d'));
-            $this->setPaymentInfoParameter($paymentInfo, 'AccountDateChange', wc_format_datetime($customer->get_date_modified(), 'Y-m-d'));
-
-            $billingName = $customer->get_billing_first_name() . ' ' . $customer->get_billing_last_name();
-            $shippingName = $customer->get_shipping_first_name() . ' ' . $customer->get_shipping_last_name();
-
-            if ($billingName === $shippingName) {
-                $this->setPaymentInfoParameter($paymentInfo, 'AccountShippingIdenticalName', 'Y');
-            } else {
-                $this->setPaymentInfoParameter($paymentInfo, 'AccountShippingIdenticalName', 'N');
-            }
-                
-            if ($this->isAddressesIdentical($customer->get_billing(), $customer->get_shipping())) {
-                $this->setPaymentInfoParameter($paymentInfo, 'AddressIdenticalShipping', 'Y');
-            } else {
-                $this->setPaymentInfoParameter($paymentInfo, 'AddressIdenticalShipping', 'N');
-            }
-
-            $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressCity', $customer->get_billing_city());
-            $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressCountry', $customer->get_billing_country());
-            $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressLine1', $customer->get_billing_address_1());
-            $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressLine2', $customer->get_billing_address_2());
-            $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressPostalCode', $customer->get_billing_postcode());
-            $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressState', $customer->get_billing_state());
-
-            $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressCity', $customer->get_shipping_city());
-            $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressCountry', $customer->get_shipping_country());
-            $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressLine1', $customer->get_shipping_address_1());
-            $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressLine2', $customer->get_shipping_address_2());
-            $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressPostalCode', $customer->get_shipping_postcode());
-            $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressState', $customer->get_shipping_state());
-
-            $this->setPaymentInfoParameter($paymentInfo, 'Name', $billingName);
-            $this->setPaymentInfoParameter($paymentInfo, 'Email', $customer->get_billing_email());
-            $this->setPaymentInfoParameter($paymentInfo, 'PhoneHome',  [null, $customer->get_billing_phone()]);
-            $this->setPaymentInfoParameter($paymentInfo, 'DeliveryEmail', $customer->get_billing_email());
-
-            $paymentWindow->setInfo($paymentInfo);
-
-            // Enable testmode
-            if($this->get_option(self::SETTING_ONPAY_TESTMODE) === 'yes') {
-                $paymentWindow->setTestMode(1);
-            } else {
-                $paymentWindow->setTestMode(0);
-            }
-            return $paymentWindow;
-        }
-
-        /**
-         * Method used for setting a payment info parameter. The value is attempted set, if this fails we'll ignore the value and do nothing.
-         * $value can be a single value or an array of values passed on as arguments.
-         * Validation of value happens directly in the SDK.
-         *
-         * @param $paymentInfo
-         * @param $parameter
-         * @param $value
-         */
-        private function setPaymentInfoParameter($paymentInfo, $parameter, $value) {
-            if ($paymentInfo instanceof \OnPay\API\PaymentWindow\PaymentInfo) {
-                $method = 'set'.$parameter;
-                if (method_exists($paymentInfo, $method)) {
-                    try {
-                        if (is_array($value)) {
-                            call_user_func_array([$paymentInfo, $method], $value);
-                        } else {
-                            call_user_func([$paymentInfo, $method], $value);
-                        }
-                    } catch (\OnPay\API\Exception\InvalidFormatException $e) {
-                        // No need to do anything. If the value fails, we'll simply ignore the value.
-                    }
-                }
-            }
-        }
-
-        /**
-         * Compares fields of two woocommerce addresses, and determines whether they are the same. 
-         * 
-         * @param $address1
-         * @param $address2
-         * @return bool
-         */
-        private function isAddressesIdentical($address1, $address2) {
-            $comparisonFields = [
-                'first_name',
-                'last_name',
-                'company',
-                'address_1',
-                'address_2',
-                'city',
-                'postcode',
-                'country',
-                'state'
-            ];
-            foreach ($comparisonFields as $field) {
-                if ($address1[$field] !== $address2[$field]) {
-                    return false;
-                }  
-            }
-            return true;
-        }
-
-        /**
          * Handle callback in oauth flow
          */
         private function handle_oauth_callback() {
             $onpayApi = $this->get_onpay_client(true);
-            if(null !== $this->get_query_value('code') && !$onpayApi->isAuthorized()) {
+            if(null !== wc_onpay_query_helper::get_query_value('code') && !$onpayApi->isAuthorized()) {
                 // We're not authorized with the API, and we have a 'code' value at hand. 
                 // Let's authorize, and save the gatewayID and secret accordingly.
-                $onpayApi->finishAuthorize($this->get_query_value('code'));
+                $onpayApi->finishAuthorize(wc_onpay_query_helper::get_query_value('code'));
                 if ($onpayApi->isAuthorized()) {
                     $this->update_option(self::SETTING_ONPAY_GATEWAY_ID, $onpayApi->gateway()->getInformation()->gatewayId);
                     $this->update_option(self::SETTING_ONPAY_SECRET, $onpayApi->gateway()->getPaymentWindowIntegrationSettings()->secret);
                 }
-                wp_redirect($this->generate_url(['page' => 'wc-settings','tab' => 'checkout','section' => 'wc_onpay']));
+                wp_redirect(wc_onpay_query_helper::generate_url(['page' => 'wc-settings','tab' => 'checkout','section' => $this::WC_ONPAY_ID]));
                 exit;
             }
         }
@@ -718,7 +544,7 @@ function init_onpay() {
          */
         private function handle_detach() {
             $onpayApi = $this->get_onpay_client(true);
-            if(null !== $this->get_query_value('detach') && $onpayApi->isAuthorized()) {
+            if(null !== wc_onpay_query_helper::get_query_value('detach') && $onpayApi->isAuthorized()) {
                 update_option('woocommerce_onpay_token', null);
                 $this->update_option(self::SETTING_ONPAY_GATEWAY_ID, null);
                 $this->update_option(self::SETTING_ONPAY_SECRET, null);
@@ -729,7 +555,7 @@ function init_onpay() {
                 $this->update_option(self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE, null);
                 $this->update_option(self::SETTING_ONPAY_TESTMODE, null);
 
-                wp_redirect($this->generate_url(['page' => 'wc-settings','tab' => 'checkout','section' => 'wc_onpay']));
+                wp_redirect(wc_onpay_query_helper::generate_url(['page' => 'wc-settings','tab' => 'checkout','section' => $this::WC_ONPAY_ID]));
                 exit;
             }
         }
@@ -783,57 +609,22 @@ function init_onpay() {
         }
 
         /**
-         * Generates URL for current page with params
-         * @param $params
-         * @return string
-         */
-        private function generate_url($params) {
-            if (is_ssl()) {
-                $currentPage = 'https://';
-            } else {
-                $currentPage = 'http://';
-            }
-            $currentPage .= $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-            $baseUrl = explode('?', $currentPage, 2);
-            $baseUrl = array_shift($baseUrl);
-            $fullUrl = $baseUrl . '?' . http_build_query($params);
-            return $fullUrl;
-        }
-
-        /**
-         * Since Wordpress not really allows getting custom queries, we'll implement this method allowing us to get the values we need.
-         * @param string $query
-         * @return string|null
-         */
-        private function get_query_value($query) {
-            if (isset($_GET[$query])) {
-                return sanitize_text_field($_GET[$query]);
-            }
-            return null;
-        }
-
-        /**
-         * Get all query values sanitized in array.
+         * Returns a prepared list of card logos
+         *
          * @return array
          */
-        private function get_query() {
-            $query = [];
-            foreach ($_GET as $key => $get) {
-                $query[$key] = sanitize_text_field($get);
-            }
-            return $query;
-        }
-
-        /**
-         * Since Wordpress not really allows getting post values, we have this method for easier access.
-         * @param string $key
-         * @return string|null
-         */
-        private function get_post_value($key) {
-            if (isset($_POST[$key])) {
-                return sanitize_text_field($_POST[$key]);
-            }
-            return null;
+        private function get_card_logo_options() {
+            return [
+                'american-express'      => __('American Express/AMEX', 'wc-onpay'),
+                'dankort'               => __('Dankort', 'wc-onpay'),
+                'diners'                => __('Diners', 'wc-onpay'),
+                'discover'              => __('Discover', 'wc-onpay'),
+                'forbrugsforeningen'    => __('Forbrugsforeningen', 'wc-onpay'),
+                'jcb'                   => __('JCB', 'wc-onpay'),
+                'mastercard'            => __('Mastercard/Maestro', 'wc-onpay'),
+                'unionpay'              => __('UnionPay', 'wc-onpay'),
+                'visa'                  => __('Visa/VPay/Visa Electron ', 'wc-onpay')
+            ];
         }
 
         /**
@@ -850,12 +641,26 @@ function init_onpay() {
             }
             die(wp_json_encode($response));
         }
+
+        /**
+         * Return the name of the option in the WP DB.
+         * Hardcode to use the defined settings_id as id for settings, for legacy reasons.
+         *
+         * @return string
+         */
+        public function get_option_key() {
+            return $this->plugin_id . self::WC_ONPAY_SETTINGS_ID . '_settings';
+        }
     }
 
     // Add OnPay as payment method to WooCommerce
     add_filter( 'woocommerce_payment_gateways', 'wc_onpay_add_to_woocommerce' );
     function wc_onpay_add_to_woocommerce($methods) {
-        $methods[] = 'WC_OnPay';
+        $methods[] = 'wc_onpay_gateway_card';
+        $methods[] = 'wc_onpay_gateway_mobilepay';
+        $methods[] = 'wc_onpay_gateway_viabill';
+        $methods[] = 'wc_onpay';
+
         return $methods;
     }
     
@@ -868,7 +673,7 @@ function init_onpay() {
         return array_merge( $plugin_links, $links );
     }
 
-	// Initialize hooks
+	// Initialize
     WC_OnPay::get_instance()->init_hooks();
 }
 ?>
