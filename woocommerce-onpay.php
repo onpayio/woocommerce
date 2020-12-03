@@ -286,10 +286,9 @@ function init_onpay() {
         }
 
         public function process_admin_options() {
-            parent::process_admin_options();
-
-            $this->init_settings();
             $this->init_form_fields();  
+            
+            parent::process_admin_options();
         }
 
 
