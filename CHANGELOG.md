@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.10] - 2020-12-03
+- Split methods form one single into individual payment methods shown when choosing method in frontoffice.
+- Added feature for choosing card logos shown on OnPay credit card method.
+- Updated MobilePay logo.
+
 ## [1.0.9] - 2020-10-21
 - Fix bug with invalid token crashing whole site
 - Updated dependencies, PHP SDK and onpayio oauth2 dependency

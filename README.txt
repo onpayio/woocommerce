@@ -2,9 +2,9 @@
 Contributors: onpayio
 Tags: onpay, gateway, payment, payment gateway, woocommerce, psp
 Requires at least: 5.3
-Tested up to: 5.5.1
+Tested up to: 5.5.3
 Requires PHP: 5.6
-Stable tag: 1.0.9
+Stable tag: 1.0.10
 License: MIT
 License URI: https://mit-license.org/
 
@@ -29,6 +29,11 @@ Plugin for WooCommerce, based on the official OnPay PHP SDK. The plugin adds the
 2. WooCommerce >= 3.8.1
 
 == Changelog ==
+
+= [1.0.10] =
+Split methods form one single into individual payment methods shown when choosing method in frontoffice.
+Added feature for choosing card logos shown on OnPay credit card method.
+Updated MobilePay logo.
 
 = [1.0.9] =
 Fix bug with invalid token crashing whole site

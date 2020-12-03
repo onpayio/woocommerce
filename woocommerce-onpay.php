@@ -30,7 +30,7 @@
 * Author URI: https://onpay.io/
 * Text Domain: wc-onpay
 * Domain Path: /languages
-* Version: 1.0.9
+* Version: 1.0.10
 **/
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -286,9 +286,10 @@ function init_onpay() {
         }
 
         public function process_admin_options() {
-            $this->init_form_fields();
-
             parent::process_admin_options();
+
+            $this->init_settings();
+            $this->init_form_fields();  
         }
 
 
