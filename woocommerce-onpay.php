@@ -124,8 +124,7 @@ function init_onpay() {
          * Initialize hooks
          */
         public function init_hooks() {
-            add_action('woocommerce_settings_checkout_'. $this->id, [$this, 'admin_options'] );
-            add_action('woocommerce_update_options_checkout_'. $this->id, [$this, 'process_admin_options']);
+            add_action('woocommerce_update_options_payment_gateways_'. $this->id, [$this, 'process_admin_options']);
             add_action('woocommerce_api_'. $this->id . '_callback', [$this, 'callback']);
             add_action('woocommerce_before_checkout_form', [$this, 'declinedReturnMessage']);
             add_action('post_updated', [$this, 'handle_order_metabox']);
