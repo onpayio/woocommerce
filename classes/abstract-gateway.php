@@ -85,6 +85,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         $paymentWindow->setAcceptUrl($order->get_checkout_order_received_url());
         $paymentWindow->setDeclineUrl($declineUrl);
         $paymentWindow->setCallbackUrl(WC()->api_request_url('wc_onpay' . '_callback'));
+        $paymentWindow->setWebsite(get_bloginfo('wpurl'));
 
         if($order->get_payment_method() === 'onpay_card') {
             $paymentWindow->setMethod($paymentWindow::METHOD_CARD);
