@@ -54,12 +54,14 @@ function init_onpay() {
     include_once __DIR__ . '/classes/gateway-card.php';
     include_once __DIR__ . '/classes/gateway-mobilepay.php';
     include_once __DIR__ . '/classes/gateway-viabill.php';
+    include_once __DIR__ . '/classes/gateway-anyday.php';
 
     class WC_OnPay extends WC_Payment_Gateway {
         const SETTING_ONPAY_GATEWAY_ID = 'gateway_id';
         const SETTING_ONPAY_SECRET = 'secret';
         const SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY = 'extra_payments_mobilepay';
         const SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL = 'extra_payments_viabill';
+        const SETTING_ONPAY_EXTRA_PAYMENTS_ANYDAY = 'extra_payments_anyday_split';
         const SETTING_ONPAY_EXTRA_PAYMENTS_CARD = 'extra_payments_card';
         const SETTING_ONPAY_PAYMENTWINDOW_DESIGN = 'paymentwindow_design';
         const SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE = 'paymentwindow_language';
@@ -102,7 +104,6 @@ function init_onpay() {
 
         /**
          * Tells WooCommerce whether gateway is available for use.
-         * Returns true if gateway is authorized and either card, mpo or viabill is activated.
          */
         public function is_available() {
             return false;
@@ -188,6 +189,12 @@ function init_onpay() {
                 self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL => [
                     'title' => __('ViaBill', 'wc-onpay'),
                     'label' => __('Enable ViaBill as payment method', 'wc-onpay'),
+                    'type' => 'checkbox',
+                    'default' => 'no',
+                ],
+                self::SETTING_ONPAY_EXTRA_PAYMENTS_ANYDAY => [
+                    'title' => __('Anyday Split', 'wc-onpay'),
+                    'label' => __('Enable Anyday Split as payment method', 'wc-onpay'),
                     'type' => 'checkbox',
                     'default' => 'no',
                 ],
@@ -491,6 +498,7 @@ function init_onpay() {
                 wc_onpay_gateway_card::WC_ONPAY_GATEWAY_CARD_ID,
                 wc_onpay_gateway_mobilepay::WC_ONPAY_GATEWAY_MOBILEPAY_ID,
                 wc_onpay_gateway_viabill::WC_ONPAY_GATEWAY_VIABILL_ID,
+                wc_onpay_gateway_anyday::WC_ONPAY_GATEWAY_ANYDAY_SPLIT_ID,
             ])) {
                 return true;
             }
@@ -550,6 +558,7 @@ function init_onpay() {
                 $this->update_option(self::SETTING_ONPAY_SECRET, null);
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY, null);
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL, null);
+                $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_ANYDAY, null);
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD, null);
                 $this->update_option(self::SETTING_ONPAY_PAYMENTWINDOW_DESIGN, null);
                 $this->update_option(self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE, null);
@@ -660,6 +669,7 @@ function init_onpay() {
         $methods[] = 'wc_onpay_gateway_card';
         $methods[] = 'wc_onpay_gateway_mobilepay';
         $methods[] = 'wc_onpay_gateway_viabill';
+        $methods[] = 'wc_onpay_gateway_anyday';
         $methods[] = 'wc_onpay';
 
         return $methods;
