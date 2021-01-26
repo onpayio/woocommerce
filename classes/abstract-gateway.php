@@ -87,6 +87,10 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         $paymentWindow->setCallbackUrl(WC()->api_request_url('wc_onpay' . '_callback'));
         $paymentWindow->setWebsite(get_bloginfo('wpurl'));
 
+        $pluginFile = dirname(__DIR__) . '/woocommerce-onpay.php';
+        $pluginData = get_plugin_data($pluginFile);  
+        $paymentWindow->setPlatform('woocommerce', $pluginData['Version'], get_bloginfo('version'));
+
         if($order->get_payment_method() === 'onpay_card') {
             $paymentWindow->setMethod($paymentWindow::METHOD_CARD);
         } else if($order->get_payment_method() === 'onpay_mobilepay') {
