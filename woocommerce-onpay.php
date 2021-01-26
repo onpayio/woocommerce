@@ -57,6 +57,8 @@ function init_onpay() {
     include_once __DIR__ . '/classes/gateway-anyday.php';
 
     class WC_OnPay extends WC_Payment_Gateway {
+        const PLUGIN_VERSION = '1.0.11-dev';
+
         const SETTING_ONPAY_GATEWAY_ID = 'gateway_id';
         const SETTING_ONPAY_SECRET = 'secret';
         const SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY = 'extra_payments_mobilepay';
