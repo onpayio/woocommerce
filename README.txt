@@ -2,9 +2,9 @@
 Contributors: onpayio
 Tags: onpay, gateway, payment, payment gateway, woocommerce, psp
 Requires at least: 5.3
-Tested up to: 5.5.3
+Tested up to: 5.6
 Requires PHP: 5.6
-Stable tag: 1.0.10
+Stable tag: 1.0.11
 License: MIT
 License URI: https://mit-license.org/
 
@@ -29,6 +29,12 @@ Plugin for WooCommerce, based on the official OnPay PHP SDK. The plugin adds the
 2. WooCommerce >= 3.8.1
 
 == Changelog ==
+
+= [1.0.11] =
+Updated version of onpayio/php-sdk
+Added website field to payment window
+Added Anyday Split as an payment option
+Implemented platform field in payment window
 
 = [1.0.10] =
 Split methods form one single into individual payment methods shown when choosing method in frontoffice.
