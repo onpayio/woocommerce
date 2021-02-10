@@ -73,6 +73,8 @@ function init_onpay() {
         const WC_ONPAY_ID = 'wc_onpay';
         const WC_ONPAY_SETTINGS_ID = 'onpay';
 
+        const WC_ONPAY_SESSION_ADMIN_NOTICES = 'onpay_admin_notices';
+
         /**
          * @var WC_OnPay
          */
@@ -130,9 +132,10 @@ function init_onpay() {
             add_action('woocommerce_update_options_payment_gateways_'. $this->id, [$this, 'process_admin_options']);
             add_action('woocommerce_api_'. $this->id . '_callback', [$this, 'callback']);
             add_action('woocommerce_before_checkout_form', [$this, 'declinedReturnMessage']);
-            add_action('post_updated', [$this, 'handle_order_metabox']);
+            add_action('save_post', [$this, 'handle_order_metabox']);
             add_action('add_meta_boxes', [$this, 'meta_boxes']);
             add_action('wp_enqueue_scripts', [$this, 'register_styles']);
+            add_action('admin_notices', [$this, 'showAdminNotices']);
         }
 
         public function register_styles() {
@@ -330,22 +333,28 @@ function init_onpay() {
                     $transaction = $this->get_onpay_client()->transaction()->getTransaction($order->get_transaction_id());
                     $currencyHelper = new wc_onpay_currency_helper();
 
-                    if (null !== wc_onpay_query_helper::get_post_value('onpay_capture') && null !== wc_onpay_query_helper::get_post_value('onpay_capture_amount')) { // If transaction is requested captured.
-                        $value = str_replace(',', '.', wc_onpay_query_helper::get_post_value('onpay_capture_amount'));
-                        $amount = $currencyHelper->majorToMinor($value, $transaction->currencyCode, '.');
-                        $this->get_onpay_client()->transaction()->captureTransaction($transaction->uuid, $amount);
-                        $order->add_order_note( __( 'Amount captured on transaction in OnPay.', 'wc-onpay' ));
+                    try {
+                        if (null !== wc_onpay_query_helper::get_post_value('onpay_capture') && null !== wc_onpay_query_helper::get_post_value('onpay_capture_amount')) { // If transaction is requested captured.                            
+                            $value = str_replace(',', '.', wc_onpay_query_helper::get_post_value('onpay_capture_amount'));
+                            $amount = $currencyHelper->majorToMinor($value, $transaction->currencyCode, '.');
+                            $this->get_onpay_client()->transaction()->captureTransaction($transaction->uuid, $amount);
+                            $order->add_order_note( __( 'Amount captured on transaction in OnPay.', 'wc-onpay' ));
+                            $this->addAdminNotice(__( 'Amount captured on transaction in OnPay.', 'wc-onpay' ), 'success');
 
-                    } else if (null !== wc_onpay_query_helper::get_post_value('onpay_refund') && null !== wc_onpay_query_helper::get_post_value('onpay_refund_amount')) { // If transaction is requested refunded.
-                        $value = str_replace('.', ',', wc_onpay_query_helper::get_post_value('onpay_refund_amount'));
-                        $amount = $currencyHelper->majorToMinor($value, $transaction->currencyCode, ',');
-                        $this->get_onpay_client()->transaction()->refundTransaction($transaction->uuid, $amount);
-                        $order->add_order_note( __( 'Amount refunded on transaction in OnPay.', 'wc-onpay' ));
+                        } else if (null !== wc_onpay_query_helper::get_post_value('onpay_refund') && null !== wc_onpay_query_helper::get_post_value('onpay_refund_amount')) { // If transaction is requested refunded.
+                            $value = str_replace('.', ',', wc_onpay_query_helper::get_post_value('onpay_refund_amount'));
+                            $amount = $currencyHelper->majorToMinor($value, $transaction->currencyCode, ',');
+                            $this->get_onpay_client()->transaction()->refundTransaction($transaction->uuid, $amount);
+                            $order->add_order_note( __( 'Amount refunded on transaction in OnPay.', 'wc-onpay' ));
+                            $this->addAdminNotice(__( 'Amount refunded on transaction in OnPay.', 'wc-onpay' ), 'success');
 
-                    } else if (null !== wc_onpay_query_helper::get_post_value('onpay_cancel')) { // If transaction is requested cancelled.
-                        $this->get_onpay_client()->transaction()->cancelTransaction($transaction->uuid);
-                        $order->add_order_note( __( 'Transaction finished/cancelled in OnPay.', 'wc-onpay' ));
-
+                        } else if (null !== wc_onpay_query_helper::get_post_value('onpay_cancel')) { // If transaction is requested cancelled.
+                            $this->get_onpay_client()->transaction()->cancelTransaction($transaction->uuid);
+                            $order->add_order_note( __( 'Transaction finished/cancelled in OnPay.', 'wc-onpay' ));
+                            $this->addAdminNotice(__( 'Transaction finished/cancelled in OnPay.', 'wc-onpay' ), 'info');
+                        }
+                    } catch (OnPay\API\Exception\ApiException $exception) {
+                        $this->addAdminNotice(__('OnPay error: ', 'wc-onpay') . $exception->getMessage(), 'error');
                     }
                 }
             }
@@ -489,6 +498,43 @@ function init_onpay() {
                 wc_enqueue_js('$("#button_onpay_cancel_hide").on("click", function(event) {event.preventDefault(); $("#onpay_action_cancel").slideUp(); $("#onpay_action_buttons").slideDown(); })');
             }
             echo ent2ncr($html);
+        }
+
+        private function addAdminNotice($text, $type = 'success', $dismissable = true) {
+            $classes = [
+                'notice',
+            ];
+
+            if ($type === 'success') {
+                $classes[] = 'notice-success';
+            } else if ($type === 'warning') {
+                $classes[] = 'notice-warning';
+            } else if ($type === 'error') {
+                $classes[] = 'notice-error';
+            } else if ($type === 'info') {
+                $classes[] = 'notice-info';
+            }
+
+            if ($dismissable === true) {
+                $classes[] = 'is-dismissible';
+            }
+
+            $transientNotices = get_transient(self::WC_ONPAY_SESSION_ADMIN_NOTICES . '_' . get_current_user_id());
+            if ($transientNotices === false) {
+                $transientNotices = [];
+            }
+            $transientNotices[] = '<div class="' . implode(' ', $classes) . '"><p>' . $text . '</p></div>';
+            set_transient(self::WC_ONPAY_SESSION_ADMIN_NOTICES . '_' . get_current_user_id(), $transientNotices);
+        }
+        
+        public function showAdminNotices() {
+            $transientNotices = get_transient(self::WC_ONPAY_SESSION_ADMIN_NOTICES . '_' . get_current_user_id());
+            if ($transientNotices !== false) {
+                foreach($transientNotices as $notice) {
+                    echo $notice;
+                }
+                delete_transient(self::WC_ONPAY_SESSION_ADMIN_NOTICES . '_' . get_current_user_id());
+            }
         }
 
         /**
