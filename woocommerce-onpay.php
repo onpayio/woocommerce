@@ -73,8 +73,6 @@ function init_onpay() {
         const WC_ONPAY_ID = 'wc_onpay';
         const WC_ONPAY_SETTINGS_ID = 'onpay';
 
-        const WC_ONPAY_SESSION_ADMIN_NOTICES = 'onpay_admin_notices';
-
         /**
          * @var WC_OnPay
          */
@@ -243,7 +241,6 @@ function init_onpay() {
             $html = '';
             $html .=  '<h3>' . __('OnPay.io', 'wc-onpay') .'</h3>';
             $html .=  '<p>' . __('Receive payments with cards and more through OnPay.io', 'wc-onpay') . '</p>';
-            $html .= '<hr />';
             echo ent2ncr($html);
 
             $hideForm = false;
@@ -255,7 +252,9 @@ function init_onpay() {
                 $GLOBALS['hide_save_button'] = true;
                 return;
             } catch (OnPay\API\Exception\TokenException $exception) { // Something's wrong with the token, print link to reauth
-                echo ent2ncr('<a href="' . $onpayApi->authorize() . '" class="button-primary">' . __('Log in with OnPay', 'wc-onpay') . '</a>');
+                echo ent2ncr($this->getOnboardingHtml());
+                echo ent2ncr('<hr />');
+                echo ent2ncr('<a href="' . $onpayApi->authorize() . '" class="button-primary">' . __('Log in with OnPay account', 'wc-onpay') . '</a>');
                 $GLOBALS['hide_save_button'] = true;
                 $hideForm = true;
             }
@@ -265,7 +264,7 @@ function init_onpay() {
             $this->handle_detach();
 
             if (!$hideForm) {
-                $html = '';
+                $html = '<hr />';
                 $html .= '<table class="form-table">';
                 $html .= $this->generate_settings_html([], false);
                 $html .= '</table>';
@@ -698,6 +697,16 @@ function init_onpay() {
                 $response = ['error' => $message];
             }
             die(wp_json_encode($response));
+        }
+
+        private function getOnboardingHtml() {
+            $html = '<span>' . __('Don\'t  have an OnPay account yet? Order one through DanDomain from DKK 0,- per month.', 'wc-onpay') . '</span>';
+            $html .= '&nbsp;';
+            $html .= '<a href="https://dandomain.dk/betalingssystem/priser" class="button-primary" target="_blank">' . __('Get OnPay now', 'wc-onpay') . '</a>';
+            $html .= '&nbsp;';
+            $html .= '<a href="https://onpay.io/#brands" class="button" target="_blank">' . __('OnPay sellers', 'wc-onpay') . '</a>';
+
+            return $html;
         }
 
         /**
