@@ -16,6 +16,10 @@ Plugin for WooCommerce, based on the official OnPay PHP SDK. The plugin adds the
 - Validation of orders with callbacks directly from OnPay, outside the context of the cardholders browser.
 - Management of transaction on order pages in backoffice.
 
+Don't  have an OnPay account yet? Order one through <a href="https://dandomain.dk/betalingssystem/priser" target="_blank">DanDomain</a> from DKK 0,- per month.
+
+<a href="https://onpay.io/#brands" target="_blank">OnPay sellers</a>
+
 == Installation ==
 1. Install plugin as any other Wordpress plugin.
 2. Log in with OnPay on plugin settings page in woocommerce settings.
