@@ -73,6 +73,8 @@ function init_onpay() {
         const WC_ONPAY_ID = 'wc_onpay';
         const WC_ONPAY_SETTINGS_ID = 'onpay';
 
+        const WC_ONPAY_SESSION_ADMIN_NOTICES = 'onpay_admin_notices';
+
         /**
          * @var WC_OnPay
          */
