@@ -66,11 +66,12 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         if (!$order instanceof WC_Order) {
             return null;
         }
+        $orderData = $order->get_data();
 
         $CurrencyHelper = new wc_onpay_currency_helper();
 
         // We'll need to find out details about the currency, and format the order total amount accordingly
-        $isoCurrency = $CurrencyHelper->fromAlpha3($order->get_data()['currency']);
+        $isoCurrency = $CurrencyHelper->fromAlpha3($orderData['currency']);
         $orderTotal = number_format($this->get_order_total(), $isoCurrency->exp, '', '');
         $declineUrl = get_permalink(wc_get_page_id('checkout'));
         $declineUrl = add_query_arg('declined_from_onpay', '1', $declineUrl);
@@ -80,7 +81,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         $paymentWindow->setSecret($this->get_option(WC_OnPay::SETTING_ONPAY_SECRET));
         $paymentWindow->setCurrency($isoCurrency->alpha3);
         $paymentWindow->setAmount($orderTotal);
-        $paymentWindow->setReference($order->get_data()['id']);
+        $paymentWindow->setReference($orderData['id']);
         $paymentWindow->setType("payment");
         $paymentWindow->setAcceptUrl($order->get_checkout_order_received_url());
         $paymentWindow->setDeclineUrl($declineUrl);
@@ -105,7 +106,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
             $paymentWindow->setLanguage($this->get_option(WC_OnPay::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE));
         }
 
-        $customer = new WC_Customer($order->get_data()['customer_id']);
+        $customer = new WC_Customer($orderData['customer_id']);
 
         // Adding available info fields
         $paymentInfo = new \OnPay\API\PaymentWindow\PaymentInfo();
