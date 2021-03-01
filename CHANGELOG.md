@@ -6,12 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.12] - 2020-03-01
+## [1.0.12] - 2021-03-01
 - Added method for showing notices in admin
 - Added better handling of errors on order page in admin
 - Get data from Order object the correct way in abstract_gateway
 
-## [1.0.11] - 2020-01-28
+## [1.0.11] - 2021-01-28
 - Updated version of onpayio/php-sdk
 - Added website field to payment window
 - Added Anyday Split as an payment option
