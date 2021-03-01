@@ -264,6 +264,7 @@ function init_onpay() {
             $this->init_form_fields();
             $this->handle_oauth_callback();
             $this->handle_detach();
+            $this->handle_refresh();
 
             if (!$hideForm) {
                 $html = '<hr />';
@@ -286,13 +287,14 @@ function init_onpay() {
 
                 $html .= '<tr valign="top">';
                 $html .= '<th class="titledesc" scope="row"></th>';
-                $html .= '<td><button class="button-secondary" id="button_onpay_apilogout">' . __('Log out from OnPay', 'wc-onpay') . '</button></td>';
+                $html .= '<td><button class="button-secondary" id="button_onpay_refreshsecret">' . __('Refresh', 'wc-onpay') . '</button>&nbsp;<button class="button-secondary" id="button_onpay_apilogout">' . __('Log out from OnPay', 'wc-onpay') . '</button></td>';
                 $html .= '</tr>';
 
                 $html .= '</tbody></table>';
                 $html .= '<hr />';
 
                 wc_enqueue_js('$("#button_onpay_apilogout").on("click", function(event) {event.preventDefault(); if(confirm(\''. __('Are you sure you want to logout from Onpay?', 'wc-onpay') . '\')) {window.location.href = window.location.href+"&detach=1";}})');
+                wc_enqueue_js('$("#button_onpay_refreshsecret").on("click", function(event) {event.preventDefault(); if(confirm(\''. __('Are you sure you want to refresh gateway ID and secret?', 'wc-onpay') . '\')) {window.location.href = window.location.href+"&refresh=1";}})');
             
                 echo ent2ncr($html);
             }
@@ -613,6 +615,19 @@ function init_onpay() {
                 $this->update_option(self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE, null);
                 $this->update_option(self::SETTING_ONPAY_TESTMODE, null);
                 $this->update_option(self::SETTING_ONPAY_CARDLOGOS, null);
+
+                wp_redirect(wc_onpay_query_helper::generate_url(['page' => 'wc-settings','tab' => 'checkout','section' => $this::WC_ONPAY_ID]));
+                exit;
+            }
+        }
+
+        private function handle_refresh() {
+            $onpayApi = $this->get_onpay_client(true);
+            if(null !== wc_onpay_query_helper::get_query_value('refresh') && $onpayApi->isAuthorized()) {
+                $this->update_option(self::SETTING_ONPAY_GATEWAY_ID, $onpayApi->gateway()->getInformation()->gatewayId);
+                $this->update_option(self::SETTING_ONPAY_SECRET, $onpayApi->gateway()->getPaymentWindowIntegrationSettings()->secret);
+
+                $this->addAdminNotice(__('Gateway ID and secret was refreshed', 'wc-onpay'), 'info');
 
                 wp_redirect(wc_onpay_query_helper::generate_url(['page' => 'wc-settings','tab' => 'checkout','section' => $this::WC_ONPAY_ID]));
                 exit;
