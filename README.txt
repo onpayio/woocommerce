@@ -2,9 +2,9 @@
 Contributors: onpayio
 Tags: onpay, gateway, payment, payment gateway, woocommerce, psp
 Requires at least: 5.3
-Tested up to: 5.6
+Tested up to: 5.6.2
 Requires PHP: 5.6
-Stable tag: 1.0.11
+Stable tag: 1.0.12
 License: MIT
 License URI: https://mit-license.org/
 
@@ -33,6 +33,11 @@ Don't  have an OnPay account yet? Order one through <a href="https://dandomain.d
 2. WooCommerce >= 3.8.1
 
 == Changelog ==
+
+= [1.0.12] =
+Added method for showing notices in admin
+Added better handling of errors on order page in admin
+Get data from Order object the correct way in abstract_gateway
 
 = [1.0.11] =
 Updated version of onpayio/php-sdk
