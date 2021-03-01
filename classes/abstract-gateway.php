@@ -105,7 +105,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
             $paymentWindow->setLanguage($this->get_option(WC_OnPay::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE));
         }
 
-        $customer = new WC_Customer($order->data['customer_id']);
+        $customer = new WC_Customer($order->get_data()['customer_id']);
 
         // Adding available info fields
         $paymentInfo = new \OnPay\API\PaymentWindow\PaymentInfo();
