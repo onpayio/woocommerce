@@ -26,22 +26,23 @@
     display: block;
 }
 
-/** 
+/**
  * Adds styling to card logos when theme does not apply,
- * but is overridden by the default selector '#payment .payment_methods li img' 
+ * but is overridden by the default selector '#payment .payment_methods li img'
  * provided by the WooCommerce storefront theme,
  * and is overridden by the default selector '.wc_payment_method > label:first-of-type img'
  * provided by the Wordpress Twenty Twenty-One theme.
  */
-.payment_method_onpay_card img,
-.payment_method_onpay_mobilepay img,
-.payment_method_onpay_viabill img {
-    max-height: 26px;
-}
+ .payment_method_onpay_card img,
+ .payment_method_onpay_mobilepay img,
+ .payment_method_onpay_viabill img,
+ .payment_method_onpay_anyday img {
+     max-height: 26px;
+     max-width: 50px;
+ }
 
-#payment .payment_methods .onpay_card_logos > img {
-    float: unset;
-    display:inline-block;
-    margin-right: 5px;
-    max-height: 28px;
-}
+ #payment .payment_methods .onpay_card_logos > img {
+     float: unset;
+     display:inline-block;
+     margin: 5px 5px 0 0;
+ }
