@@ -439,6 +439,7 @@ function init_onpay() {
                 $html .= '<th>' . __('IP', 'wc-onpay') . '</th>';
                 $html .= '</thead><tbody>';
                 foreach ($transaction->history as $history) {
+                    $history->dateTime->setTimeZone(wp_timezone());
                    $html .= '<tr>';
                    $html .= '<td>' . $history->dateTime->format('Y-m-d H:i:s') . '</td>';
                    $html .= '<td>' . $history->action . '</td>';
