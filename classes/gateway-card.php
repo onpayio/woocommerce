@@ -55,6 +55,10 @@ class wc_onpay_gateway_card extends wc_onpay_gateway_abstract {
         $description .= '<div class="onpay_card_logos">';
         foreach($this->get_option(WC_OnPay::SETTING_ONPAY_CARDLOGOS) as $cardLogo) {
             $description .= '<img src="' . plugin_dir_url(__DIR__) . '/assets/img/' . $cardLogo . '.svg" />';
+            if ($cardLogo === 'mastercard') {
+                // If Mastercard, also show Maestro logo
+                $description .= '<img src="' . plugin_dir_url(__DIR__) . '/assets/img/maestro.svg" />';
+            }
         }
         $description .= '</div>';
         return $description;
