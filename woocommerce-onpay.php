@@ -706,8 +706,7 @@ function init_onpay() {
          * Prints a json response
          */
         private function json_response($message, $error = false, $responseCode = 200) {
-            header('Content-Type: application/json');
-            http_response_code($responseCode);
+            header('Content-Type: application/json', true, $responseCode);
             $response = [];
             if (!$error) {
                 $response = ['success' => $message, 'error' => false];
