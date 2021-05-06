@@ -55,6 +55,7 @@ function init_onpay() {
     include_once __DIR__ . '/classes/gateway-mobilepay.php';
     include_once __DIR__ . '/classes/gateway-viabill.php';
     include_once __DIR__ . '/classes/gateway-anyday.php';
+    include_once __DIR__ . '/classes/gateway-vipps.php';
 
     class WC_OnPay extends WC_Payment_Gateway {
         const PLUGIN_VERSION = '1.0.13';
@@ -64,6 +65,7 @@ function init_onpay() {
         const SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY = 'extra_payments_mobilepay';
         const SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL = 'extra_payments_viabill';
         const SETTING_ONPAY_EXTRA_PAYMENTS_ANYDAY = 'extra_payments_anyday_split';
+        const SETTING_ONPAY_EXTRA_PAYMENTS_VIPPS = 'extra_payments_vipps';
         const SETTING_ONPAY_EXTRA_PAYMENTS_CARD = 'extra_payments_card';
         const SETTING_ONPAY_PAYMENTWINDOW_DESIGN = 'paymentwindow_design';
         const SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE = 'paymentwindow_language';
@@ -188,6 +190,12 @@ function init_onpay() {
                 self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY => [
                     'title' => __('MobilePay Online', 'wc-onpay'),
                     'label' => __('Enable MobilePay Online as payment method', 'wc-onpay'),
+                    'type' => 'checkbox',
+                    'default' => 'no',
+                ],
+                self::SETTING_ONPAY_EXTRA_PAYMENTS_VIPPS => [
+                    'title' => __('Vipps', 'wc-onpay'),
+                    'label' => __('Enable Vipps as payment method', 'wc-onpay'),
                     'type' => 'checkbox',
                     'default' => 'no',
                 ],
@@ -551,6 +559,7 @@ function init_onpay() {
                 wc_onpay_gateway_mobilepay::WC_ONPAY_GATEWAY_MOBILEPAY_ID,
                 wc_onpay_gateway_viabill::WC_ONPAY_GATEWAY_VIABILL_ID,
                 wc_onpay_gateway_anyday::WC_ONPAY_GATEWAY_ANYDAY_SPLIT_ID,
+                wc_onpay_gateway_vipps::WC_ONPAY_GATEWAY_VIPPS_ID,
             ])) {
                 return true;
             }
@@ -611,6 +620,7 @@ function init_onpay() {
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY, null);
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL, null);
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_ANYDAY, null);
+                $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_VIPPS, null);
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD, null);
                 $this->update_option(self::SETTING_ONPAY_PAYMENTWINDOW_DESIGN, null);
                 $this->update_option(self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE, null);
@@ -744,6 +754,7 @@ function init_onpay() {
         $methods[] = 'wc_onpay_gateway_mobilepay';
         $methods[] = 'wc_onpay_gateway_viabill';
         $methods[] = 'wc_onpay_gateway_anyday';
+        $methods[] = 'wc_onpay_gateway_vipps';
         $methods[] = 'wc_onpay';
 
         return $methods;
