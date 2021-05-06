@@ -1,7 +1,8 @@
+<?php
 /**
  * MIT License
  *
- * Copyright (c) 2019 OnPay.io
+ * Copyright (c) 2021 OnPay.io
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,28 +23,37 @@
  * SOFTWARE.
  */
 
-#payment .payment_methods .onpay_card_logos {
-    display: block;
+include_once 'abstract-gateway.php';
+
+class wc_onpay_gateway_vipps extends wc_onpay_gateway_abstract {
+    const WC_ONPAY_GATEWAY_VIPPS_ID = 'onpay_vipps';
+
+    public function __construct() {
+        // Initialize settings
+        $this->id = WC_OnPay::WC_ONPAY_SETTINGS_ID;
+        $this->init_settings();
+
+        // Define gateway
+        $this->id = $this::WC_ONPAY_GATEWAY_VIPPS_ID;
+        $this->method_title = __('Vipps', 'wc-onpay');
+        $this->description = __('Payment through Vipps', 'wc-onpay');
+        $this->method_description = $this->description;
+        $this->has_fields = false;
+        $this->icon = plugin_dir_url(__DIR__) . 'assets/img/vipps.svg';
+
+        if (is_admin()) {
+            $this->title = __('OnPay.io', 'wc-onpay');
+        } else {
+            $this->title = $this->method_title;
+        }
+
+        parent::__construct();
+    }
+
+    public function is_available() {
+        if ($this->get_option(WC_OnPay::SETTING_ONPAY_EXTRA_PAYMENTS_VIPPS) !== 'yes') {
+            return false;
+        }
+        return true;
+    }
 }
-
-/**
- * Adds styling to card logos when theme does not apply,
- * but is overridden by the default selector '#payment .payment_methods li img'
- * provided by the WooCommerce storefront theme,
- * and is overridden by the default selector '.wc_payment_method > label:first-of-type img'
- * provided by the Wordpress Twenty Twenty-One theme.
- */
- .payment_method_onpay_card img,
- .payment_method_onpay_mobilepay img,
- .payment_method_onpay_viabill img,
- .payment_method_onpay_anyday img,
- .payment_method_onpay_vipps img {
-     max-height: 26px;
-     max-width: 50px;
- }
-
- #payment .payment_methods .onpay_card_logos > img {
-     float: unset;
-     display:inline-block;
-     margin: 5px 5px 0 0;
- }
