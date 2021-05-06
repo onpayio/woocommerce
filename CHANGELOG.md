@@ -5,7 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.0.14] - 2021-05-06
 - Added Vipps as payment option
+- Properly set HTTP header and code in json responses
 
 ## [1.0.13] - 2021-04-13
 - Added styling for Anyday Split logo
