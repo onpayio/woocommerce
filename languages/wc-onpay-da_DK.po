@@ -33,8 +33,8 @@ msgid "Amount refunded on transaction in OnPay."
 msgstr "Beløbet blev refunderet på transaktionen i OnPay"
 
 #: woocommerce-onpay.php:209 classes/gateway-anyday.php:38
-msgid "Anyday Split"
-msgstr "Anyday Split"
+msgid "Anyday"
+msgstr "Anyday"
 
 #: woocommerce-onpay.php:304
 msgid "Are you sure you want to logout from Onpay?"
@@ -118,8 +118,8 @@ msgid "Dutch"
 msgstr "Hollandsk"
 
 #: woocommerce-onpay.php:210
-msgid "Enable Anyday Split as payment method"
-msgstr "Aktivér Anyday Split som betalingsmulighed"
+msgid "Enable Anyday as payment method"
+msgstr "Aktivér Anyday som betalingsmulighed"
 
 #: woocommerce-onpay.php:186
 msgid "Enable card as payment method"
@@ -250,8 +250,8 @@ msgid "OnPay.io payment plugin for WooCommerce"
 msgstr "OnPay.io betalings plugin for WooCommerce"
 
 #: classes/gateway-anyday.php:39
-msgid "Payment through Anyday Split"
-msgstr "Betaling igennem Anyday Split"
+msgid "Payment through Anyday"
+msgstr "Betaling igennem Anyday"
 
 #: classes/gateway-viabill.php:39
 msgid "Payment through ViaBill"

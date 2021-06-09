@@ -206,8 +206,8 @@ function init_onpay() {
                     'default' => 'no',
                 ],
                 self::SETTING_ONPAY_EXTRA_PAYMENTS_ANYDAY => [
-                    'title' => __('Anyday Split', 'wc-onpay'),
-                    'label' => __('Enable Anyday Split as payment method', 'wc-onpay'),
+                    'title' => __('Anyday', 'wc-onpay'),
+                    'label' => __('Enable Anyday as payment method', 'wc-onpay'),
                     'type' => 'checkbox',
                     'default' => 'no',
                 ],
@@ -558,7 +558,7 @@ function init_onpay() {
                 wc_onpay_gateway_card::WC_ONPAY_GATEWAY_CARD_ID,
                 wc_onpay_gateway_mobilepay::WC_ONPAY_GATEWAY_MOBILEPAY_ID,
                 wc_onpay_gateway_viabill::WC_ONPAY_GATEWAY_VIABILL_ID,
-                wc_onpay_gateway_anyday::WC_ONPAY_GATEWAY_ANYDAY_SPLIT_ID,
+                wc_onpay_gateway_anyday::WC_ONPAY_GATEWAY_ANYDAY_ID,
                 wc_onpay_gateway_vipps::WC_ONPAY_GATEWAY_VIPPS_ID,
             ])) {
                 return true;
