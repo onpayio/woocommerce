@@ -26,7 +26,7 @@
 include_once 'abstract-gateway.php';
 
 class wc_onpay_gateway_anyday extends wc_onpay_gateway_abstract {
-    const WC_ONPAY_GATEWAY_ANYDAY_SPLIT_ID = 'onpay_anyday';
+    const WC_ONPAY_GATEWAY_ANYDAY_ID = 'onpay_anyday';
 
     public function __construct() {
         // Initialize settings
@@ -34,9 +34,9 @@ class wc_onpay_gateway_anyday extends wc_onpay_gateway_abstract {
         $this->init_settings();
 
         // Define gateway
-        $this->id = $this::WC_ONPAY_GATEWAY_ANYDAY_SPLIT_ID;
-        $this->method_title = __('Anyday Split', 'wc-onpay');
-        $this->description = __('Payment through Anyday Split', 'wc-onpay');
+        $this->id = $this::WC_ONPAY_GATEWAY_ANYDAY_ID;
+        $this->method_title = __('Anyday', 'wc-onpay');
+        $this->description = __('Payment through Anyday', 'wc-onpay');
         $this->method_description = $this->description;
         $this->has_fields = false;
         $this->icon = plugin_dir_url(__DIR__) . 'assets/img/anyday.svg';
