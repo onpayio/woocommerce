@@ -2,7 +2,7 @@
 Contributors: onpayio
 Tags: onpay, gateway, payment, payment gateway, woocommerce, psp
 Requires at least: 5.3
-Tested up to: 5.7.1
+Tested up to: 5.8
 Requires PHP: 5.6
 Stable tag: 1.0.14
 License: MIT
@@ -33,6 +33,18 @@ Don't  have an OnPay account yet? Order one through <a href="https://dandomain.d
 2. WooCommerce >= 3.8.1
 
 == Changelog ==
+
+= [1.0.15] =
+Updated Anyday branding
+
+= [1.0.14] =
+Added Vipps as payment option
+Properly set HTTP header and code in json responses
+
+= [1.0.13] =
+Added styling for Anyday Split logo
+Show Maestro logo if Mastercard is shown
+Fix datetimes shown in log for transactions to follow timezone set in Wordpress.
 
 = [1.0.12] =
 Added method for showing notices in admin
