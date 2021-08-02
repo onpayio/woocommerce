@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.16] - 2021-08-02
+- Fixed version tag mismatches
+
 ## [1.0.15] - 2021-08-02
 - Updated Anyday branding
 
