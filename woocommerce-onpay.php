@@ -71,6 +71,7 @@ function init_onpay() {
         const SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE = 'paymentwindow_language';
         const SETTING_ONPAY_TESTMODE = 'testmode_enabled';
         const SETTING_ONPAY_CARDLOGOS = 'card_logos';
+        const SETTING_ONPAY_STATUS_AUTOCAPTURE = 'status_autocapture';
 
         const WC_ONPAY_ID = 'wc_onpay';
         const WC_ONPAY_SETTINGS_ID = 'onpay';
@@ -134,6 +135,7 @@ function init_onpay() {
             add_action('woocommerce_update_options_payment_gateways_'. $this->id, [$this, 'process_admin_options']);
             add_action('woocommerce_api_'. $this->id . '_callback', [$this, 'callback']);
             add_action('woocommerce_before_checkout_form', [$this, 'declinedReturnMessage']);
+            add_action('woocommerce_order_status_completed', [$this, 'orderStatusCompleteEvent']);
             add_action('save_post', [$this, 'handle_order_metabox']);
             add_action('add_meta_boxes', [$this, 'meta_boxes']);
             add_action('wp_enqueue_scripts', [$this, 'register_styles']);
@@ -181,6 +183,10 @@ function init_onpay() {
          */
         public function init_form_fields() {
             $this->form_fields = [
+                '_payment_methods'=> [
+					'type'  => 'title',
+					'title' => __('Payment methods', 'wc-onpay'),
+				],
                 self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD => [
                     'title' => __('Card', 'wc-onpay'),
                     'label' => __('Enable card as payment method', 'wc-onpay'),
@@ -211,6 +217,11 @@ function init_onpay() {
                     'type' => 'checkbox',
                     'default' => 'no',
                 ],
+
+                '_payment_window'=> [
+					'type'  => 'title',
+					'title' => __('Payment window', 'wc-onpay'),
+				],
                 self::SETTING_ONPAY_PAYMENTWINDOW_DESIGN => [
                     'title' => __('Payment window design', 'wc-onpay'),
                     'type' => 'select',
@@ -228,7 +239,7 @@ function init_onpay() {
                     'default' => 'no',
                 ],
                 self::SETTING_ONPAY_CARDLOGOS => [
-                    'title' => __( 'Card logos', 'wc-onpay' ),
+                    'title' => __('Card logos', 'wc-onpay'),
                     'type' => 'multiselect',
                     'description' => __( 'Card logos shown for the Card payment method.', 'wc-onpay' ),
                     'desc_tip' => true,
@@ -238,6 +249,19 @@ function init_onpay() {
                     ],
                     'default' => '',
                     'options' => $this->get_card_logo_options(),
+                ],
+
+                '_backoffice'=> [
+					'type'  => 'title',
+					'title' => __('Backoffice settings', 'wc-onpay'),
+				],
+                self::SETTING_ONPAY_STATUS_AUTOCAPTURE => [
+                    'title' => __('Automatic capture', 'wc-onpay'),
+                    'label' => __('Automatic capture of transactions on status completed', 'wc-onpay'),
+                    'description' => __( 'Automatically capture remaining amounts on transactions, when orders are marked with status completed', 'wc-onpay' ),
+                    'desc_tip' => true,
+                    'type' => 'checkbox',
+                    'default' => 'no',
                 ],
             ];
 		}
@@ -281,6 +305,7 @@ function init_onpay() {
                 $html .= '</table>';
                 
                 $html .= '<hr />';
+                $html .= '<h3>' . __('Gateway information', 'wc-onpay') . '</h3>';
                 $html .= '<table class="form-table"><tbody>';
 
                 $html .= '<tr valign="top">';
@@ -327,6 +352,31 @@ function init_onpay() {
                     add_meta_box('mv_other_fields', __('OnPay.io', 'wc-onpay'), [$this,'order_meta_box'], 'shop_order', 'advanced', 'high', ['order' => $order]);
                 }
             }
+        }
+
+        /**
+         * Method that fires when orders change status to completed
+         */
+        public function orderStatusCompleteEvent($orderId) {
+            $order = new WC_Order($orderId);
+            // Check if order payment method is OnPay
+            if ($this->isOnPayMethod($order->get_payment_method()) && null !== $order->get_transaction_id() && $order->get_transaction_id() !== '') {
+                // If autocapture is not enabled, no need to do anything
+                if($this->get_option(WC_OnPay::SETTING_ONPAY_STATUS_AUTOCAPTURE) === 'yes') {
+                    try {
+                        $transaction = $this->get_onpay_client()->transaction()->getTransaction($order->get_transaction_id());
+                        // If transaction has status active, and charged amount is less than the full amount, we'll capture the remaining amount on transaction
+                        if ($transaction->status === 'active' && $transaction->charged < $transaction->amount) {
+                            $this->get_onpay_client()->transaction()->captureTransaction($transaction->uuid);
+                            $order->add_order_note( __( 'Status changed to completed. Amount was automatically captured on transaction in OnPay.', 'wc-onpay' ));
+                        }
+                    } catch (OnPay\API\Exception\ConnectionException $exception) { // No connection to OnPay API
+                        $order->add_order_note(__('Automatic capture failed.') . ' ' . __('No connection to OnPay', 'wc-onpay'));
+                    } catch (OnPay\API\Exception\TokenException $exception) { // Something's wrong with the token, print link to reauth
+                        $order->add_order_note(__( 'Automatic capture failed.') . ' ' . __('Invalid OnPay token, please login on settings page', 'wc-onpay' ));
+                    }
+                }
+            } 
         }
 
         /**
@@ -626,6 +676,7 @@ function init_onpay() {
                 $this->update_option(self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE, null);
                 $this->update_option(self::SETTING_ONPAY_TESTMODE, null);
                 $this->update_option(self::SETTING_ONPAY_CARDLOGOS, null);
+                $this->update_option(self::SETTING_ONPAY_STATUS_AUTOCAPTURE, null);
 
                 wp_redirect(wc_onpay_query_helper::generate_url(['page' => 'wc-settings','tab' => 'checkout','section' => $this::WC_ONPAY_ID]));
                 exit;
