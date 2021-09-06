@@ -4,7 +4,7 @@ Tags: onpay, gateway, payment, payment gateway, woocommerce, psp
 Requires at least: 5.3
 Tested up to: 5.8
 Requires PHP: 5.6
-Stable tag: 1.0.16
+Stable tag: 1.0.17
 License: MIT
 License URI: https://mit-license.org/
 
@@ -33,6 +33,10 @@ Don't  have an OnPay account yet? Order one through <a href="https://dandomain.d
 2. WooCommerce >= 3.8.1
 
 == Changelog ==
+
+= [1.0.17] =
+Exclude paragonIE random_compat from scoper, since this repo is registered in the global space, and results in errors if prefixed with a namespace.
+Added feature for enabling autocapture of transaction, when order is marked as completed.
 
 = [1.0.16] =
 Fixed version tag mismatches

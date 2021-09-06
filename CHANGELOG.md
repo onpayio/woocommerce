@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 - Exclude paragonIE random_compat from scoper, since this repo is registered in the global space, and results in errors if prefixed with a namespace.
 
+## [1.0.17] - 2021-09-06
+- Exclude paragonIE random_compat from scoper, since this repo is registered in the global space, and results in errors if prefixed with a namespace.
+- Added feature for enabling autocapture of transaction, when order is marked as completed.
+
 ## [1.0.16] - 2021-08-02
 - Fixed version tag mismatches
 
