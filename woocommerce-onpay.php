@@ -159,7 +159,16 @@ function init_onpay() {
             if (!$paymentWindow->validatePayment(wc_onpay_query_helper::get_query())) {
                 $this->json_response('Invalid values', true, 400);
             }
-            $order = new WC_Order(wc_onpay_query_helper::get_query_value('onpay_reference'));
+            $orders = wc_get_orders([
+                'number' => wc_onpay_query_helper::get_query_value('onpay_reference'),
+                'limit' => 1,
+                'orderby' => 'date',
+                'order' => 'DESC',
+            ]);
+            if (count($orders) === 0) {
+                $this->json_response('Order not found', true, 400);
+            }
+            $order = $orders[0];
 
             // Is order in pending state, otherwise we don't care.
             if ($order->has_status('pending')) {
@@ -722,7 +731,7 @@ function init_onpay() {
             }
 
             try {
-                $createdOnpayTransaction = $this->get_onpay_client()->subscription()->createTransactionFromSubscription($onpaySubscription->uuid, $orderAmount, strval($newOrder->get_id()));
+                $createdOnpayTransaction = $this->get_onpay_client()->subscription()->createTransactionFromSubscription($onpaySubscription->uuid, $orderAmount, strval($newOrder->get_order_number()));
             } catch (WoocommerceOnpay\OnPay\API\Exception\ApiException $exception) {
                 $subscriptionOrder->add_order_note(__('Authorizing new transaction failed.', 'wc-onpay'));
                 $newOrder->update_status('failed', __('Authorizing new transaction failed.', 'wc-onpay'));
