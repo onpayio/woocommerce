@@ -39,6 +39,16 @@ class wc_onpay_gateway_card extends wc_onpay_gateway_abstract {
         $this->description = __('Payment using credit card', 'wc-onpay');
         $this->method_description = $this->description;
         $this->has_fields = false;
+        $this->supports = [
+            'products',
+            'subscriptions',
+            'subscription_cancellation',
+            'subscription_amount_changes',
+            'subscription_date_changes',
+            'subscription_suspension',
+            'subscription_reactivation',
+        ];
+
         $this->icon = plugin_dir_url(__DIR__) . 'assets/img/generic.svg';
 
         if (is_admin()) {
