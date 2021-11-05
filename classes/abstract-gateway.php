@@ -68,21 +68,27 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         }
         $orderData = $order->get_data();
 
-        $CurrencyHelper = new wc_onpay_currency_helper();
-
         // We'll need to find out details about the currency, and format the order total amount accordingly
+        $CurrencyHelper = new wc_onpay_currency_helper();
         $isoCurrency = $CurrencyHelper->fromAlpha3($orderData['currency']);
-        $orderTotal = number_format($this->get_order_total(), $isoCurrency->exp, '', '');
+        $paymentWindow = new \OnPay\API\PaymentWindow();
+
+        // Check if we're dealing with a subscription order
+        if (class_exists('WC_Subscriptions_Order') && WC_Subscriptions_Order::order_contains_subscription($orderData['id'])) {
+            $paymentWindow->setType("subscription");
+        } else {
+            $orderTotal = number_format($this->get_order_total(), $isoCurrency->exp, '', '');
+            $paymentWindow->setAmount($orderTotal);
+            $paymentWindow->setType("payment");
+        }
+    
         $declineUrl = get_permalink(wc_get_page_id('checkout'));
         $declineUrl = add_query_arg('declined_from_onpay', '1', $declineUrl);
 
-        $paymentWindow = new \OnPay\API\PaymentWindow();
         $paymentWindow->setGatewayId($this->get_option(WC_OnPay::SETTING_ONPAY_GATEWAY_ID));
         $paymentWindow->setSecret($this->get_option(WC_OnPay::SETTING_ONPAY_SECRET));
         $paymentWindow->setCurrency($isoCurrency->alpha3);
-        $paymentWindow->setAmount($orderTotal);
         $paymentWindow->setReference($orderData['id']);
-        $paymentWindow->setType("payment");
         $paymentWindow->setAcceptUrl($order->get_checkout_order_received_url());
         $paymentWindow->setDeclineUrl($declineUrl);
         $paymentWindow->setCallbackUrl(WC()->api_request_url('wc_onpay' . '_callback'));

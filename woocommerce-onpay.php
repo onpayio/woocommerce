@@ -131,11 +131,14 @@ function init_onpay() {
         /**
          * Initialize hooks
          */
-        public function init_hooks() {
+        public function init_hooks() {            
             add_action('woocommerce_update_options_payment_gateways_'. $this->id, [$this, 'process_admin_options']);
             add_action('woocommerce_api_'. $this->id . '_callback', [$this, 'callback']);
             add_action('woocommerce_before_checkout_form', [$this, 'declinedReturnMessage']);
+            add_action('woocommerce_thankyou', [$this, 'completedPage']);
             add_action('woocommerce_order_status_completed', [$this, 'orderStatusCompleteEvent']);
+            add_action('woocommerce_scheduled_subscription_payment_onpay_card', [$this, 'subscriptionPayment'], 1, 2);
+            add_action('woocommerce_subscription_cancelled_onpay_card', [$this, 'subscriptionCancellation']);
             add_action('save_post', [$this, 'handle_order_metabox']);
             add_action('add_meta_boxes', [$this, 'meta_boxes']);
             add_action('wp_enqueue_scripts', [$this, 'register_styles']);
@@ -157,13 +160,149 @@ function init_onpay() {
                 $this->json_response('Invalid values', true, 400);
             }
             $order = new WC_Order(wc_onpay_query_helper::get_query_value('onpay_reference'));
+
+            // Is order in pending state, otherwise we don't care.
             if ($order->has_status('pending')) {
-                $order->payment_complete(wc_onpay_query_helper::get_query_value('onpay_number'));
-                $order->add_order_note( __( 'Transaction authorized in OnPay. Remember to capture amount.', 'wc-onpay' ));
+                $type = wc_onpay_query_helper::get_query_value('onpay_type');
+
+                // If we're dealing with a subscription
+                if ($type === 'subscription') {
+                    $orderItems = $order->get_items();
+                    // If order is subscription and has more than 1 item, we'll split the remaining items in a new order, and complete the current order with only the subscription.
+                    if(count($orderItems) > 1) {
+                        $newOrder = $this->cloneOrder($order);
+                        $subscriptionFound = false;
+                        foreach($orderItems as $itemId => $orderItem) {
+                            if (!$subscriptionFound && WC_Subscriptions_Product::is_subscription(wcs_get_canonical_product_id($orderItem))) {
+                                $subscriptionFound = true;
+                                continue;
+                            } else {
+                                $order->remove_item($itemId);
+                                $newOrder->add_item($orderItem);
+                            }
+                        }
+                        $order->calculate_totals();
+                        $order->calculate_shipping();
+                        $order->recalculate_coupons();
+                        $order->save();
+                    }
+
+                    // If a new order is created, add note and relation to original order, and save the new order.
+                    if (isset($newOrder)) {
+                        $newOrder->add_order_note( __( 'Order split from: ' . $order->get_id(), 'wc-onpay' ));
+                        $newOrder->calculate_totals();
+                        $newOrder->calculate_shipping();
+                        $newOrder->recalculate_coupons();
+                        $newOrder->save();
+
+                        $order->add_meta_data($this::WC_ONPAY_ID . '_order_split', $newOrder->get_id());
+                        $order->save_meta_data();
+                    }
+                }
+
+                $onpayNumber = wc_onpay_query_helper::get_query_value('onpay_number');
+
+                // If we're dealing with a subscription
+                if ($type === 'subscription') {
+                    $order->add_order_note(__( 'Subscription authorized in OnPay.', 'wc-onpay' ));
+
+                    // Write subscription id to subscription order for later reference. 
+                    $wcSubscriptions = wcs_get_subscriptions_for_order($order->get_id());
+                    foreach ($wcSubscriptions as $id => $subscription) {
+                        $subscriptionOrder = new WC_order($id);
+                        $subscriptionOrder->set_transaction_id($onpayNumber);
+                        $subscriptionOrder->save();
+                    }
+                    
+                    // Create the initial transaction from subscription
+                    $currencyHelper = new wc_onpay_currency_helper();
+                    $orderCurrency = $currencyHelper->fromAlpha3($order->get_currency());
+                    $orderAmount = $currencyHelper->majorToMinor($order->get_total(), $orderCurrency->numeric, '.');
+                    $onpaySubscription = $this->get_onpay_client()->subscription()->getSubscription($onpayNumber);
+                    $createdTransaction = $this->get_onpay_client()->subscription()->createTransactionFromSubscription($onpaySubscription->uuid, $orderAmount, strval($order->get_id()));
+
+                    // Set onpayNumber to value from newly created transaction
+                    $onpayNumber = $createdTransaction->transactionNumber;
+                }
+
+                $order->add_order_note(__( 'Transaction authorized in OnPay. Remember to capture amount.', 'wc-onpay' ));
+                $order->payment_complete($onpayNumber);
                 $order->add_meta_data($this::WC_ONPAY_ID . '_test_mode', wc_onpay_query_helper::get_query_value('onpay_testmode'));
                 $order->save_meta_data();
             }
+
             $this->json_response('Order validated');
+        }
+
+        // Clones existing order as a new order.
+        private function cloneOrder($order) {
+            $newOrder = wc_create_order([
+                'customer_id' => $order->get_customer_id(),
+                'customer_note' => $order->get_customer_note(),
+                'created_via' => $order->get_created_via(),
+            ]);
+            $newOrder->set_currency($order->get_currency());
+
+            $newOrder->set_billing_first_name($order->get_billing_first_name());
+            $newOrder->set_billing_last_name($order->get_billing_last_name());
+            $newOrder->set_billing_company($order->get_billing_company());
+            $newOrder->set_billing_address_1($order->get_billing_address_1());
+            $newOrder->set_billing_address_2($order->get_billing_address_2());
+            $newOrder->set_billing_city($order->get_billing_city());
+            $newOrder->set_billing_state($order->get_billing_state());
+            $newOrder->set_billing_postcode($order->get_billing_postcode());
+            $newOrder->set_billing_country($order->get_billing_country());
+            $newOrder->set_billing_email($order->get_billing_email());
+            $newOrder->set_billing_phone($order->get_billing_phone());
+
+            $newOrder->set_shipping_first_name($order->get_shipping_first_name());
+            $newOrder->set_shipping_last_name($order->get_shipping_last_name());
+            $newOrder->set_shipping_company($order->get_shipping_company());
+            $newOrder->set_shipping_address_1($order->get_shipping_address_1());
+            $newOrder->set_shipping_address_2($order->get_shipping_address_2());
+            $newOrder->set_shipping_city($order->get_shipping_city());
+            $newOrder->set_shipping_state($order->get_shipping_state());
+            $newOrder->set_shipping_postcode($order->get_shipping_postcode());
+            $newOrder->set_shipping_country($order->get_shipping_country());
+
+            return $newOrder;
+        }
+
+        /**
+         * Hook for order complete page
+         */
+        public function completedPage($orderId) {
+            $type = wc_onpay_query_helper::get_query_value('onpay_type');
+            if ($type === 'subscription') {
+                $order = new WC_Order($orderId);
+                // More than 1 item, or order is split into a new order
+                if (count($order->get_items()) > 1 || $order->meta_exists($this::WC_ONPAY_ID . '_order_split')) {
+                    $waitCount = 0;
+                    // If no split id is found on order, we'll try and wait for up to 5 seconds for it to appear.
+                    while (!$order->meta_exists($this::WC_ONPAY_ID . '_order_split') && $waitCount < 5) {
+                        sleep(1);
+                        $order->read_meta_data(true);
+                        $waitCount++;
+                    }
+
+                    $order->read_meta_data(true);
+                    $splitOrderId = $order->get_meta($this::WC_ONPAY_ID . '_order_split');
+                    if ($splitOrderId !== '') {
+                        echo $splitOrderId;
+                        $splitOrder = new WC_Order($splitOrderId);
+                        $orderActions = wc_get_account_orders_actions($splitOrder);
+                        if (array_key_exists('pay', $orderActions)) {
+                            wc_add_notice(__( 'Subscription added, please continue with payment for the rest of the order.', 'wc-onpay' ));
+                            wp_redirect($orderActions['pay']['url']);
+                            return;
+                        }
+                    }
+
+                    // No split order id found, we'll show the orders overview.
+                    wc_add_notice(__( 'Subscription added, please continue with the rest of the order from the list below.', 'wc-onpay' ));
+                    wp_redirect(site_url('/my-account/orders/'));
+                }
+            }
         }
 
         public function declinedReturnMessage() {
@@ -560,6 +699,56 @@ function init_onpay() {
                 wc_enqueue_js('$("#button_onpay_cancel_hide").on("click", function(event) {event.preventDefault(); $("#onpay_action_cancel").slideUp(); $("#onpay_action_buttons").slideDown(); })');
             }
             echo ent2ncr($html);
+        }
+
+        /**
+         * Hook that handles renewal of subscriptions. Creating transactions from subscriptions in OnPay.
+         */
+        public function subscriptionPayment($amountToCharge, $newOrder) {
+            // Get subscription order
+            $subscriptionOrder = new WC_Order($newOrder->get_meta('_subscription_renewal'));
+
+            // Create transaction from subscription in OnPay.
+            $currencyHelper = new wc_onpay_currency_helper();
+            $orderCurrency = $currencyHelper->fromAlpha3($newOrder->get_currency());
+            $orderAmount = $currencyHelper->majorToMinor($newOrder->get_total(), $orderCurrency->numeric, '.');
+            $onpaySubscription = $this->get_onpay_client()->subscription()->getSubscription($subscriptionOrder->get_transaction_id());
+
+            // Subscription no longer active.
+            if ($onpaySubscription->status !== 'active') {
+                $subscriptionOrder->update_status(__('expired', 'Subscription no longer active in OnPay.', 'wc-onpay'));
+                $newOrder->update_status('failed', __('Subscription no longer active in OnPay.', 'wc-onpay'));
+                return;
+            }
+
+            try {
+                $createdOnpayTransaction = $this->get_onpay_client()->subscription()->createTransactionFromSubscription($subscription->uuid, $orderAmount, strval($newOrder->get_id()));
+            } catch (WoocommerceOnpay\OnPay\API\Exception\ApiException $exception) {
+                $subscriptionOrder->add_order_note(__('Authorizing new transaction failed.', 'wc-onpay'));
+                $newOrder->update_status('failed', __('Authorizing new transaction failed.', 'wc-onpay'));
+                return;
+            }
+
+            $onpayNumber = $createdOnpayTransaction->transactionNumber;
+
+            // Finalize order
+            $newOrder->add_order_note(__('Transaction authorized in OnPay. Remember to capture amount.', 'wc-onpay'));
+            $newOrder->payment_complete($onpayNumber);
+            $newOrder->add_meta_data($this::WC_ONPAY_ID . '_test_mode', wc_onpay_query_helper::get_query_value('onpay_testmode'));
+            $newOrder->save_meta_data();
+        }
+
+        /**
+         * Hook that handles cancellation of subscriptions. Cancelling subscriptions in OnPay.
+         */
+        public function subscriptionCancellation($subscriptionOrder) {
+            $onpaySubscription = $this->get_onpay_client()->subscription()->getSubscription($subscriptionOrder->get_transaction_id());
+            $cancelledSubscription = $this->get_onpay_client()->subscription()->cancelSubscription($onpaySubscription->uuid);
+            if ($cancelledSubscription->status !== 'cancelled') {
+                $subscriptionOrder->add_order_note(__('An error occured cancelling subscription in OnPay.', 'wc-onpay'));
+            } else{
+                $subscriptionOrder->add_order_note(__('Subscription cancelled in OnPay.', 'wc-onpay'));
+            }
         }
 
         private function addAdminNotice($text, $type = 'success', $dismissable = true) {
