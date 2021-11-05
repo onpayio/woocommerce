@@ -88,7 +88,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         $paymentWindow->setGatewayId($this->get_option(WC_OnPay::SETTING_ONPAY_GATEWAY_ID));
         $paymentWindow->setSecret($this->get_option(WC_OnPay::SETTING_ONPAY_SECRET));
         $paymentWindow->setCurrency($isoCurrency->alpha3);
-        $paymentWindow->setReference($orderData['id']);
+        $paymentWindow->setReference($orderData['number']);
         $paymentWindow->setAcceptUrl($order->get_checkout_order_received_url());
         $paymentWindow->setDeclineUrl($declineUrl);
         $paymentWindow->setCallbackUrl(WC()->api_request_url('wc_onpay' . '_callback'));
