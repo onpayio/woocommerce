@@ -722,7 +722,7 @@ function init_onpay() {
             }
 
             try {
-                $createdOnpayTransaction = $this->get_onpay_client()->subscription()->createTransactionFromSubscription($subscription->uuid, $orderAmount, strval($newOrder->get_id()));
+                $createdOnpayTransaction = $this->get_onpay_client()->subscription()->createTransactionFromSubscription($onpaySubscription->uuid, $orderAmount, strval($newOrder->get_id()));
             } catch (WoocommerceOnpay\OnPay\API\Exception\ApiException $exception) {
                 $subscriptionOrder->add_order_note(__('Authorizing new transaction failed.', 'wc-onpay'));
                 $newOrder->update_status('failed', __('Authorizing new transaction failed.', 'wc-onpay'));
