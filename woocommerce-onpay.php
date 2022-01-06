@@ -72,6 +72,7 @@ function init_onpay() {
         const SETTING_ONPAY_TESTMODE = 'testmode_enabled';
         const SETTING_ONPAY_CARDLOGOS = 'card_logos';
         const SETTING_ONPAY_STATUS_AUTOCAPTURE = 'status_autocapture';
+        const SETTING_ONPAY_REFUND_INTEGRATION = 'refund_integration';
 
         const WC_ONPAY_ID = 'wc_onpay';
         const WC_ONPAY_SETTINGS_ID = 'onpay';
@@ -411,6 +412,13 @@ function init_onpay() {
                     'type' => 'checkbox',
                     'default' => 'no',
                 ],
+                self::SETTING_ONPAY_REFUND_INTEGRATION => [
+                    'title' => __('Integrate with refund feature', 'wc-onpay'),
+                    'label' => __('Integrate with the built in refund feature in WooCommerce', 'wc-onpay'),
+                    'desc_tip' => true,
+                    'type' => 'checkbox',
+                    'default' => 'no',
+                ],
             ];
 		}
 
@@ -513,8 +521,9 @@ function init_onpay() {
                 if($this->get_option(WC_OnPay::SETTING_ONPAY_STATUS_AUTOCAPTURE) === 'yes') {
                     try {
                         $transaction = $this->get_onpay_client()->transaction()->getTransaction($order->get_transaction_id());
+                        $availableAmount = $this->getAvailableAmount($order, $transaction);
                         // If transaction has status active, and charged amount is less than the full amount, we'll capture the remaining amount on transaction
-                        if ($transaction->status === 'active' && $transaction->charged < $transaction->amount) {
+                        if ($transaction->status === 'active' && $availableAmount > 0) {
                             $this->get_onpay_client()->transaction()->captureTransaction($transaction->uuid);
                             $order->add_order_note( __( 'Status changed to completed. Amount was automatically captured on transaction in OnPay.', 'wc-onpay' ));
                         }
@@ -603,7 +612,7 @@ function init_onpay() {
                 $currency = $currencyHelper->fromNumeric($transaction->currencyCode);
 
                 $amount = $currencyHelper->minorToMajor($transaction->amount, $currency->numeric);
-                $availableAmount = $currencyHelper->minorToMajor($transaction->amount - $transaction->charged, $currency->numeric);
+                $availableAmount = $currencyHelper->minorToMajor($this->getAvailableAmount($order, $transaction), $currency->numeric);
                 $charged = $currencyHelper->minorToMajor($transaction->charged, $currency->numeric);
                 $availableCharged = $currencyHelper->minorToMajor($transaction->charged - $transaction->refunded, $currency->numeric);
                 $refunded = $currencyHelper->minorToMajor($transaction->refunded, $currency->numeric);
@@ -849,6 +858,7 @@ function init_onpay() {
                     $this->update_option(self::SETTING_ONPAY_GATEWAY_ID, $onpayApi->gateway()->getInformation()->gatewayId);
                     $this->update_option(self::SETTING_ONPAY_SECRET, $onpayApi->gateway()->getPaymentWindowIntegrationSettings()->secret);
                     $this->update_option(self::SETTING_ONPAY_CARDLOGOS, ['mastercard', 'visa']);
+                    $this->update_option(self::SETTING_ONPAY_REFUND_INTEGRATION, 'yes');
                 }
                 wp_redirect(wc_onpay_query_helper::generate_url(['page' => 'wc-settings','tab' => 'checkout','section' => $this::WC_ONPAY_ID]));
                 exit;
@@ -875,6 +885,7 @@ function init_onpay() {
                 $this->update_option(self::SETTING_ONPAY_TESTMODE, null);
                 $this->update_option(self::SETTING_ONPAY_CARDLOGOS, null);
                 $this->update_option(self::SETTING_ONPAY_STATUS_AUTOCAPTURE, null);
+                $this->update_option(self::SETTING_ONPAY_REFUND_INTEGRATION, null);
 
                 wp_redirect(wc_onpay_query_helper::generate_url(['page' => 'wc-settings','tab' => 'checkout','section' => $this::WC_ONPAY_ID]));
                 exit;
@@ -959,6 +970,24 @@ function init_onpay() {
                 'unionpay'              => __('UnionPay', 'wc-onpay'),
                 'visa'                  => __('Visa/VPay/Visa Electron ', 'wc-onpay')
             ];
+        }
+
+        /**
+         * Returns available amount based on order and transaction
+         */
+        private function getAvailableAmount($order, $transaction) {
+            $currencyHelper = new wc_onpay_currency_helper();
+            
+            $orderCurrency = $currencyHelper->fromAlpha3($order->get_currency());
+            $orderRefunded = $order->get_total_refunded() * (10 ** $orderCurrency->exp);
+
+            if ($this->get_option(WC_OnPay::SETTING_ONPAY_REFUND_INTEGRATION) === 'yes') {
+                $availableAmount = $transaction->amount - $transaction->charged - $orderRefunded;
+            } else {
+                $availableAmount = $transaction->amount - $transaction->charged;
+            }
+
+            return $availableAmount;
         }
 
         /**
