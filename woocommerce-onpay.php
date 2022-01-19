@@ -160,16 +160,11 @@ function init_onpay() {
             if (!$paymentWindow->validatePayment(wc_onpay_query_helper::get_query())) {
                 $this->json_response('Invalid values', true, 400);
             }
-            $orders = wc_get_orders([
-                'number' => wc_onpay_query_helper::get_query_value('onpay_reference'),
-                'limit' => 1,
-                'orderby' => 'date',
-                'order' => 'DESC',
-            ]);
-            if (count($orders) === 0) {
+            $order = wc_get_order(wc_onpay_query_helper::get_query_value('onpay_reference'));
+
+            if (false === $order) {
                 $this->json_response('Order not found', true, 400);
             }
-            $order = $orders[0];
 
             // Is order in pending state, otherwise we don't care.
             if ($order->has_status('pending')) {
