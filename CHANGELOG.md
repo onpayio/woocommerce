@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Added feature for including WooCommerce refunded values in calculated amounts for capture.
+- Fixed bug where latest order is selected instead of the order in question
 
 ## [1.0.18] - 2021-11-08
 - Added support for WooCommerce Subscriptions
