@@ -26,7 +26,7 @@
 abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
     public function admin_options() {
         // Redirect to general plugin settings page
-        wp_redirect(wc_onpay_query_helper::generate_url(['page' => 'wc-settings','tab' => 'checkout','section' => WC_OnPay::WC_ONPAY_ID]));
+        wp_redirect(wc_onpay_query_helper::generate_url(['page' => 'wc-settings','tab' => WC_OnPay::WC_ONPAY_ID]));
         exit;
     }
 

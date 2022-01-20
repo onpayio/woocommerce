@@ -52,7 +52,11 @@ class wc_onpay_gateway_card extends wc_onpay_gateway_abstract {
         $this->icon = plugin_dir_url(__DIR__) . 'assets/img/generic.svg';
 
         if (is_admin()) {
-            $this->title = __('OnPay.io', 'wc-onpay');
+            if (get_current_screen()->base === 'woocommerce_page_wc-settings') {
+                $this->title = __('OnPay.io', 'wc-onpay');
+            } else {
+                $this->title = $this->method_title . ' - ' . __('OnPay.io', 'wc-onpay');
+            }
         } else {
             $this->title = $this->method_title;
         }

@@ -133,7 +133,8 @@ function init_onpay() {
          * Initialize hooks
          */
         public function init_hooks() {            
-            add_action('woocommerce_update_options_payment_gateways_'. $this->id, [$this, 'process_admin_options']);
+            add_filter('woocommerce_settings_'. $this->id, [$this, 'admin_options']);
+            add_action('woocommerce_settings_save_'. $this->id, [$this, 'process_admin_options']);
             add_action('woocommerce_api_'. $this->id . '_callback', [$this, 'callback']);
             add_action('woocommerce_before_checkout_form', [$this, 'declinedReturnMessage']);
             add_action('woocommerce_thankyou', [$this, 'completedPage']);
@@ -1028,7 +1029,6 @@ function init_onpay() {
         $methods[] = 'wc_onpay_gateway_viabill';
         $methods[] = 'wc_onpay_gateway_anyday';
         $methods[] = 'wc_onpay_gateway_vipps';
-        $methods[] = 'wc_onpay';
 
         return $methods;
     }
@@ -1037,7 +1037,7 @@ function init_onpay() {
     add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'wc_onpay_action_links' );
     function wc_onpay_action_links($links) {
         $plugin_links = [
-            '<a href="' . admin_url('admin.php?page=wc-settings&tab=checkout&section=wc_onpay') . '">' . __('Settings', 'wc-onpay') . '</a>',
+            '<a href="' . admin_url('admin.php?page=wc-settings&tab=wc_onpay') . '">' . __('Settings', 'wc-onpay') . '</a>',
         ];
         return array_merge( $plugin_links, $links );
     }
