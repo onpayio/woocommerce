@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 - Added feature for including WooCommerce refunded values in calculated amounts for capture.
 - Fixed bug where latest order is selected instead of the order in question
+- Fixed names of gateways shown in lists and removed base wc_onpay gateway that wasnt a real gateway
 
 ## [1.0.18] - 2021-11-08
 - Added support for WooCommerce Subscriptions
