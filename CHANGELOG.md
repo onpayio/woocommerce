@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug where latest order is selected instead of the order in question
 - Fixed names of gateways shown in lists and removed base wc_onpay gateway that wasnt a real gateway
 - Added support for activated toggle switches on payment gateways page
+- Added function to allow automatic refund when using built in refund function of woocommerce
 
 ## [1.0.18] - 2021-11-08
 - Added support for WooCommerce Subscriptions
