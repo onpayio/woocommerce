@@ -42,7 +42,7 @@ class wc_onpay_gateway_mobilepay extends wc_onpay_gateway_abstract {
         $this->icon = plugin_dir_url(__DIR__) . 'assets/img/mobilepay.svg';
 
         if (is_admin()) {
-            if (get_current_screen()->base === 'woocommerce_page_wc-settings') {
+            if (function_exists('get_current_screen') && get_current_screen()->base === 'woocommerce_page_wc-settings') {
                 $this->title = __('OnPay.io', 'wc-onpay');
             } else {
                 $this->title = $this->method_title . ' - ' . __('OnPay.io', 'wc-onpay');
@@ -51,11 +51,17 @@ class wc_onpay_gateway_mobilepay extends wc_onpay_gateway_abstract {
             $this->title = $this->method_title;
         }
 
+        if ($this->get_option(WC_OnPay::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY) !== 'yes') {
+            $this->enabled = 'no';
+        } else {
+            $this->enabled = 'yes';
+        }
+
         parent::__construct();
     }
 
     public function is_available() {
-        if ($this->get_option(WC_OnPay::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY) !== 'yes' || $this->get_option(WC_OnPay::SETTING_ONPAY_TESTMODE) !== 'no') {
+        if ($this->enabled!== 'yes' || $this->get_option(WC_OnPay::SETTING_ONPAY_TESTMODE) !== 'no') {
             return false;
         }
         return true;

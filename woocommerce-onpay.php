@@ -135,6 +135,7 @@ function init_onpay() {
         public function init_hooks() {            
             add_filter('woocommerce_settings_'. $this->id, [$this, 'admin_options']);
             add_action('woocommerce_settings_save_'. $this->id, [$this, 'process_admin_options']);
+            add_action('admin_init', [$this, 'gateway_toggle']);
             add_action('woocommerce_api_'. $this->id . '_callback', [$this, 'callback']);
             add_action('woocommerce_before_checkout_form', [$this, 'declinedReturnMessage']);
             add_action('woocommerce_thankyou', [$this, 'completedPage']);
@@ -493,6 +494,36 @@ function init_onpay() {
 
 
         /**
+         * Allows toggling of gateways from payment gateways overview
+         */
+        public function gateway_toggle() {
+            if (isset( $_POST['action'] ) && 'woocommerce_toggle_gateway_enabled' === sanitize_text_field(wp_unslash( $_POST['action']))) {
+                $gatewayId = isset( $_POST['gateway_id'] ) ? sanitize_text_field( wp_unslash( $_POST['gateway_id'] ) ) : false;
+                $gatewaySettings = [
+                    wc_onpay_gateway_anyday::WC_ONPAY_GATEWAY_ANYDAY_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_ANYDAY,
+                    wc_onpay_gateway_card::WC_ONPAY_GATEWAY_CARD_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD,
+                    wc_onpay_gateway_mobilepay::WC_ONPAY_GATEWAY_MOBILEPAY_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY,
+                    wc_onpay_gateway_viabill::WC_ONPAY_GATEWAY_VIABILL_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL,
+                    wc_onpay_gateway_vipps::WC_ONPAY_GATEWAY_VIPPS_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_VIPPS,
+                ];
+                if (in_array($gatewayId, $this->getGateways()) && array_key_exists($gatewayId, $gatewaySettings)) {
+                    $enabled = false;
+                    if ($this->get_option($gatewaySettings[$gatewayId]) !== 'yes') {
+                        $this->update_option($gatewaySettings[$gatewayId], 'yes');
+                        $enabled = true;
+                    } else {
+                        $this->update_option($gatewaySettings[$gatewayId], 'no');
+                    }
+                    die(wp_json_encode([
+                        'success' => true,
+                        'data' => $enabled,
+                    ]));
+                }
+            }
+        }
+
+
+        /**
          * Method for setting meta boxes in admin
          */
         public function meta_boxes() {
@@ -807,16 +838,20 @@ function init_onpay() {
          * @return bool
          */
         private function isOnPayMethod($paymentMethod) {
-            if (in_array($paymentMethod, [
+            if (in_array($paymentMethod, $this->getGateways())) {
+                return true;
+            }
+            return false;
+        }
+
+        private function getGateways() {
+            return [
                 wc_onpay_gateway_card::WC_ONPAY_GATEWAY_CARD_ID,
                 wc_onpay_gateway_mobilepay::WC_ONPAY_GATEWAY_MOBILEPAY_ID,
                 wc_onpay_gateway_viabill::WC_ONPAY_GATEWAY_VIABILL_ID,
                 wc_onpay_gateway_anyday::WC_ONPAY_GATEWAY_ANYDAY_ID,
                 wc_onpay_gateway_vipps::WC_ONPAY_GATEWAY_VIPPS_ID,
-            ])) {
-                return true;
-            }
-            return false;
+            ];
         }
         
         /**
