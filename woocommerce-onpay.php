@@ -135,13 +135,14 @@ function init_onpay() {
         public function init_hooks() {            
             add_filter('woocommerce_settings_'. $this->id, [$this, 'admin_options']);
             add_action('woocommerce_settings_save_'. $this->id, [$this, 'process_admin_options']);
-            add_action('admin_init', [$this, 'gateway_toggle']);
             add_action('woocommerce_api_'. $this->id . '_callback', [$this, 'callback']);
             add_action('woocommerce_before_checkout_form', [$this, 'declinedReturnMessage']);
             add_action('woocommerce_thankyou', [$this, 'completedPage']);
             add_action('woocommerce_order_status_completed', [$this, 'orderStatusCompleteEvent']);
             add_action('woocommerce_scheduled_subscription_payment_onpay_card', [$this, 'subscriptionPayment'], 1, 2);
             add_action('woocommerce_subscription_cancelled_onpay_card', [$this, 'subscriptionCancellation']);
+            add_action('woocommerce_order_refunded', [$this, 'refundEvent'], 10, 2);
+            add_action('admin_init', [$this, 'gateway_toggle']);
             add_action('save_post', [$this, 'handle_order_metabox']);
             add_action('add_meta_boxes', [$this, 'meta_boxes']);
             add_action('wp_enqueue_scripts', [$this, 'register_styles']);
@@ -606,6 +607,35 @@ function init_onpay() {
         }
 
         /**
+         * Function that handles refund event
+         */
+        public function refundEvent($order_id, $refund_id) {
+            // Only perform refund if setting is enabled
+            if ($this->get_option(WC_OnPay::SETTING_ONPAY_REFUND_INTEGRATION) === 'yes') {
+                $order = wc_get_order($order_id);
+                if ($this->isOnPayMethod($order->get_payment_method()) && null !== $order->get_transaction_id() && $order->get_transaction_id() !== '') {
+                    // Get the transaction from API
+                    $transaction = $this->get_onpay_client()->transaction()->getTransaction($order->get_transaction_id());
+                    // Get refund data
+                    $refund = new WC_Order_Refund($refund_id);
+                    // Get amount as minor units
+                    $currencyHelper = new wc_onpay_currency_helper();
+                    $amount = $currencyHelper->majorToMinor($refund->data['amount'], $transaction->currencyCode, '.');
+                    $refundableAmount = $transaction->charged - $transaction->refunded;
+                    // Check if amount is lower than amount available for refund.
+                    if ($amount <= $refundableAmount) {
+                        $this->get_onpay_client()->transaction()->refundTransaction($transaction->uuid, $amount);
+                        $order->add_order_note( __( 'Amount automatically refunded on transaction in OnPay.', 'wc-onpay' ));
+                        $this->addAdminNotice(__( 'Amount refunded on transaction in OnPay.', 'wc-onpay' ), 'success');
+                    } else {
+                        $order->add_order_note( __( 'Unable to automatically refund on transaction in OnPay.', 'wc-onpay' ));
+                        $this->addAdminNotice(__( 'Unable to refund on transaction in OnPay.', 'wc-onpay' ), 'success');
+                    }
+                }
+            }
+        }
+
+        /**
          * Method that renders the meta box for OnPay transactions on order page.
          */
         public function order_meta_box($post, array $meta) {
@@ -1016,6 +1046,10 @@ function init_onpay() {
                 $availableAmount = $transaction->amount - $transaction->charged - $orderRefunded;
             } else {
                 $availableAmount = $transaction->amount - $transaction->charged;
+            }
+
+            if ($availableAmount < 0) {
+                $availableAmount = 0;
             }
 
             return $availableAmount;
