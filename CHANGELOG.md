@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Fixed invalid Redirect urls when logging in through OnPay.
+
+## [1.0.19] - 2021-01-24
 - Added feature for including WooCommerce refunded values in calculated amounts for capture.
 - Fixed bug where latest order is selected instead of the order in question
 - Fixed names of gateways shown in lists and removed base wc_onpay gateway that wasnt a real gateway

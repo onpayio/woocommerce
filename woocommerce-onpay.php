@@ -895,8 +895,7 @@ function init_onpay() {
             // AdminToken cannot be generated on payment pages
             if($prepareRedirectUri) {
                 $params['page'] = 'wc-settings';
-                $params['tab'] = 'checkout';
-                $params['section'] = $this::WC_ONPAY_ID;
+                $params['tab'] = self::WC_ONPAY_ID;
             }
             $url = wc_onpay_query_helper::generate_url($params);
             $onPayAPI = new \OnPay\OnPayAPI($tokenStorage, [
@@ -921,7 +920,7 @@ function init_onpay() {
                     $this->update_option(self::SETTING_ONPAY_CARDLOGOS, ['mastercard', 'visa']);
                     $this->update_option(self::SETTING_ONPAY_REFUND_INTEGRATION, 'yes');
                 }
-                wp_redirect(wc_onpay_query_helper::generate_url(['page' => 'wc-settings','tab' => 'checkout','section' => $this::WC_ONPAY_ID]));
+                wp_redirect(wc_onpay_query_helper::generate_url(['page' => 'wc-settings','tab' => self::WC_ONPAY_ID]));
                 exit;
             }
         }
@@ -948,7 +947,7 @@ function init_onpay() {
                 $this->update_option(self::SETTING_ONPAY_STATUS_AUTOCAPTURE, null);
                 $this->update_option(self::SETTING_ONPAY_REFUND_INTEGRATION, null);
 
-                wp_redirect(wc_onpay_query_helper::generate_url(['page' => 'wc-settings','tab' => 'checkout','section' => $this::WC_ONPAY_ID]));
+                wp_redirect(wc_onpay_query_helper::generate_url(['page' => 'wc-settings','tab' => self::WC_ONPAY_ID]));
                 exit;
             }
         }
@@ -961,7 +960,7 @@ function init_onpay() {
 
                 $this->addAdminNotice(__('Gateway ID and secret was refreshed', 'wc-onpay'), 'info');
 
-                wp_redirect(wc_onpay_query_helper::generate_url(['page' => 'wc-settings','tab' => 'checkout','section' => $this::WC_ONPAY_ID]));
+                wp_redirect(wc_onpay_query_helper::generate_url(['page' => 'wc-settings','tab' => self::WC_ONPAY_ID]));
                 exit;
             }
         }
