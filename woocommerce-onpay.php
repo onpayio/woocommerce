@@ -163,7 +163,15 @@ function init_onpay() {
             if (!$paymentWindow->validatePayment(wc_onpay_query_helper::get_query())) {
                 $this->json_response('Invalid values', true, 400);
             }
-            $order = wc_get_order(wc_onpay_query_helper::get_query_value('onpay_reference'));
+            
+            // Get order
+            $reference = wc_onpay_query_helper::get_query_value('onpay_reference');
+            if (function_exists('wc_seq_order_number_pro')) {
+                // Specifically use 'find_order_by_order_number' function if Sequential Order Number Pro plugin is installed, to find order ID
+                $reference = wc_seq_order_number_pro()->find_order_by_order_number($reference);
+            }
+            
+            $order = wc_get_order($reference);
 
             if (false === $order) {
                 $this->json_response('Order not found', true, 400);
