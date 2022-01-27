@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Fixed invalid Redirect urls when logging in through OnPay.
+- Added support for Sequential Order Number Pro, when validating orders
 
 ## [1.0.19] - 2021-01-24
 - Added feature for including WooCommerce refunded values in calculated amounts for capture.
