@@ -82,16 +82,21 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
             $paymentWindow->setType("payment");
         }
     
+        // Generate decline URL
         $declineUrl = get_permalink(wc_get_page_id('checkout'));
         $declineUrl = add_query_arg('declined_from_onpay', '1', $declineUrl);
+
+        // Add parameters to callback URL
+        $callbackUrl = WC()->api_request_url('wc_onpay' . '_callback');
+        $callbackUrl = add_query_arg('order_key', $order->get_order_key(), $callbackUrl);
 
         $paymentWindow->setGatewayId($this->get_option(WC_OnPay::SETTING_ONPAY_GATEWAY_ID));
         $paymentWindow->setSecret($this->get_option(WC_OnPay::SETTING_ONPAY_SECRET));
         $paymentWindow->setCurrency($isoCurrency->alpha3);
-        $paymentWindow->setReference($orderData['number']);
+        $paymentWindow->setReference($order->get_order_number());
         $paymentWindow->setAcceptUrl($order->get_checkout_order_received_url());
         $paymentWindow->setDeclineUrl($declineUrl);
-        $paymentWindow->setCallbackUrl(WC()->api_request_url('wc_onpay' . '_callback'));
+        $paymentWindow->setCallbackUrl($callbackUrl);
         $paymentWindow->setWebsite(get_bloginfo('wpurl'));
         $paymentWindow->setPlatform('woocommerce', WC_OnPay::PLUGIN_VERSION, WC_VERSION);
 
