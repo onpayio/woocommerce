@@ -158,21 +158,15 @@ function init_onpay() {
          * Method used for callbacks from OnPay. Validates orders using OnPay as method.
          */
         public function callback() {
+            // Validate query parameters from OnPay
             $paymentWindow = new \OnPay\API\PaymentWindow();
             $paymentWindow->setSecret($this->get_option(self::SETTING_ONPAY_SECRET));
             if (!$paymentWindow->validatePayment(wc_onpay_query_helper::get_query())) {
                 $this->json_response('Invalid values', true, 400);
             }
-            
-            // Get order
-            $reference = wc_onpay_query_helper::get_query_value('onpay_reference');
-            if (function_exists('wc_seq_order_number_pro')) {
-                // Specifically use 'find_order_by_order_number' function if Sequential Order Number Pro plugin is installed, to find order ID
-                $reference = wc_seq_order_number_pro()->find_order_by_order_number($reference);
-            }
-            
-            $order = wc_get_order($reference);
 
+            // Find order
+            $order = $this->findOrder();
             if (false === $order) {
                 $this->json_response('Order not found', true, 400);
             }
@@ -248,6 +242,31 @@ function init_onpay() {
             }
 
             $this->json_response('Order validated');
+        }
+
+        // Finds order based on query parameters
+        private function findOrder() {
+            // Get order key
+            $key = wc_onpay_query_helper::get_query_value('order_key');
+
+            // If key is not found attempt legacy logic for finding order
+            if (null === $key) {
+                $reference = wc_onpay_query_helper::get_query_value('onpay_reference');
+                if (null === $reference) {
+                    return false;
+                }
+
+                if (function_exists('wc_seq_order_number_pro')) {
+                    // Specifically use 'find_order_by_order_number' function if Sequential Order Number Pro plugin is installed, to find order ID
+                    $reference = wc_seq_order_number_pro()->find_order_by_order_number($reference);
+                }
+
+                return wc_get_order($reference);
+            }
+
+            $orderId = wc_get_order_id_by_order_key($key);
+            $order = wc_get_order($orderId);
+            return $order;
         }
 
         // Clones existing order as a new order.
