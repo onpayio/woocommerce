@@ -56,6 +56,7 @@ function init_onpay() {
     include_once __DIR__ . '/classes/gateway-viabill.php';
     include_once __DIR__ . '/classes/gateway-anyday.php';
     include_once __DIR__ . '/classes/gateway-vipps.php';
+    include_once __DIR__ . '/classes/gateway-swish.php';
 
     class WC_OnPay extends WC_Payment_Gateway {
         const PLUGIN_VERSION = '1.0.21';
@@ -66,6 +67,7 @@ function init_onpay() {
         const SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL = 'extra_payments_viabill';
         const SETTING_ONPAY_EXTRA_PAYMENTS_ANYDAY = 'extra_payments_anyday_split';
         const SETTING_ONPAY_EXTRA_PAYMENTS_VIPPS = 'extra_payments_vipps';
+        const SETTING_ONPAY_EXTRA_PAYMENTS_SWISH = 'extra_payments_swish';
         const SETTING_ONPAY_EXTRA_PAYMENTS_CARD = 'extra_payments_card';
         const SETTING_ONPAY_PAYMENTWINDOW_DESIGN = 'paymentwindow_design';
         const SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE = 'paymentwindow_language';
@@ -379,6 +381,12 @@ function init_onpay() {
                     'type' => 'checkbox',
                     'default' => 'no',
                 ],
+                self::SETTING_ONPAY_EXTRA_PAYMENTS_SWISH => [
+                    'title' => __('Swish', 'wc-onpay'),
+                    'label' => __('Enable Swish as payment method', 'wc-onpay'),
+                    'type' => 'checkbox',
+                    'default' => 'no',
+                ],
                 self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL => [
                     'title' => __('ViaBill', 'wc-onpay'),
                     'label' => __('Enable ViaBill as payment method', 'wc-onpay'),
@@ -533,6 +541,7 @@ function init_onpay() {
                     wc_onpay_gateway_mobilepay::WC_ONPAY_GATEWAY_MOBILEPAY_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY,
                     wc_onpay_gateway_viabill::WC_ONPAY_GATEWAY_VIABILL_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL,
                     wc_onpay_gateway_vipps::WC_ONPAY_GATEWAY_VIPPS_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_VIPPS,
+                    wc_onpay_gateway_swish::WC_ONPAY_GATEWAY_SWISH_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_SWISH,
                 ];
                 if (in_array($gatewayId, $this->getGateways()) && array_key_exists($gatewayId, $gatewaySettings)) {
                     $enabled = false;
@@ -908,6 +917,7 @@ function init_onpay() {
                 wc_onpay_gateway_viabill::WC_ONPAY_GATEWAY_VIABILL_ID,
                 wc_onpay_gateway_anyday::WC_ONPAY_GATEWAY_ANYDAY_ID,
                 wc_onpay_gateway_vipps::WC_ONPAY_GATEWAY_VIPPS_ID,
+                wc_onpay_gateway_swish::WC_ONPAY_GATEWAY_SWISH_ID,
             ];
         }
         
@@ -966,6 +976,7 @@ function init_onpay() {
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL, null);
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_ANYDAY, null);
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_VIPPS, null);
+                $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_SWISH, null);
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD, null);
                 $this->update_option(self::SETTING_ONPAY_PAYMENTWINDOW_DESIGN, null);
                 $this->update_option(self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE, null);
@@ -1124,6 +1135,7 @@ function init_onpay() {
         $methods[] = 'wc_onpay_gateway_viabill';
         $methods[] = 'wc_onpay_gateway_anyday';
         $methods[] = 'wc_onpay_gateway_vipps';
+        $methods[] = 'wc_onpay_gateway_swish';
 
         return $methods;
     }
