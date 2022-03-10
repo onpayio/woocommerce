@@ -6,14 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.21] - 2021-01-28
+## [1.0.21] - 2022-01-28
 - Based identification of orders in callback, on order_key instead of unpredictable order_number, but keep using order_number for reference
 
-## [1.0.20] - 2021-01-27
+## [1.0.20] - 2022-01-27
 - Fixed invalid Redirect urls when logging in through OnPay.
 - Added support for Sequential Order Number Pro, when validating orders
 
-## [1.0.19] - 2021-01-24
+## [1.0.19] - 2022-01-24
 - Added feature for including WooCommerce refunded values in calculated amounts for capture.
 - Fixed bug where latest order is selected instead of the order in question
 - Fixed names of gateways shown in lists and removed base wc_onpay gateway that wasnt a real gateway
