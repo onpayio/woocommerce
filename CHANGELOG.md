@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.22] - 2022-03-10
+- Added swish as available payment option.
+
 ## [1.0.21] - 2022-01-28
 - Based identification of orders in callback, on order_key instead of unpredictable order_number, but keep using order_number for reference
 

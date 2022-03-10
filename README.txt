@@ -2,9 +2,9 @@
 Contributors: onpayio
 Tags: onpay, gateway, payment, payment gateway, woocommerce, psp
 Requires at least: 5.3
-Tested up to: 5.8
+Tested up to: 5.9.1
 Requires PHP: 5.6
-Stable tag: 1.0.21
+Stable tag: 1.0.22
 License: MIT
 License URI: https://mit-license.org/
 
@@ -33,6 +33,23 @@ Don't  have an OnPay account yet? Order one through <a href="https://dandomain.d
 2. WooCommerce >= 3.8.1
 
 == Changelog ==
+
+= [1.0.22] =
+Added swish as available payment option.
+
+= [1.0.21] =
+Based identification of orders in callback, on order_key instead of unpredictable order_number, but keep using order_number for reference
+
+= [1.0.20] =
+Fixed invalid Redirect urls when logging in through OnPay.
+Added support for Sequential Order Number Pro, when validating orders
+
+= [1.0.19] =
+Added feature for including WooCommerce refunded values in calculated amounts for capture.
+Fixed bug where latest order is selected instead of the order in question
+Fixed names of gateways shown in lists and removed base wc_onpay gateway that wasnt a real gateway
+Added support for activated toggle switches on payment gateways page
+Added function to allow automatic refund when using built in refund function of woocommerce
 
 = [1.0.18] =
 Added support for WooCommerce Subscriptions
