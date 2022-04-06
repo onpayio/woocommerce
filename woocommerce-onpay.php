@@ -163,13 +163,18 @@ function init_onpay() {
             // Validate query parameters from OnPay
             $paymentWindow = new \OnPay\API\PaymentWindow();
             $paymentWindow->setSecret($this->get_option(self::SETTING_ONPAY_SECRET));
-            if (!$paymentWindow->validatePayment(wc_onpay_query_helper::get_query())) {
+
+            $onpayNumber = wc_onpay_query_helper::get_query_value('onpay_number');
+            $onpayReference = wc_onpay_query_helper::get_query_value('onpay_reference');
+
+            // Validate query parameters and check that onpay_number is present
+            if (!$paymentWindow->validatePayment(wc_onpay_query_helper::get_query()) || null === $onpayNumber) {
                 $this->json_response('Invalid values', true, 400);
             }
 
-            // Find order
+            // Validate that order exists and that order number and onpay_reference match 
             $order = $this->findOrder();
-            if (false === $order) {
+            if (false === $order || $order->get_order_number() !== $onpayReference) {
                 $this->json_response('Order not found', true, 400);
             }
 
@@ -211,8 +216,6 @@ function init_onpay() {
                         $order->save_meta_data();
                     }
                 }
-
-                $onpayNumber = wc_onpay_query_helper::get_query_value('onpay_number');
 
                 // If we're dealing with a subscription
                 if ($type === 'subscription') {
@@ -347,7 +350,7 @@ function init_onpay() {
             $paymentWindow->setSecret($this->get_option($this::SETTING_ONPAY_SECRET));
             $order = new WC_Order(wc_onpay_query_helper::get_query_value('onpay_reference'));
             $isDeclined = wc_onpay_query_helper::get_query_value('declined_from_onpay');
-            if (!$order->is_paid() && $isDeclined === '1' && $paymentWindow->validatePayment($_GET)) {
+            if (!$order->is_paid() && $isDeclined === '1') {
                 // Order is not paid yet and user is returned through declined url from OnPay.
                 // Valid OnPay URL params are also present, which indicates that user did not simply quit payment, but an actual error was encountered.
                 echo '<div class="woocommerce-error">' . __('The payment failed. Please try again.', 'wc-onpay') . '</div>';
