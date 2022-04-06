@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.23] - 2022-04-06
+- Improved validation of parameters on callback and decline endpoints.
+
 ## [1.0.22] - 2022-03-10
 - Added swish as available payment option.
 
