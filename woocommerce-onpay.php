@@ -350,7 +350,7 @@ function init_onpay() {
             $paymentWindow->setSecret($this->get_option($this::SETTING_ONPAY_SECRET));
             $order = new WC_Order(wc_onpay_query_helper::get_query_value('onpay_reference'));
             $isDeclined = wc_onpay_query_helper::get_query_value('declined_from_onpay');
-            if (!$order->is_paid() && $isDeclined === '1' && $paymentWindow->validatePayment($_GET)) {
+            if (!$order->is_paid() && $isDeclined === '1') {
                 // Order is not paid yet and user is returned through declined url from OnPay.
                 // Valid OnPay URL params are also present, which indicates that user did not simply quit payment, but an actual error was encountered.
                 echo '<div class="woocommerce-error">' . __('The payment failed. Please try again.', 'wc-onpay') . '</div>';
