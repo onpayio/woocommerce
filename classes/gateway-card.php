@@ -47,6 +47,7 @@ class wc_onpay_gateway_card extends wc_onpay_gateway_abstract {
             'subscription_date_changes',
             'subscription_suspension',
             'subscription_reactivation',
+            'subscription_payment_method_change_customer',
         ];
 
         $this->icon = plugin_dir_url(__DIR__) . 'assets/img/generic.svg';
