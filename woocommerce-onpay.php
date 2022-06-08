@@ -178,10 +178,10 @@ function init_onpay() {
                 $this->json_response('Order not found', true, 400);
             }
 
+            $type = wc_onpay_query_helper::get_query_value('onpay_type');
             // Is order in pending state, otherwise we don't care.
             if ($order->has_status('pending')) {
-                $type = wc_onpay_query_helper::get_query_value('onpay_type');
-
+                
                 // If we're dealing with a subscription
                 if ($type === 'subscription') {
                     $orderItems = $order->get_items();
@@ -215,10 +215,7 @@ function init_onpay() {
                         $order->add_meta_data($this::WC_ONPAY_ID . '_order_split', $newOrder->get_id());
                         $order->save_meta_data();
                     }
-                }
 
-                // If we're dealing with a subscription
-                if ($type === 'subscription') {
                     $order->add_order_note(__( 'Subscription authorized in OnPay.', 'wc-onpay' ));
 
                     // Write subscription id to subscription order for later reference. 
@@ -244,6 +241,15 @@ function init_onpay() {
                 $order->payment_complete($onpayNumber);
                 $order->add_meta_data($this::WC_ONPAY_ID . '_test_mode', wc_onpay_query_helper::get_query_value('onpay_testmode'));
                 $order->save_meta_data();
+            } else if (null !== wc_onpay_query_helper::get_query_value('update_method') && $type === 'subscription') {
+                // Update of payment method for a subscription
+                // Check that the current transaction ID is not already the OnPay number submitted.
+                if ($order->get_transaction_id() !== $onpayNumber) {
+                    // We'll simply update the transaction ID stored in the post meta.
+                    update_post_meta($order->get_id(), '_transaction_id', $onpayNumber);
+                    $order->add_order_note(__( 'Subscription updated with new payment info in OnPay.', 'wc-onpay' ));
+                    $order->save();
+                }
             }
 
             $this->json_response('Order validated');
@@ -856,7 +862,16 @@ function init_onpay() {
          * Hook that handles cancellation of subscriptions. Cancelling subscriptions in OnPay.
          */
         public function subscriptionCancellation($subscriptionOrder) {
+            // No need to do anything is no transaction ID is currently assigned.
+            if ($subscriptionOrder->get_transaction_id() === '') {
+                return;
+            }
+
+            // No need to do anything if no subscription is found by current Transaction ID in OnPay.
             $onpaySubscription = $this->get_onpay_client()->subscription()->getSubscription($subscriptionOrder->get_transaction_id());
+            if ($onpaySubscription->status === 'cancelled') {
+                return;
+            }
             $cancelledSubscription = $this->get_onpay_client()->subscription()->cancelSubscription($onpaySubscription->uuid);
             if ($cancelledSubscription->status !== 'cancelled') {
                 $subscriptionOrder->add_order_note(__('An error occured cancelling subscription in OnPay.', 'wc-onpay'));

@@ -36,9 +36,13 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
 
     public function process_payment($order_id) {
         $order = new WC_Order($order_id);
+        $redirectUrl = $order->get_checkout_payment_url(true);
+        if (class_exists('WC_Subscriptions_Change_Payment_Gateway') && WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment) {
+            $redirectUrl = add_query_arg('update_method', true, $redirectUrl);
+        }
         return [
             'result'   => 'success',
-            'redirect' => $redirect = $order->get_checkout_payment_url(true),
+            'redirect' => $redirectUrl
         ];
     }
 
@@ -47,8 +51,15 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
      */
     public function checkout($order_id) {
         $order = new WC_Order($order_id);
-        $paymentWindow = self::get_payment_window($order);
+        $updateMethod = wc_onpay_query_helper::get_query_value('update_method') !== null ? true : false;
+        $paymentWindow = self::get_payment_window($order, $updateMethod);
+        self::paymentWindowFormRedirect($paymentWindow);
+    }
 
+    /**
+     * Method that prints payment window form
+     */
+    protected function paymentWindowFormRedirect($paymentWindow) {
         echo '<p>' . __( 'Redirecting to payment window', 'wc-onpay' ) . '</p>';
         wc_enqueue_js('document.getElementById("onpay_form").submit();');
 
@@ -62,7 +73,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
     /**
      * Returns instance of PaymentWindow based on WC_Order
      */
-    protected function get_payment_window($order) {
+    protected function get_payment_window($order, $updateMethod = false) {
         if (!$order instanceof WC_Order) {
             return null;
         }
@@ -74,7 +85,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         $paymentWindow = new \OnPay\API\PaymentWindow();
 
         // Check if we're dealing with a subscription order
-        if (class_exists('WC_Subscriptions_Order') && WC_Subscriptions_Order::order_contains_subscription($orderData['id'])) {
+        if ((function_exists('wcs_is_subscription') && wcs_is_subscription($orderData['id'])) || (function_exists('wcs_order_contains_subscription') && wcs_order_contains_subscription($orderData['id']))) {
             $paymentWindow->setType("subscription");
         } else {
             $orderTotal = number_format($this->get_order_total(), $isoCurrency->exp, '', '');
@@ -89,6 +100,9 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         // Add parameters to callback URL
         $callbackUrl = WC()->api_request_url('wc_onpay' . '_callback');
         $callbackUrl = add_query_arg('order_key', $order->get_order_key(), $callbackUrl);
+        if ($updateMethod) {
+            $callbackUrl = add_query_arg('update_method', true, $callbackUrl);
+        }
 
         $paymentWindow->setGatewayId($this->get_option(WC_OnPay::SETTING_ONPAY_GATEWAY_ID));
         $paymentWindow->setSecret($this->get_option(WC_OnPay::SETTING_ONPAY_SECRET));
