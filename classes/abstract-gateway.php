@@ -47,27 +47,38 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
     }
 
     /**
-     * Method for injecting payment window form into receipt page, and automatically posting form to OnPay.
+     * Gets payment link and redirects browser to newly created payment
      */
     public function checkout($order_id) {
         $order = new WC_Order($order_id);
         $updateMethod = wc_onpay_query_helper::get_query_value('update_method') !== null ? true : false;
         $paymentWindow = self::get_payment_window($order, $updateMethod);
-        self::paymentWindowFormRedirect($paymentWindow);
+        wp_redirect(self::getPaymentLink($paymentWindow));
+        exit;
     }
 
     /**
-     * Method that prints payment window form
+     * Returns a payment link provided by the OnPay API
      */
-    protected function paymentWindowFormRedirect($paymentWindow) {
-        echo '<p>' . __( 'Redirecting to payment window', 'wc-onpay' ) . '</p>';
-        wc_enqueue_js('document.getElementById("onpay_form").submit();');
+    protected function getPaymentLink($paymentWindow) {
+        $onpayApi = $this->getOnPayClient();
+        $payment = $onpayApi->payment()->createNewPayment($paymentWindow);
+        return $payment->getPaymentWindowLink();
+    }
 
-        echo '<form action="' . $paymentWindow->getActionUrl() . '" method="post" target="_top" id="onpay_form">';
-        foreach($paymentWindow->getFormFields() as $key => $formField) {
-            echo '<input type="hidden" name="' . $key . '" value="' . $formField . '">';
-        }
-        echo '</form>';
+    /**
+     * Returns an instantiated OnPay API client
+     *
+     * @return \OnPay\OnPayAPI
+     */
+    private function getOnPayClient() {
+        $tokenStorage = new wc_onpay_token_storage();
+        $url = wc_onpay_query_helper::generate_url([]);
+        $onPayAPI = new \OnPay\OnPayAPI($tokenStorage, [
+            'client_id' => 'Onpay WooCommerce',
+            'redirect_uri' => $url,
+        ]);
+        return $onPayAPI;
     }
 
     /**
@@ -140,7 +151,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         // Adding available info fields
         $paymentInfo = new \OnPay\API\PaymentWindow\PaymentInfo();
 
-        $this->setPaymentInfoParameter($paymentInfo, 'AccountId', $customer->get_id());
+        $this->setPaymentInfoParameter($paymentInfo, 'AccountId', strval($customer->get_id()));
         $this->setPaymentInfoParameter($paymentInfo, 'AccountDateCreated',  wc_format_datetime($customer->get_date_created(), 'Y-m-d'));
         $this->setPaymentInfoParameter($paymentInfo, 'AccountDateChange', wc_format_datetime($customer->get_date_modified(), 'Y-m-d'));
 
