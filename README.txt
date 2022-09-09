@@ -2,9 +2,9 @@
 Contributors: onpayio
 Tags: onpay, gateway, payment, payment gateway, woocommerce, psp
 Requires at least: 5.3
-Tested up to: 6.0.1
+Tested up to: 6.0.2
 Requires PHP: 5.6
-Stable tag: 1.0.26
+Stable tag: 1.0.27
 License: MIT
 License URI: https://mit-license.org/
 
@@ -33,6 +33,10 @@ Don't  have an OnPay account yet? Order one through <a href="https://dandomain.d
 2. WooCommerce >= 3.8.1
 
 == Changelog ==
+
+= 1.0.27
+Properly set required amount value when constructing subscriptions
+Allow MobilePay in testmode since this is now supported
 
 = [1.0.26]
 Implemented creation of payments through API redirecting to link, instead of posting form directly to onpay
