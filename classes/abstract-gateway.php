@@ -97,12 +97,14 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
 
         // Check if we're dealing with a subscription order
         if ((function_exists('wcs_is_subscription') && wcs_is_subscription($orderData['id'])) || (function_exists('wcs_order_contains_subscription') && wcs_order_contains_subscription($orderData['id']))) {
+            $orderTotal = 0; // Set order total to zero when we have a subscription.
             $paymentWindow->setType("subscription");
         } else {
             $orderTotal = number_format($this->get_order_total(), $isoCurrency->exp, '', '');
-            $paymentWindow->setAmount($orderTotal);
-            $paymentWindow->setType("payment");
+            $paymentWindow->setType("transaction");
         }
+
+        $paymentWindow->setAmount($orderTotal);
     
         // Generate decline URL
         $declineUrl = get_permalink(wc_get_page_id('checkout'));
