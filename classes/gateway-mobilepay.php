@@ -61,7 +61,7 @@ class wc_onpay_gateway_mobilepay extends wc_onpay_gateway_abstract {
     }
 
     public function is_available() {
-        if ($this->enabled!== 'yes' || $this->get_option(WC_OnPay::SETTING_ONPAY_TESTMODE) !== 'no') {
+        if ($this->enabled!== 'yes') {
             return false;
         }
         return true;

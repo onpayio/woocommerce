@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Properly set required amount value when constructing subscriptions
+- Allow MobilePay in testmode since this is now supported
 
 ## [1.0.26] - 2022-08-24
 - Implemented creation of payments through API redirecting to link, instead of posting form directly to onpay
