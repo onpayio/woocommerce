@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Properly set required amount value when constructing subscriptions
 
 ## [1.0.26] - 2022-08-24
 - Implemented creation of payments through API redirecting to link, instead of posting form directly to onpay
