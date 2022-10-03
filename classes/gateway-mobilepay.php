@@ -59,11 +59,4 @@ class wc_onpay_gateway_mobilepay extends wc_onpay_gateway_abstract {
 
         parent::__construct();
     }
-
-    public function is_available() {
-        if ($this->enabled!== 'yes') {
-            return false;
-        }
-        return true;
-    }
 }

@@ -24,6 +24,8 @@
  */
 
 abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
+    private bool $apiAuthorized;
+    
     public function admin_options() {
         // Redirect to general plugin settings page
         wp_redirect(wc_onpay_query_helper::generate_url(['page' => 'wc-settings','tab' => WC_OnPay::WC_ONPAY_ID]));
@@ -53,8 +55,12 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         $order = new WC_Order($order_id);
         $updateMethod = wc_onpay_query_helper::get_query_value('update_method') !== null ? true : false;
         $paymentWindow = self::get_payment_window($order, $updateMethod);
-        wp_redirect(self::getPaymentLink($paymentWindow));
-        exit;
+        try {
+            wp_redirect(self::getPaymentLink($paymentWindow));
+            exit;
+        } catch (WoocommerceOnpay\OnPay\API\Exception\TokenException $e) {
+            echo 'Authorized connection to OnPay failed.';
+        }
     }
 
     /**
@@ -253,5 +259,23 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
             }
         }
         return true;
+    }
+
+    // WooCommerce function indicating available state of method.
+    public function is_available() {
+        if ($this->enabled === 'yes' && $this->isApiAuthorized()) {
+            return true;
+        }
+        return false;
+    }
+
+    // Function that checks if connection to OnPay APi is authorized. Caches result by default.
+    private function isApiAuthorized($refresh = false) {
+        if(isset($this->isApiAuthorized) && !$refresh) {
+            return $this->isApiAuthorized;
+        }
+        $onpayApi = $this->getOnPayClient();
+        $this->isApiAuthorized = $onpayApi->isAuthorized();
+        return $this->isApiAuthorized;
     }
 }
