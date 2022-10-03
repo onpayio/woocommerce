@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Updated danish translations
+- Added check of authorized connection to OnPay, before presenting OnPay methods
 
 ## [1.0.27] - 2022-09-09
 - Properly set required amount value when constructing subscriptions
