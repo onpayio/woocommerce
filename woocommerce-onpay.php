@@ -48,6 +48,7 @@ function init_onpay() {
     include_once __DIR__ . '/require.php';
 
     include_once __DIR__ . '/classes/currency-helper.php';
+    include_once __DIR__ . '/classes/order-helper.php';
     include_once __DIR__ . '/classes/query-helper.php';
     include_once __DIR__ . '/classes/token-storage.php';
 
@@ -174,6 +175,8 @@ function init_onpay() {
          * Method used for callbacks from OnPay. Validates orders using OnPay as method.
          */
         public function callback() {
+            $orderHelper = new wc_onpay_order_helper();
+
             // Validate query parameters from OnPay
             $paymentWindow = new \OnPay\API\PaymentWindow();
             $paymentWindow->setSecret($this->get_option(self::SETTING_ONPAY_SECRET));
@@ -186,14 +189,15 @@ function init_onpay() {
                 $this->json_response('Invalid values', true, 400);
             }
 
-            // Validate that order exists and that order number and onpay_reference match 
+            // Validate that order exists and that order reference and onpay_reference match 
             $order = $this->findOrder();
-            if (false === $order || $order->get_order_number() !== $onpayReference) {
+            $reference = $orderHelper->getOrderReference($order);
+            if (false === $order || $reference !== $onpayReference) {
                 $this->json_response('Order not found', true, 400);
             }
 
             $type = wc_onpay_query_helper::get_query_value('onpay_type');
-            // Is order in pending state, otherwise we don't care.
+            // Is order in pending state
             if ($order->has_status('pending')) {
                 
                 // If we're dealing with a subscription
@@ -245,24 +249,43 @@ function init_onpay() {
                     $orderCurrency = $currencyHelper->fromAlpha3($order->get_currency());
                     $orderAmount = $currencyHelper->majorToMinor($order->get_total(), $orderCurrency->numeric, '.');
                     $onpaySubscription = $this->get_onpay_client()->subscription()->getSubscription($onpayNumber);
-                    $createdTransaction = $this->get_onpay_client()->subscription()->createTransactionFromSubscription($onpaySubscription->uuid, $orderAmount, strval($order->get_id()));
+                    $createdTransaction = $this->get_onpay_client()->subscription()->createTransactionFromSubscription($onpaySubscription->uuid, $orderAmount, strval($order->get_order_number()));
 
                     // Set onpayNumber to value from newly created transaction
                     $onpayNumber = $createdTransaction->transactionNumber;
                 }
 
+                // Regular completion of order with onpayNumber from callback
                 $order->add_order_note(__( 'Transaction authorized in OnPay. Remember to capture amount.', 'wc-onpay' ));
                 $order->payment_complete($onpayNumber);
                 $order->add_meta_data($this::WC_ONPAY_ID . '_test_mode', wc_onpay_query_helper::get_query_value('onpay_testmode'));
                 $order->save_meta_data();
-            } else if (null !== wc_onpay_query_helper::get_query_value('update_method') && $type === 'subscription') {
-                // Update of payment method for a subscription
-                // Check that the current transaction ID is not already the OnPay number submitted.
-                if ($order->get_transaction_id() !== $onpayNumber) {
-                    // We'll simply update the transaction ID stored in the post meta.
-                    update_post_meta($order->get_id(), '_transaction_id', $onpayNumber);
-                    $order->add_order_note(__( 'Subscription updated with new payment info in OnPay.', 'wc-onpay' ));
-                    $order->save();
+                $order->save();
+            }
+            
+            if ($type === 'subscription' && null !== wc_onpay_query_helper::get_query_value('update_method')) { // Order is subscription and an update of method is requested.
+                // Set OnpayNumber from callback query
+                $onpayNumber = wc_onpay_query_helper::get_query_value('onpay_number');
+                // Try getting original subscription Id
+                $originalSubscription = get_post_meta($order->get_id(), '_subscription_renewal', true);
+                if ($originalSubscription !== '') {
+                    // If originalSubscription is present, we'll set the subscription order that is to be updated to this.
+                    // This is during the flow of an early renewal.
+                    $subscriptionOrder = new WC_order($originalSubscription);
+                    $this->cancelOnpaySubscription($subscriptionOrder); // Cancel current subscription in OnPay if possible.
+                } else {
+                    // Otherwise we'll set the subscription to be updated as the current.
+                    // This is during the flow of a method update.
+                    $subscriptionOrder = new WC_order($order->get_id());
+                    // Current subscription will be automatically cancelled.
+                }
+
+                // Check that the current subscription order transaction ID is not already the OnPay number submitted.
+                if ($subscriptionOrder->get_transaction_id() !== $onpayNumber) {
+                    // We'll simply update the transaction ID on the subscription order
+                    $subscriptionOrder->set_transaction_id($onpayNumber);
+                    $subscriptionOrder->add_order_note(__( 'Subscription updated with new payment info in OnPay.', 'wc-onpay' ));
+                    $subscriptionOrder->save();
                 }
             }
 
@@ -898,6 +921,15 @@ function init_onpay() {
          * Hook that handles cancellation of subscriptions. Cancelling subscriptions in OnPay.
          */
         public function subscriptionCancellation($subscriptionOrder) {
+            $cancelledSubscription = $this->cancelOnpaySubscription($subscriptionOrder);
+            if ($cancelledSubscription->status !== 'cancelled') {
+                $subscriptionOrder->add_order_note(__('An error occured cancelling subscription in OnPay.', 'wc-onpay'));
+            } else{
+                $subscriptionOrder->add_order_note(__('Subscription cancelled in OnPay.', 'wc-onpay'));
+            }
+        }
+
+        private function cancelOnpaySubscription($subscriptionOrder) {
             // No need to do anything is no transaction ID is currently assigned.
             if ($subscriptionOrder->get_transaction_id() === '') {
                 return;
@@ -908,12 +940,7 @@ function init_onpay() {
             if ($onpaySubscription->status === 'cancelled') {
                 return;
             }
-            $cancelledSubscription = $this->get_onpay_client()->subscription()->cancelSubscription($onpaySubscription->uuid);
-            if ($cancelledSubscription->status !== 'cancelled') {
-                $subscriptionOrder->add_order_note(__('An error occured cancelling subscription in OnPay.', 'wc-onpay'));
-            } else{
-                $subscriptionOrder->add_order_note(__('Subscription cancelled in OnPay.', 'wc-onpay'));
-            }
+            return $this->get_onpay_client()->subscription()->cancelSubscription($onpaySubscription->uuid);
         }
 
         private function addAdminNotice($text, $type = 'success', $dismissable = true) {
