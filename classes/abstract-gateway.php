@@ -54,10 +54,12 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
     public function checkout($order_id) {
         $order = new WC_Order($order_id);
         $updateMethod = wc_onpay_query_helper::get_query_value('update_method') !== null ? true : false;
-        $paymentWindow = self::get_payment_window($order, $updateMethod);
         try {
+            $paymentWindow = self::get_payment_window($order, $updateMethod);
             wp_redirect(self::getPaymentLink($paymentWindow));
             exit;
+        } catch (InvalidArgumentException $e) {
+            echo 'Invalid data provided(' . $e->getMessage() . '). Unable to create OnPay payment.';
         } catch (WoocommerceOnpay\OnPay\API\Exception\TokenException $e) {
             echo 'Authorized connection to OnPay failed.';
         }
@@ -92,7 +94,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
      */
     protected function get_payment_window($order, $updateMethod = false) {
         if (!$order instanceof WC_Order) {
-            return null;
+            throw new InvalidArgumentException('WC_Order');
         }
         $orderData = $order->get_data();
 
@@ -111,6 +113,13 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         }
 
         $paymentWindow->setAmount($orderTotal);
+
+        // Sanitize reference field
+        $reference = $order->get_order_number();
+        if (!preg_match("/^[a-zA-Z0-9\-\.]{1,36}$/", $reference)) {
+            throw new InvalidArgumentException('reference/order number');
+        }
+        $reference = $this->sanitizeFieldValue($reference);
     
         // Generate decline URL
         $declineUrl = get_permalink(wc_get_page_id('checkout'));
@@ -126,11 +135,11 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         $paymentWindow->setGatewayId($this->get_option(WC_OnPay::SETTING_ONPAY_GATEWAY_ID));
         $paymentWindow->setSecret($this->get_option(WC_OnPay::SETTING_ONPAY_SECRET));
         $paymentWindow->setCurrency($isoCurrency->alpha3);
-        $paymentWindow->setReference($order->get_order_number());
-        $paymentWindow->setAcceptUrl($order->get_checkout_order_received_url());
-        $paymentWindow->setDeclineUrl($declineUrl);
-        $paymentWindow->setCallbackUrl($callbackUrl);
-        $paymentWindow->setWebsite(get_bloginfo('wpurl'));
+        $paymentWindow->setReference($reference);
+        $paymentWindow->setAcceptUrl($this->sanitizeFieldValue($order->get_checkout_order_received_url()));
+        $paymentWindow->setDeclineUrl($this->sanitizeFieldValue($declineUrl));
+        $paymentWindow->setCallbackUrl($this->sanitizeFieldValue($callbackUrl));
+        $paymentWindow->setWebsite($this->sanitizeFieldValue(get_bloginfo('wpurl')));
         $paymentWindow->setPlatform('woocommerce', WC_OnPay::PLUGIN_VERSION, WC_VERSION);
 
         if($order->get_payment_method() === 'onpay_card') {
@@ -159,7 +168,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         // Adding available info fields
         $paymentInfo = new \OnPay\API\PaymentWindow\PaymentInfo();
 
-        $this->setPaymentInfoParameter($paymentInfo, 'AccountId', strval($customer->get_id()));
+        $this->setPaymentInfoParameter($paymentInfo, 'AccountId', $this->sanitizeFieldValue($customer->get_id()));
         $this->setPaymentInfoParameter($paymentInfo, 'AccountDateCreated',  wc_format_datetime($customer->get_date_created(), 'Y-m-d'));
         $this->setPaymentInfoParameter($paymentInfo, 'AccountDateChange', wc_format_datetime($customer->get_date_modified(), 'Y-m-d'));
 
@@ -178,24 +187,24 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
             $this->setPaymentInfoParameter($paymentInfo, 'AddressIdenticalShipping', 'N');
         }
 
-        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressCity', $customer->get_billing_city());
-        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressCountry', $customer->get_billing_country());
-        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressLine1', $customer->get_billing_address_1());
-        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressLine2', $customer->get_billing_address_2());
-        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressPostalCode', $customer->get_billing_postcode());
-        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressState', $customer->get_billing_state());
+        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressCity', $this->sanitizeFieldValue($customer->get_billing_city()));
+        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressCountry', $this->sanitizeFieldValue($customer->get_billing_country()));
+        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressLine1', $this->sanitizeFieldValue($customer->get_billing_address_1()));
+        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressLine2', $this->sanitizeFieldValue($customer->get_billing_address_2()));
+        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressPostalCode', $this->sanitizeFieldValue($customer->get_billing_postcode()));
+        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressState', $this->sanitizeFieldValue($customer->get_billing_state()));
 
-        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressCity', $customer->get_shipping_city());
-        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressCountry', $customer->get_shipping_country());
-        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressLine1', $customer->get_shipping_address_1());
-        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressLine2', $customer->get_shipping_address_2());
-        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressPostalCode', $customer->get_shipping_postcode());
-        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressState', $customer->get_shipping_state());
+        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressCity', $this->sanitizeFieldValue($customer->get_shipping_city()));
+        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressCountry', $this->sanitizeFieldValue($customer->get_shipping_country()));
+        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressLine1', $this->sanitizeFieldValue($customer->get_shipping_address_1()));
+        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressLine2', $this->sanitizeFieldValue($customer->get_shipping_address_2()));
+        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressPostalCode', $this->sanitizeFieldValue($customer->get_shipping_postcode()));
+        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressState', $this->sanitizeFieldValue($customer->get_shipping_state()));
 
-        $this->setPaymentInfoParameter($paymentInfo, 'Name', $billingName);
-        $this->setPaymentInfoParameter($paymentInfo, 'Email', $customer->get_billing_email());
-        $this->setPaymentInfoParameter($paymentInfo, 'PhoneHome',  [null, $customer->get_billing_phone()]);
-        $this->setPaymentInfoParameter($paymentInfo, 'DeliveryEmail', $customer->get_billing_email());
+        $this->setPaymentInfoParameter($paymentInfo, 'Name', $this->sanitizeFieldValue($billingName));
+        $this->setPaymentInfoParameter($paymentInfo, 'Email', $this->sanitizeFieldValue($customer->get_billing_email()));
+        $this->setPaymentInfoParameter($paymentInfo, 'PhoneHome',  [null, $this->sanitizeFieldValue($customer->get_billing_phone())]);
+        $this->setPaymentInfoParameter($paymentInfo, 'DeliveryEmail', $this->sanitizeFieldValue($customer->get_billing_email()));
 
         $paymentWindow->setInfo($paymentInfo);
 
@@ -277,5 +286,12 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         $onpayApi = $this->getOnPayClient();
         $this->isApiAuthorized = $onpayApi->isAuthorized();
         return $this->isApiAuthorized;
+    }
+
+    private function sanitizeFieldValue($value) {
+        $value = strval($value);
+        $value = htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML401, 'UTF-8');
+        $value = htmlentities($value);
+        return $value;
     }
 }
