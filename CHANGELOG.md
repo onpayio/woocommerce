@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Improved general error handling
+- Added field validation when constructing payment
 - Updated danish translations
 - Added check of authorized connection to OnPay, before presenting OnPay methods
 
