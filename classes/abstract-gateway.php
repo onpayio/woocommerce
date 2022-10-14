@@ -36,6 +36,19 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         add_action('woocommerce_receipt_' . $this->id, [$this, 'checkout']);
     }
 
+    public function getMethodTitle() {
+        if (is_admin()) {
+            if (function_exists('get_current_screen')) {
+                $currentScreen = get_current_screen();
+                if (null !== $currentScreen && $currentScreen->base === 'woocommerce_page_wc-settings') {
+                    return __('OnPay.io', 'wc-onpay');
+                }
+            }
+            return $this->method_title . ' - ' . __('OnPay.io', 'wc-onpay');
+        }
+        return $this->method_title;
+    }
+
     public function process_payment($order_id) {
         $order = new WC_Order($order_id);
         $redirectUrl = $order->get_checkout_payment_url(true);
@@ -284,7 +297,13 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
             return $this->isApiAuthorized;
         }
         $onpayApi = $this->getOnPayClient();
-        $this->isApiAuthorized = $onpayApi->isAuthorized();
+        try {
+            $this->isApiAuthorized = $onpayApi->isAuthorized();
+        } catch (OnPay\API\Exception\ConnectionException $e) {
+            $this->isApiAuthorized = false;
+        } catch (OnPay\API\Exception\TokenException $e) {
+            $this->isApiAuthorized = false;
+        }
         return $this->isApiAuthorized;
     }
 

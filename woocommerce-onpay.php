@@ -575,7 +575,7 @@ function init_onpay() {
         public function meta_boxes() {
             global $post;
             // Determine that we're on the correct controller
-            if ($post->post_type === 'shop_order') {
+            if (null !== $post && $post->post_type === 'shop_order') {
                 $order = new WC_Order($post->ID);
                 if ($this->isOnPayMethod($order->get_payment_method())) {
                     add_meta_box('mv_other_fields', __('OnPay.io', 'wc-onpay'), [$this,'order_meta_box'], 'shop_order', 'advanced', 'high', ['order' => $order]);
@@ -616,7 +616,7 @@ function init_onpay() {
             global $post;
 
             // Determine that we're on the correct controller
-            if ($post->post_type === 'shop_order') {
+            if (null !== $post && $post->post_type === 'shop_order') {
                 $order = new WC_Order($post->ID);
                 // Determine that the required data for getting transaction is available.
                 if ($this->isOnPayMethod($order->get_payment_method()) && null !== $order->get_transaction_id() && $order->get_transaction_id() !== '') {
