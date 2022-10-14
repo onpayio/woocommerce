@@ -297,7 +297,13 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
             return $this->isApiAuthorized;
         }
         $onpayApi = $this->getOnPayClient();
-        $this->isApiAuthorized = $onpayApi->isAuthorized();
+        try {
+            $this->isApiAuthorized = $onpayApi->isAuthorized();
+        } catch (OnPay\API\Exception\ConnectionException $e) {
+            $this->isApiAuthorized = false;
+        } catch (OnPay\API\Exception\TokenException $e) {
+            $this->isApiAuthorized = false;
+        }
         return $this->isApiAuthorized;
     }
 
