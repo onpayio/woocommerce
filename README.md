@@ -7,7 +7,7 @@ The plugin adds the following functionality to WooCommerce:
 - Management of transaction on order pages in backoffice.
 
 The plugin is tested and confirmed working on 
-- Wordpress 6.0.3
+- Wordpress 6.1.0
 - WooCommerce 7.0.0
 
 ## Usage
