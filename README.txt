@@ -2,7 +2,7 @@
 Contributors: onpayio
 Tags: onpay, gateway, payment, payment gateway, woocommerce, psp
 Requires at least: 5.3
-Tested up to: 6.0.3
+Tested up to: 6.1.0
 Requires PHP: 5.6
 Stable tag: 1.0.28
 License: MIT
