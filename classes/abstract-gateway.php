@@ -149,9 +149,9 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         $paymentWindow->setSecret($this->get_option(WC_OnPay::SETTING_ONPAY_SECRET));
         $paymentWindow->setCurrency($isoCurrency->alpha3);
         $paymentWindow->setReference($reference);
-        $paymentWindow->setAcceptUrl($this->sanitizeFieldValue($order->get_checkout_order_received_url()));
-        $paymentWindow->setDeclineUrl($this->sanitizeFieldValue($declineUrl));
-        $paymentWindow->setCallbackUrl($this->sanitizeFieldValue($callbackUrl));
+        $paymentWindow->setAcceptUrl($order->get_checkout_order_received_url());
+        $paymentWindow->setDeclineUrl($declineUrl);
+        $paymentWindow->setCallbackUrl($callbackUrl);
         $paymentWindow->setWebsite($this->sanitizeFieldValue(get_bloginfo('wpurl')));
         $paymentWindow->setPlatform('woocommerce', WC_OnPay::PLUGIN_VERSION, WC_VERSION);
 
