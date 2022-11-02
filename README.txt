@@ -4,7 +4,7 @@ Tags: onpay, gateway, payment, payment gateway, woocommerce, psp
 Requires at least: 5.3
 Tested up to: 6.1.0
 Requires PHP: 5.6
-Stable tag: 1.0.28
+Stable tag: 1.0.29
 License: MIT
 License URI: https://mit-license.org/
 
@@ -33,6 +33,10 @@ Don't  have an OnPay account yet? Order one through <a href="https://dandomain.d
 2. WooCommerce >= 3.8.1
 
 == Changelog ==
+
+= [1.0.29] =
+Fixed bug with querystrings being sanitized incorrectly
+Confirmed compatibility with version 6.1 of Wordpress.
 
 = [1.0.28] =
 Improved general error handling
