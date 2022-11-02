@@ -24,7 +24,7 @@
  */
 
 abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
-    private bool $apiAuthorized;
+    private $apiAuthorized;
     
     public function admin_options() {
         // Redirect to general plugin settings page
