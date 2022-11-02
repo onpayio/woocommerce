@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Fixed strict typing of apiAuthorized
+- Updated supported versions, following WooCommerce.
 
 ## [1.0.29] - 2022-11-02
 - Fixed bug with querystrings being sanitized incorrectly
