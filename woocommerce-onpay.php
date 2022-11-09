@@ -1167,6 +1167,13 @@ function init_onpay() {
         return array_merge( $plugin_links, $links );
     }
 
+    // Add tab in woocommerce settings for OnPay
+    add_filter('woocommerce_settings_tabs_array', 'add_settings_tab', 50);
+    function add_settings_tab( $settings_tabs ) {
+        $settings_tabs['wc_onpay'] = __( 'OnPay.io', 'wc_onpay' );
+        return $settings_tabs;
+    }
+
 	// Initialize
     WC_OnPay::get_instance()->init_hooks();
 }
