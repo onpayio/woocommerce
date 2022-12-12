@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
 # Get composer
-# Locked to version 1.X.X to preserve PHP 5.6 compatibility
-EXPECTED_SIGNATURE="6fa00eba5103ce6750f94f87af8356e12cc45d5bbb11a140533790cf60725f1c"
-php -r "copy('https://getcomposer.org/download/1.10.17/composer.phar', 'composer.phar');"
+EXPECTED_SIGNATURE="c252c2a2219956f88089ffc242b42c8cb9300a368fd3890d63940e4fc9652345"
+php -r "copy('https://getcomposer.org/download/2.4.4/composer.phar', 'composer.phar');"
 ACTUAL_SIGNATURE="$(php -r "echo hash_file('sha256', 'composer.phar');")"
 
 if [ "$EXPECTED_SIGNATURE" != "$ACTUAL_SIGNATURE" ]
@@ -25,8 +24,7 @@ rm -rf build
 php composer.phar install
 
 # Require and run php-scoper
-# Locked to version compatible with version of composer
-php composer.phar global require humbug/php-scoper "0.12.3"
+php composer.phar global require humbug/php-scoper
 COMPOSER_BIN_DIR="$(composer global config bin-dir --absolute)"
 "$COMPOSER_BIN_DIR"/php-scoper add-prefix
 
