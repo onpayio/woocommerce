@@ -122,6 +122,32 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
             $paymentWindow->setType("subscription");
         } else {
             $orderTotal = number_format($this->get_order_total(), $isoCurrency->exp, '', '');
+            $shippingTax = $order->get_shipping_tax();
+            $shippingTotal = $shippingTax + $order->get_shipping_total();
+            $discountTotal = $order->get_discount_total() + $order->get_discount_tax();
+
+            // Construct cart object that we're going to send to OnPay
+            $cart = new \OnPay\API\PaymentWindow\Cart();
+            $cart->setShipping(
+                intval(number_format($shippingTotal, $isoCurrency->exp, '', '')),
+                intval(number_format($shippingTax, $isoCurrency->exp, '', ''))
+            );
+            $cart->setDiscount(intval(number_format($discountTotal, $isoCurrency->exp, '', '')));
+            // Loop through cart items, adding them to the cart object.
+            foreach($order->get_items() as $item) {
+                $itemTax = $item->get_subtotal_tax();
+                $itemTotal = $itemTax + $item->get_subtotal();
+                $cartItem = new \OnPay\API\PaymentWindow\CartItem(
+                    $item->get_name(),
+                    intval(number_format($itemTotal, $isoCurrency->exp, '', '')),
+                    $item->get_quantity(),
+                    intval(number_format($itemTax, $isoCurrency->exp, '', ''))
+                );
+                $cart->addItem($cartItem);
+            }
+            // Add cart object to payment window
+            $paymentWindow->setCart($cart);
+
             $paymentWindow->setType("transaction");
         }
 
