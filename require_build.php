@@ -16,6 +16,8 @@
     class_alias('WoocommerceOnpay\OnPay\API\GatewayService', 'OnPay\API\GatewayService');
     class_alias('WoocommerceOnpay\OnPay\API\PaymentWindow', 'OnPay\API\PaymentWindow');
     class_alias('WoocommerceOnpay\OnPay\API\PaymentWindow\PaymentInfo', 'OnPay\API\PaymentWindow\PaymentInfo');
+    class_alias('WoocommerceOnpay\OnPay\API\PaymentWindow\Cart', 'OnPay\API\PaymentWindow\Cart');
+    class_alias('WoocommerceOnpay\OnPay\API\PaymentWindow\CartItem', 'OnPay\API\PaymentWindow\CartItem');
     class_alias('WoocommerceOnpay\OnPay\API\SubscriptionService', 'OnPay\API\SubscriptionService');
     class_alias('WoocommerceOnpay\OnPay\API\TransactionService', 'OnPay\API\TransactionService');
 
