@@ -282,7 +282,7 @@ msgstr "OnPay fejl:"
 
 #: woocommerce-onpay.php:1155
 msgid "OnPay sellers"
-msgstr "OnPay forhandlere"
+msgstr "OnPay-forhandlere"
 
 #. Author of the plugin
 #: woocommerce-onpay.php:106 woocommerce-onpay.php:493
@@ -302,7 +302,7 @@ msgstr "OnPay.io til WooCommerce"
 
 #. Description of the plugin
 msgid "OnPay.io payment plugin for WooCommerce"
-msgstr "OnPay.io betalings plugin for WooCommerce"
+msgstr "OnPay.io betalings-plugin for WooCommerce"
 
 #: woocommerce-onpay.php:392
 msgid "Payment methods"
