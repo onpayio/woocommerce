@@ -5,11 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.0.30] - 2023-01-04
 - Added WC settings tab for OnPay.io.
 - Fixed strict typing of apiAuthorized
 - Updated supported versions, following WooCommerce.
 - Updated build script for newer versions of PHP.
 - Added cart and items to info sent to API when creating payments.
+- Updated danish translations, courtesy of @NoahBohme.
 
 ## [1.0.29] - 2022-11-02
 - Fixed bug with querystrings being sanitized incorrectly

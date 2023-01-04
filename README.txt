@@ -2,9 +2,9 @@
 Contributors: onpayio
 Tags: onpay, gateway, payment, payment gateway, woocommerce, psp
 Requires at least: 5.8
-Tested up to: 6.1.0
+Tested up to: 6.1.1
 Requires PHP: 7.2
-Stable tag: 1.0.29
+Stable tag: 1.0.30
 License: MIT
 License URI: https://mit-license.org/
 
@@ -33,6 +33,14 @@ Don't  have an OnPay account yet? Order one through <a href="https://dandomain.d
 2. WooCommerce >= 6.5
 
 == Changelog ==
+
+= [1.0.30] =
+Added WC settings tab for OnPay.io.
+Fixed strict typing of apiAuthorized
+Updated supported versions, following WooCommerce.
+Updated build script for newer versions of PHP.
+Added cart and items to info sent to API when creating payments.
+Updated danish translations, courtesy of @NoahBohme.
 
 = [1.0.29] =
 Fixed bug with querystrings being sanitized incorrectly
