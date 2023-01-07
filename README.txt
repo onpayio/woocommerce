@@ -4,7 +4,7 @@ Tags: onpay, gateway, payment, payment gateway, woocommerce, psp
 Requires at least: 5.8
 Tested up to: 6.1.1
 Requires PHP: 7.2
-Stable tag: 1.0.30
+Stable tag: 1.0.31
 License: MIT
 License URI: https://mit-license.org/
 
