@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.31] - 2023-01-07
+- Removed sending cart item info when creating payments, introduced in 1.0.30
+
 ## [1.0.30] - 2023-01-04
 - Added WC settings tab for OnPay.io.
 - Fixed strict typing of apiAuthorized
