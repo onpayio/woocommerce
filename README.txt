@@ -34,6 +34,9 @@ Don't  have an OnPay account yet? Order one through <a href="https://dandomain.d
 
 == Changelog ==
 
+= [1.0.31] =
+Removed sending cart item info when creating payments, introduced in 1.0.30
+
 = [1.0.30] =
 Added WC settings tab for OnPay.io.
 Fixed strict typing of apiAuthorized
