@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Removed unecessary sanitation of website value we send to OnPay API.
 
 ## [1.0.31] - 2023-01-07
 - Removed sending cart item info when creating payments, introduced in 1.0.30

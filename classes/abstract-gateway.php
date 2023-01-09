@@ -152,7 +152,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         $paymentWindow->setAcceptUrl($order->get_checkout_order_received_url());
         $paymentWindow->setDeclineUrl($declineUrl);
         $paymentWindow->setCallbackUrl($callbackUrl);
-        $paymentWindow->setWebsite($this->sanitizeFieldValue(get_bloginfo('wpurl')));
+        $paymentWindow->setWebsite(get_site_url());
         $paymentWindow->setPlatform('woocommerce', WC_OnPay::PLUGIN_VERSION, WC_VERSION);
 
         if($order->get_payment_method() === 'onpay_card') {
