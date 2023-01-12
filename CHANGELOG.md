@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Removed unecessary sanitation of website value we send to OnPay API.
+- Reintroduced sending cart object when creating new payments, checking validity before adding the object to the request.
 
 ## [1.0.31] - 2023-01-07
 - Removed sending cart item info when creating payments, introduced in 1.0.30
