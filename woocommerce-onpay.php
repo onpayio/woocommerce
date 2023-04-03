@@ -53,6 +53,8 @@ function init_onpay() {
 
     include_once __DIR__ . '/classes/gateway-card.php';
     include_once __DIR__ . '/classes/gateway-mobilepay.php';
+    include_once __DIR__ . '/classes/gateway-applepay.php';
+    include_once __DIR__ . '/classes/gateway-googlepay.php';
     include_once __DIR__ . '/classes/gateway-viabill.php';
     include_once __DIR__ . '/classes/gateway-anyday.php';
     include_once __DIR__ . '/classes/gateway-vipps.php';
@@ -64,6 +66,8 @@ function init_onpay() {
         const SETTING_ONPAY_GATEWAY_ID = 'gateway_id';
         const SETTING_ONPAY_SECRET = 'secret';
         const SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY = 'extra_payments_mobilepay';
+        const SETTING_ONPAY_EXTRA_PAYMENTS_APPLEPAY = 'extra_payments_applepay';
+        const SETTING_ONPAY_EXTRA_PAYMENTS_GOOGLEPAY = 'extra_payments_googlepay';
         const SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL = 'extra_payments_viabill';
         const SETTING_ONPAY_EXTRA_PAYMENTS_ANYDAY = 'extra_payments_anyday_split';
         const SETTING_ONPAY_EXTRA_PAYMENTS_VIPPS = 'extra_payments_vipps';
@@ -147,13 +151,21 @@ function init_onpay() {
             add_action('admin_init', [$this, 'gateway_toggle']);
             add_action('save_post', [$this, 'handle_order_metabox']);
             add_action('add_meta_boxes', [$this, 'meta_boxes']);
-            add_action('wp_enqueue_scripts', [$this, 'register_styles']);
+            add_action('wp_enqueue_scripts', [$this, 'register_scripts']);
             add_action('admin_notices', [$this, 'showAdminNotices']);
         }
 
-        public function register_styles() {
-            wp_register_style(WC_OnPay::WC_ONPAY_ID . '_style', plugin_dir_url(__FILE__) . 'assets/css/front.css');
-            wp_enqueue_style(WC_OnPay::WC_ONPAY_ID . '_style');
+        public function register_scripts() {
+            wp_enqueue_style(WC_OnPay::WC_ONPAY_ID . '_style', plugin_dir_url(__FILE__) . 'assets/css/front.css');
+            wp_enqueue_script(WC_OnPay::WC_ONPAY_ID . '_script_jssdk', 'https://onpay.io/sdk/v1.js');
+
+            // If either Apple Pay or Google Pay is enabled, register frontend script for managing these.
+            if (
+                $this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_APPLEPAY) === 'yes' ||
+                $this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_GOOGLEPAY) === 'yes'
+            ) {
+                wp_enqueue_script(WC_OnPay::WC_ONPAY_ID . '_script', plugin_dir_url(__FILE__) . 'assets/js/apple_google_pay.js');
+            }
         }
 
         /**
@@ -372,6 +384,7 @@ function init_onpay() {
 					'type'  => 'title',
 					'title' => __('Payment methods', 'wc-onpay'),
 				],
+
                 self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD => [
                     'title' => __('Card', 'wc-onpay'),
                     'label' => __('Enable card as payment method', 'wc-onpay'),
@@ -381,6 +394,18 @@ function init_onpay() {
                 self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY => [
                     'title' => __('MobilePay Online', 'wc-onpay'),
                     'label' => __('Enable MobilePay Online as payment method', 'wc-onpay'),
+                    'type' => 'checkbox',
+                    'default' => 'no',
+                ],
+                self::SETTING_ONPAY_EXTRA_PAYMENTS_APPLEPAY => [
+                    'title' => __('Apple Pay', 'wc-onpay'),
+                    'label' => __('Enable Apple Pay as payment method (Only shown if customer browser supports method)', 'wc-onpay'),
+                    'type' => 'checkbox',
+                    'default' => 'no',
+                ],
+                self::SETTING_ONPAY_EXTRA_PAYMENTS_GOOGLEPAY => [
+                    'title' => __('Google Pay', 'wc-onpay'),
+                    'label' => __('Enable Google Pay as payment method (Only shown if customer browser supports method)', 'wc-onpay'),
                     'type' => 'checkbox',
                     'default' => 'no',
                 ],
@@ -548,6 +573,8 @@ function init_onpay() {
                     wc_onpay_gateway_anyday::WC_ONPAY_GATEWAY_ANYDAY_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_ANYDAY,
                     wc_onpay_gateway_card::WC_ONPAY_GATEWAY_CARD_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD,
                     wc_onpay_gateway_mobilepay::WC_ONPAY_GATEWAY_MOBILEPAY_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY,
+                    wc_onpay_gateway_applepay::WC_ONPAY_GATEWAY_APPLEPAY_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_APPLEPAY,
+                    wc_onpay_gateway_googlepay::WC_ONPAY_GATEWAY_GOOGLEPAY_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_GOOGLEPAY,
                     wc_onpay_gateway_viabill::WC_ONPAY_GATEWAY_VIABILL_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL,
                     wc_onpay_gateway_vipps::WC_ONPAY_GATEWAY_VIPPS_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_VIPPS,
                     wc_onpay_gateway_swish::WC_ONPAY_GATEWAY_SWISH_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_SWISH,
@@ -932,6 +959,8 @@ function init_onpay() {
             return [
                 wc_onpay_gateway_card::WC_ONPAY_GATEWAY_CARD_ID,
                 wc_onpay_gateway_mobilepay::WC_ONPAY_GATEWAY_MOBILEPAY_ID,
+                wc_onpay_gateway_applepay::WC_ONPAY_GATEWAY_APPLEPAY_ID,
+                wc_onpay_gateway_googlepay::WC_ONPAY_GATEWAY_GOOGLEPAY_ID,
                 wc_onpay_gateway_viabill::WC_ONPAY_GATEWAY_VIABILL_ID,
                 wc_onpay_gateway_anyday::WC_ONPAY_GATEWAY_ANYDAY_ID,
                 wc_onpay_gateway_vipps::WC_ONPAY_GATEWAY_VIPPS_ID,
@@ -991,6 +1020,8 @@ function init_onpay() {
                 $this->update_option(self::SETTING_ONPAY_GATEWAY_ID, null);
                 $this->update_option(self::SETTING_ONPAY_SECRET, null);
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY, null);
+                $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_APPLEPAY, null);
+                $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_GOOGLEPAY, null);
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL, null);
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_ANYDAY, null);
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_VIPPS, null);
@@ -1150,6 +1181,8 @@ function init_onpay() {
     function wc_onpay_add_to_woocommerce($methods) {
         $methods[] = 'wc_onpay_gateway_card';
         $methods[] = 'wc_onpay_gateway_mobilepay';
+        $methods[] = 'wc_onpay_gateway_applepay';
+        $methods[] = 'wc_onpay_gateway_googlepay';
         $methods[] = 'wc_onpay_gateway_viabill';
         $methods[] = 'wc_onpay_gateway_anyday';
         $methods[] = 'wc_onpay_gateway_vipps';
