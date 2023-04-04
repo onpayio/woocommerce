@@ -191,6 +191,10 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
             $paymentWindow->setMethod($paymentWindow::METHOD_CARD);
         } else if($order->get_payment_method() === 'onpay_mobilepay') {
             $paymentWindow->setMethod($paymentWindow::METHOD_MOBILEPAY);
+        } else if($order->get_payment_method() === 'onpay_applepay') {
+            $paymentWindow->setMethod($paymentWindow::METHOD_APPLEPAY);
+        } else if($order->get_payment_method() === 'onpay_googlepay') {
+            $paymentWindow->setMethod($paymentWindow::METHOD_GOOGLEPAY);
         } else if($order->get_payment_method() === 'onpay_viabill') {
             $paymentWindow->setMethod($paymentWindow::METHOD_VIABILL);
         } else if($order->get_payment_method() === 'onpay_anyday') {

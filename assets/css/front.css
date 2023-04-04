@@ -33,17 +33,31 @@
  * and is overridden by the default selector '.wc_payment_method > label:first-of-type img'
  * provided by the Wordpress Twenty Twenty-One theme.
  */
- .payment_method_onpay_card img,
- .payment_method_onpay_mobilepay img,
- .payment_method_onpay_viabill img,
- .payment_method_onpay_anyday img,
- .payment_method_onpay_vipps img {
-     max-height: 26px;
-     max-width: 50px;
- }
+.payment_method_onpay_card img,
+.payment_method_onpay_mobilepay img,
+.payment_method_onpay_applepay img,
+.payment_method_onpay_googlepay img,
+.payment_method_onpay_viabill img,
+.payment_method_onpay_anyday img,
+.payment_method_onpay_swish img,
+.payment_method_onpay_vipps img {
+    max-height: 26px;
+    max-width: 50px;
+}
 
- #payment .payment_methods .onpay_card_logos > img {
-     float: unset;
-     display:inline-block;
-     margin: 5px 5px 0 0;
- }
+#payment .payment_methods .onpay_card_logos>img {
+    float: unset;
+    display: inline-block;
+    margin: 5px 5px 0 0;
+}
+
+/* Hide Apple Pay and Google Pay methods initially */
+#payment .wc_payment_methods li.payment_method_onpay_applepay,
+#payment .wc_payment_methods li.payment_method_onpay_googlepay {
+    display: none;
+}
+
+#payment .wc_payment_methods li.payment_method_onpay_applepay.show,
+#payment .wc_payment_methods li.payment_method_onpay_googlepay.show {
+    display: inherit;
+}
