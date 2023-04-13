@@ -31,6 +31,10 @@ COMPOSER_BIN_DIR="$(composer global config bin-dir --absolute)"
 # Dump composer autoload for build folder
 php composer.phar dump-autoload --working-dir build --classmap-authoritative
 
+# Search and replace to set the prefix of the Composer Namespace properly, 
+# Since Composer skips this when dumping with --classmap-authoritative
+sed -i -e "s|'Composer\\\\\\\\InstalledVersions'|'WoocommerceOnpay\\\\\\\\Composer\\\\\\\\InstalledVersions'|g" build/vendor/composer/autoload_classmap.php build/vendor/composer/autoload_static.php 
+
 # Remove composer
 rm composer.phar
 
@@ -45,6 +49,7 @@ rm -rf ./woocommerce-onpay/vendor
 rm ./woocommerce-onpay/build.sh
 rm ./woocommerce-onpay/composer.json
 rm ./woocommerce-onpay/composer.lock
+rm ./woocommerce-onpay/scoper.inc.php
 
 # Replace require file with build version
 rm ./woocommerce-onpay/require.php
