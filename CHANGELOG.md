@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reintroduced sending cart object when creating new payments, checking validity before adding the object to the request.
 - Added Apple Pay and Google Pay as available methods.
 - Fixed Composer/InstalledVersions not being properly prefixed with composer/php-scoper
+- Confirmed compatibility with version 6.2 of Wordpress.
 
 ## [1.0.31] - 2023-01-07
 - Removed sending cart item info when creating payments, introduced in 1.0.30
