@@ -34,6 +34,14 @@ Don't  have an OnPay account yet? Order one through <a href="https://dandomain.d
 
 == Changelog ==
 
+= [1.0.32] =
+Removed unecessary sanitation of website value we send to OnPay API.
+Reintroduced sending cart object when creating new payments, checking validity before adding the object to the request.
+Added Apple Pay and Google Pay as available methods.
+Fixed Composer/InstalledVersions not being properly prefixed with composer/php-scoper
+Confirmed compatibility with version 6.2 of Wordpress.
+Added PayPal as available method
+
 = [1.0.31] =
 Removed sending cart item info when creating payments, introduced in 1.0.30
 
