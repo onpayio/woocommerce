@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.0.32] - 2023-04-17
 - Removed unecessary sanitation of website value we send to OnPay API.
 - Reintroduced sending cart object when creating new payments, checking validity before adding the object to the request.
 - Added Apple Pay and Google Pay as available methods.
