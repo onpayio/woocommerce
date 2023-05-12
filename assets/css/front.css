@@ -40,7 +40,8 @@
 .payment_method_onpay_viabill img,
 .payment_method_onpay_anyday img,
 .payment_method_onpay_swish img,
-.payment_method_onpay_vipps img {
+.payment_method_onpay_vipps img,
+.payment_method_onpay_paypal img {
     max-height: 26px;
     max-width: 50px;
 }
