@@ -109,15 +109,27 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         if (!$order instanceof WC_Order) {
             throw new InvalidArgumentException('WC_Order');
         }
+        $orderHelper = new wc_onpay_order_helper();
+        $currencyHelper = new wc_onpay_currency_helper();
         $orderData = $order->get_data();
 
+        // Check for subscription presence
+        $isSubscription = false;
+        if (in_array('subscriptions', $this->supports)) { // No need to perform subscription related checks, if methods does not support it.
+            $isSubscription = $orderHelper->isOrderSubscription($order);
+            // Enforce method update if order is subscription renewal
+            if (!$updateMethod) { // If not already instructed to update method, find out if we need to
+                $updateMethod = $orderHelper->isOrderSubscriptionRenewal($order);
+            }
+        }
+
         // We'll need to find out details about the currency, and format the order total amount accordingly
-        $CurrencyHelper = new wc_onpay_currency_helper();
-        $isoCurrency = $CurrencyHelper->fromAlpha3($orderData['currency']);
+        
+        $isoCurrency = $currencyHelper->fromAlpha3($orderData['currency']);
         $paymentWindow = new \OnPay\API\PaymentWindow();
 
         // Check if we're dealing with a subscription order
-        if ((function_exists('wcs_is_subscription') && wcs_is_subscription($orderData['id'])) || (function_exists('wcs_order_contains_subscription') && wcs_order_contains_subscription($orderData['id']))) {
+        if ($isSubscription) {
             $orderTotal = 0; // Set order total to zero when we have a subscription.
             $paymentWindow->setType("subscription");
         } else {
@@ -159,8 +171,10 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
 
         $paymentWindow->setAmount($orderTotal);
 
+        // Get reference to be used with OnPay
+        $reference = $orderHelper->getOrderReference($order);
+
         // Sanitize reference field
-        $reference = $order->get_order_number();
         if (!preg_match("/^[a-zA-Z0-9\-\.]{1,36}$/", $reference)) {
             throw new InvalidArgumentException('reference/order number');
         }
