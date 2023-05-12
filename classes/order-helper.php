@@ -30,10 +30,10 @@ class wc_onpay_order_helper {
     public function isOrderSubscription($order) {
         // Check if order is or contains a subscription or is renwal
         if (
-            (function_exists('wcs_is_subscription') && wcs_is_subscription($order->id)) || // Order is a subscription
-            (function_exists('wcs_order_contains_subscription') && wcs_order_contains_subscription($order->id)) || // Order contains a subscription
-            (function_exists('wcs_order_contains_renewal') && wcs_order_contains_renewal($order->id)) || // Is a subscription renewal
-            (function_exists('wcs_order_contains_early_renewal') && wcs_order_contains_early_renewal($order->id)) // Is an early subscription renewal
+            (function_exists('wcs_is_subscription') && wcs_is_subscription($order->get_id())) || // Order is a subscription
+            (function_exists('wcs_order_contains_subscription') && wcs_order_contains_subscription($order->get_id())) || // Order contains a subscription
+            (function_exists('wcs_order_contains_renewal') && wcs_order_contains_renewal($order->get_id())) || // Is a subscription renewal
+            (function_exists('wcs_order_contains_early_renewal') && wcs_order_contains_early_renewal($order->get_id())) // Is an early subscription renewal
         ) {
             return true;
         }
@@ -47,8 +47,8 @@ class wc_onpay_order_helper {
     public function isOrderSubscriptionRenewal($order) {
         // Check if order is subscription renwal
         if (
-            (function_exists('wcs_order_contains_renewal') && wcs_order_contains_renewal($order->id)) || // Is a subscription renewal
-            (function_exists('wcs_order_contains_early_renewal') && wcs_order_contains_early_renewal($order->id)) // Is an early subscription renewal
+            (function_exists('wcs_order_contains_renewal') && wcs_order_contains_renewal($order->get_id())) || // Is a subscription renewal
+            (function_exists('wcs_order_contains_early_renewal') && wcs_order_contains_early_renewal($order->get_id())) // Is an early subscription renewal
         ) {
             return true;
         }
