@@ -118,11 +118,10 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         if (in_array('subscriptions', $this->supports)) { // No need to perform subscription related checks, if methods does not support it.
             $isSubscription = $orderHelper->isOrderSubscription($order);
             // Enforce method update if order is subscription renewal
-            $updateMethod = $orderHelper->isOrderSubscriptionRenewal($order);
+            if (!$updateMethod) { // If not already instructed to update method, find out if we need to
+                $updateMethod = $orderHelper->isOrderSubscriptionRenewal($order);
+            }
         }
-
-        // Set reference to be used with OnPay
-        $reference = $orderHelper->getOrderReference($order);
 
         // We'll need to find out details about the currency, and format the order total amount accordingly
         
@@ -172,8 +171,10 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
 
         $paymentWindow->setAmount($orderTotal);
 
+        // Get reference to be used with OnPay
+        $reference = $orderHelper->getOrderReference($order);
+
         // Sanitize reference field
-        $reference = $order->get_order_number();
         if (!preg_match("/^[a-zA-Z0-9\-\.]{1,36}$/", $reference)) {
             throw new InvalidArgumentException('reference/order number');
         }
