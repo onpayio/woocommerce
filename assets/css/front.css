@@ -46,10 +46,21 @@
     max-width: 50px;
 }
 
-#payment .payment_methods .onpay_card_logos>img {
+#payment .payment_methods .onpay_card_logos > img,
+#payment-method .onpay_card_logos > img {
     float: unset;
     display: inline-block;
     margin: 5px 5px 0 0;
+}
+
+#payment-method .onpay-block-method {
+    align-items: center;
+    display: flex;
+    justify-content: flex-start;
+}
+
+#payment-method .onpay-block-method > img.icon {
+    margin: 0 10px 0 0;
 }
 
 /* Hide Apple Pay and Google Pay methods initially */
