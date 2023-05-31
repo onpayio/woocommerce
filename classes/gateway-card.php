@@ -64,14 +64,22 @@ class wc_onpay_gateway_card extends wc_onpay_gateway_abstract {
     public function get_description() {
         $description = $this->description;
         $description .= '<div class="onpay_card_logos">';
-        foreach($this->get_option(WC_OnPay::SETTING_ONPAY_CARDLOGOS) as $cardLogo) {
-            $description .= '<img src="' . plugin_dir_url(__DIR__) . '/assets/img/' . $cardLogo . '.svg" />';
-            if ($cardLogo === 'mastercard') {
-                // If Mastercard, also show Maestro logo
-                $description .= '<img src="' . plugin_dir_url(__DIR__) . '/assets/img/maestro.svg" />';
-            }
+        foreach($this->getMethodLogos() as $cardLogo) {
+            $description .= '<img src="' . $cardLogo . '" />';
         }
         $description .= '</div>';
         return $description;
+    }
+
+    public function getMethodLogos() {
+        $logos = [];
+        foreach($this->get_option(WC_OnPay::SETTING_ONPAY_CARDLOGOS) as $cardLogo) {
+            $logos[$cardLogo] = plugin_dir_url(__DIR__) . '/assets/img/' . $cardLogo . '.svg';
+            if ($cardLogo === 'mastercard') {
+                // If Mastercard, also show Maestro logo
+                $logos['maestro'] = plugin_dir_url(__DIR__) . '/assets/img/maestro.svg';
+            }
+        }
+        return $logos;
     }
 }
