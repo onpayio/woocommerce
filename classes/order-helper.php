@@ -44,6 +44,21 @@ class wc_onpay_order_helper {
      * @param WC_Order $order
      * @return bool
      */
+    public function orderMethodSupportsSubscriptions($order) {
+        $paymentMethods = WC()->payment_gateways()->payment_gateways();
+        if (array_key_exists($order->get_payment_method(), $paymentMethods)) {
+            $method = $paymentMethods[$order->get_payment_method()];
+            if ($method->supports('subscriptions')) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @param WC_Order $order
+     * @return bool
+     */
     public function isOrderSubscriptionRenewal($order) {
         // Check if order is subscription renwal
         if (
@@ -61,9 +76,8 @@ class wc_onpay_order_helper {
      */
     public function getOrderReference($order) {
         $reference = $order->get_order_number();
-
         // Check if order is subscription
-        if ($this->isOrderSubscription($order)) {
+        if ($this->orderMethodSupportsSubscriptions($order) && $this->isOrderSubscription($order)) {
             // Attempt extracting initial subscription order number if subscription
             foreach (wcs_get_subscriptions_for_order($order, ['order_type' => 'any']) as $subscription) {
                 $reference = $subscription->get_order_number();

@@ -115,7 +115,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
 
         // Check for subscription presence
         $isSubscription = false;
-        if (in_array('subscriptions', $this->supports)) { // No need to perform subscription related checks, if methods does not support it.
+        if ($this->supports('subscriptions')) { // No need to perform subscription related checks, if methods does not support it.
             $isSubscription = $orderHelper->isOrderSubscription($order);
             // Enforce method update if order is subscription renewal
             if (!$updateMethod) { // If not already instructed to update method, find out if we need to

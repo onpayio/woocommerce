@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Updated subscriptions (early) renwal logic, to reflect the WooCOmmerce guidelines.
+- Fixed minor bug when getting order reference for subscriptions early renewal.
 
 ## [1.0.32] - 2023-04-17
 - Removed unecessary sanitation of website value we send to OnPay API.
