@@ -5,7 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-- Updated subscriptions (early) renwal logic, to reflect the WooCOmmerce guidelines.
+
+## [1.0.33] - 2023-06-12
+- Updated subscriptions (early) renwal logic, to reflect the WooCommerce guidelines.
 - Fixed minor bug when getting order reference for subscriptions early renewal.
 
 ## [1.0.32] - 2023-04-17
