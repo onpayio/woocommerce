@@ -141,7 +141,7 @@ function init_onpay() {
         /**
          * Initialize hooks
          */
-        public function init_hooks() {            
+        public function init_hooks() {
             add_filter('woocommerce_settings_'. $this->id, [$this, 'admin_options']);
             add_action('woocommerce_settings_save_'. $this->id, [$this, 'process_admin_options']);
             add_action('woocommerce_api_'. $this->id . '_callback', [$this, 'callback']);
@@ -401,15 +401,141 @@ function init_onpay() {
         }
 
         /**
-         * Initialize form fields for settings page.
+         * Method that renders payment gateway settings page in woocommerce
          */
-        public function init_form_fields() {
-            $this->form_fields = [
-                '_payment_methods'=> [
-					'type'  => 'title',
-					'title' => __('Payment methods', 'wc-onpay'),
-				],
+        public function admin_options() {
+            $onpayApi = $this->get_onpay_client(true);
 
+            $this->handle_oauth_callback();
+            $this->handle_detach();
+            $this->handle_refresh();
+
+            $html = '<h3>' . __('OnPay.io', 'wc-onpay') .'</h3>';
+
+            $hideForm = false;
+            
+            // Print information if OnPay is not pingable.
+            try {
+                $onpayApi->ping();
+            } catch (OnPay\API\Exception\ConnectionException $exception) { // No connection to OnPay API
+                $html .= '<h3>' . __('No connection to OnPay', 'wc-onpay') . '</h3>';
+                $GLOBALS['hide_save_button'] = true;
+                echo ent2ncr($html);
+                return;
+            } catch (OnPay\API\Exception\TokenException $exception) { // Something's wrong with the token, print link to reauth
+                $html .= $this->getOnboardingHtml();
+                $html .= '<hr>';
+                $html .= '<a href="' . $onpayApi->authorize() . '" class="button-primary">' . __('Log in with OnPay account', 'wc-onpay') . '</a>';
+                $GLOBALS['hide_save_button'] = true;
+                $hideForm = true;
+            }
+
+            if (!$hideForm) {
+                // Get section
+                $section = wc_onpay_query_helper::get_query_value('section');
+
+                // Render section menu
+                $html .= $this->admin_options_sections($section);
+                $html .= '<hr>';
+
+                // Init form for section
+                $this->init_section_form($section);
+
+                $html .= '<div class="postbox"><div class="inside">';
+
+                // Print form fields
+                $html .= '<table class="form-table">';
+                $html .= $this->generate_settings_html([], false);
+                $html .= '</table>';
+
+                if (null === $section || '' === $section) {
+                    $html .= '<hr>';
+                    $html .= $this->init_gateway_info();
+                }
+
+                $html .= '</div></div>';
+            }
+
+            echo ent2ncr($html);
+        }
+
+        function admin_options_sections($currentSection) {
+            if (null === $currentSection) {
+                $currentSection = '';
+            }
+        
+            // Sections we would like to register
+            $sections = [
+                ''          => __('General settings', 'wc-onpay'),
+                'methods'   => __('Payment methods', 'wc-onpay'),
+                'window'    => __('Payment window', 'wc-onpay'),
+            ];
+        
+            // Start printing list of sections
+            $html =  '<ul class="subsubsub">';
+
+            // Print individual sections
+            $i = 0;
+            foreach($sections as $id => $label) {
+                $url = add_query_arg(
+                    [
+                        'page' => 'wc-settings',
+                        'tab' => $this->id,
+                        'section' => $id,
+                    ],
+                    admin_url('admin.php')
+                );
+                $html .= '<li>' . ($i > 0 ? '|' : '') . '<a href="' . $url .'" ' . ($currentSection === $id ? 'class="current"' : '') . '>' . $label . '</a></li>';
+                $i++;
+            }
+        
+            // End list
+            $html .= '</ul><br>';
+            return $html;
+        }
+
+        public function process_admin_options() {
+            // Get section
+            $section = wc_onpay_query_helper::get_query_value('section');
+            // Init form for section
+            $this->init_section_form($section);
+            
+            parent::process_admin_options();
+        }
+
+        private function init_section_form($section) {
+            // Determine what content to print according to section
+            if (null === $section || '' === $section) {
+                $this->init_general_settings();
+            } else if ('methods' === $section) {
+                $this->init_method_settings();
+            } else if ('window' === $section) {
+                $this->init_window_settings();
+            }
+        }
+
+        private function init_general_settings() {
+            $this->form_fields = [
+                self::SETTING_ONPAY_STATUS_AUTOCAPTURE => [
+                    'title' => __('Automatic capture', 'wc-onpay'),
+                    'label' => __('Automatic capture of transactions on status completed', 'wc-onpay'),
+                    'description' => __( 'Automatically capture remaining amounts on transactions, when orders are marked with status completed', 'wc-onpay' ),
+                    'desc_tip' => true,
+                    'type' => 'checkbox',
+                    'default' => 'no',
+                ],
+                self::SETTING_ONPAY_REFUND_INTEGRATION => [
+                    'title' => __('Integrate with refund feature', 'wc-onpay'),
+                    'label' => __('Integrate with the built in refund feature in WooCommerce', 'wc-onpay'),
+                    'desc_tip' => true,
+                    'type' => 'checkbox',
+                    'default' => 'no',
+                ],
+            ];
+		}
+
+        private function init_method_settings() {
+            $this->form_fields = [
                 self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD => [
                     'title' => __('Card', 'wc-onpay'),
                     'label' => __('Enable card as payment method', 'wc-onpay'),
@@ -464,11 +590,11 @@ function init_onpay() {
                     'type' => 'checkbox',
                     'default' => 'no',
                 ],
+            ];
+		}
 
-                '_payment_window'=> [
-					'type'  => 'title',
-					'title' => __('Payment window', 'wc-onpay'),
-				],
+        private function init_window_settings() {
+            $this->form_fields = [
                 self::SETTING_ONPAY_PAYMENTWINDOW_DESIGN => [
                     'title' => __('Payment window design', 'wc-onpay'),
                     'type' => 'select',
@@ -497,69 +623,11 @@ function init_onpay() {
                     'default' => '',
                     'options' => $this->get_card_logo_options(),
                 ],
-
-                '_backoffice'=> [
-					'type'  => 'title',
-					'title' => __('Backoffice settings', 'wc-onpay'),
-				],
-                self::SETTING_ONPAY_STATUS_AUTOCAPTURE => [
-                    'title' => __('Automatic capture', 'wc-onpay'),
-                    'label' => __('Automatic capture of transactions on status completed', 'wc-onpay'),
-                    'description' => __( 'Automatically capture remaining amounts on transactions, when orders are marked with status completed', 'wc-onpay' ),
-                    'desc_tip' => true,
-                    'type' => 'checkbox',
-                    'default' => 'no',
-                ],
-                self::SETTING_ONPAY_REFUND_INTEGRATION => [
-                    'title' => __('Integrate with refund feature', 'wc-onpay'),
-                    'label' => __('Integrate with the built in refund feature in WooCommerce', 'wc-onpay'),
-                    'desc_tip' => true,
-                    'type' => 'checkbox',
-                    'default' => 'no',
-                ],
             ];
 		}
 
-        /**
-         * Method that renders payment gateway settings page in woocommerce
-         */
-        public function admin_options() {
-            $onpayApi = $this->get_onpay_client(true);
-
-            $html = '';
-            $html .=  '<h3>' . __('OnPay.io', 'wc-onpay') .'</h3>';
-            $html .=  '<p>' . __('Receive payments with cards and more through OnPay.io', 'wc-onpay') . '</p>';
-            echo ent2ncr($html);
-
-            $hideForm = false;
-            
-            try {
-                $onpayApi->ping();
-            } catch (OnPay\API\Exception\ConnectionException $exception) { // No connection to OnPay API
-                echo ent2ncr('<h3>' . __('No connection to OnPay', 'wc-onpay') . '</h3>');
-                $GLOBALS['hide_save_button'] = true;
-                return;
-            } catch (OnPay\API\Exception\TokenException $exception) { // Something's wrong with the token, print link to reauth
-                echo ent2ncr($this->getOnboardingHtml());
-                echo ent2ncr('<hr />');
-                echo ent2ncr('<a href="' . $onpayApi->authorize() . '" class="button-primary">' . __('Log in with OnPay account', 'wc-onpay') . '</a>');
-                $GLOBALS['hide_save_button'] = true;
-                $hideForm = true;
-            }
-
-            $this->init_form_fields();
-            $this->handle_oauth_callback();
-            $this->handle_detach();
-            $this->handle_refresh();
-
-            if (!$hideForm) {
-                $html = '<hr />';
-                $html .= '<table class="form-table">';
-                $html .= $this->generate_settings_html([], false);
-                $html .= '</table>';
-                
-                $html .= '<hr />';
-                $html .= '<h3>' . __('Gateway information', 'wc-onpay') . '</h3>';
+        private function init_gateway_info() {
+                $html = '<h3>' . __('Gateway information', 'wc-onpay') . '</h3>';
                 $html .= '<table class="form-table"><tbody>';
 
                 $html .= '<tr valign="top">';
@@ -578,21 +646,12 @@ function init_onpay() {
                 $html .= '</tr>';
 
                 $html .= '</tbody></table>';
-                $html .= '<hr />';
 
                 wc_enqueue_js('$("#button_onpay_apilogout").on("click", function(event) {event.preventDefault(); if(confirm(\''. __('Are you sure you want to logout from Onpay?', 'wc-onpay') . '\')) {window.location.href = window.location.href+"&detach=1";}})');
                 wc_enqueue_js('$("#button_onpay_refreshsecret").on("click", function(event) {event.preventDefault(); if(confirm(\''. __('Are you sure you want to refresh gateway ID and secret?', 'wc-onpay') . '\')) {window.location.href = window.location.href+"&refresh=1";}})');
             
-                echo ent2ncr($html);
-            }
+                return $html;
         }
-
-        public function process_admin_options() {
-            $this->init_form_fields();  
-            
-            parent::process_admin_options();
-        }
-
 
         /**
          * Allows toggling of gateways from payment gateways overview
