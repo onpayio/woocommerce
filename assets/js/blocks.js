@@ -5,6 +5,28 @@ for (let key in wc_onpay_methods) {
     // Set method
     let method = wc_onpay_methods[key];
 
+    if ('onpay_googlepay' === method.id && typeof window['Promise'] === 'function') {
+        // Check if Google Pay is supported, and renable method if so.
+        let googlePayAvailablePromise = OnPayIO.googlePay.available();
+        googlePayAvailablePromise.then(function(result) {
+            if (result) {
+                registerMethod(method);
+            }
+        });
+    } else if ('onpay_applepay' === method.id && typeof window['Promise'] === 'function') {
+        // Check if Apple Pay is supported, and renable method if so.
+        let applePayAvailablePromise = OnPayIO.applePay.available();
+        applePayAvailablePromise.then(function(result) {
+            if (result) {
+                registerMethod(method);
+            }
+        });
+    } else {
+        registerMethod(method);
+    }
+}
+
+function registerMethod(method) {
     // Construct label
     let labelElements = [];
     if (undefined !== method.icon) {
@@ -35,3 +57,4 @@ for (let key in wc_onpay_methods) {
     // Register method
     register.registerPaymentMethod(payMethod);
 }
+
