@@ -1271,6 +1271,24 @@ function init_onpay() {
         public function get_option_key() {
             return $this->plugin_id . self::WC_ONPAY_SETTINGS_ID . '_settings';
         }
+
+        /**
+         * Plugin url.
+         *
+         * @return string
+         */
+        public static function plugin_url() {
+            return untrailingslashit( plugins_url( '/', __FILE__ ) );
+        }
+
+        /**
+         * Plugin url.
+         *
+         * @return string
+         */
+        public static function plugin_abspath() {
+            return trailingslashit( plugin_dir_path( __FILE__ ) );
+        }
     }
 
     // Add OnPay as payment method to WooCommerce
@@ -1287,6 +1305,32 @@ function init_onpay() {
         $methods[] = 'wc_onpay_gateway_paypal';
 
         return $methods;
+    }
+
+    // Register methods as block layout available
+    add_action( 'woocommerce_blocks_loaded', 'wc_onpay_blocks_methods' );
+    function wc_onpay_blocks_methods() {
+        if (class_exists('Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType') ) {
+			require_once 'classes/blocks/gateway-card-block.php';
+			require_once 'classes/blocks/gateway-anyday-block.php';
+			require_once 'classes/blocks/gateway-mobilepay-block.php';
+			require_once 'classes/blocks/gateway-paypal-block.php';
+			require_once 'classes/blocks/gateway-swish-block.php';
+			require_once 'classes/blocks/gateway-viabill-block.php';
+			require_once 'classes/blocks/gateway-vipps-block.php';
+			add_action(
+				'woocommerce_blocks_payment_method_type_registration',
+				function(Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry) {
+					$payment_method_registry->register(new wc_onpay_gateway_card_block());
+					$payment_method_registry->register(new wc_onpay_gateway_anyday_block());
+					$payment_method_registry->register(new wc_onpay_gateway_mobilepay_block());
+					$payment_method_registry->register(new wc_onpay_gateway_paypal_block());
+					$payment_method_registry->register(new wc_onpay_gateway_swish_block());
+					$payment_method_registry->register(new wc_onpay_gateway_viabill_block());
+					$payment_method_registry->register(new wc_onpay_gateway_vipps_block());
+				}
+			);
+		}
     }
     
     // Add action links to OnPay plugin on plugin overview

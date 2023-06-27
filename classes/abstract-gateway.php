@@ -282,6 +282,10 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         return $paymentWindow;
     }
 
+    public function getMethodLogos() {
+        return [];
+    }
+
     /**
      * Method used for setting a payment info parameter. The value is attempted set, if this fails we'll ignore the value and do nothing.
      * $value can be a single value or an array of values passed on as arguments.
