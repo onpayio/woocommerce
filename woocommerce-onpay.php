@@ -542,6 +542,18 @@ function init_onpay() {
                     'type' => 'checkbox',
                     'default' => 'yes',
                 ],
+                self::SETTING_ONPAY_CARDLOGOS => [
+                    'title' => __('Card logos', 'wc-onpay'),
+                    'type' => 'multiselect',
+                    'description' => __( 'Card logos shown for the Card payment method.', 'wc-onpay' ),
+                    'desc_tip' => true,
+                    'class'             => 'wc-enhanced-select',
+                    'custom_attributes' => [
+                        'data-placeholder' => __( 'Select logos', 'wc-onpay' )
+                    ],
+                    'default' => '',
+                    'options' => $this->get_card_logo_options(),
+                ],
                 self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY => [
                     'title' => __('MobilePay Online', 'wc-onpay'),
                     'label' => __('Enable MobilePay Online as payment method', 'wc-onpay'),
@@ -610,18 +622,6 @@ function init_onpay() {
                     'label' => ' ',
                     'type' => 'checkbox',
                     'default' => 'no',
-                ],
-                self::SETTING_ONPAY_CARDLOGOS => [
-                    'title' => __('Card logos', 'wc-onpay'),
-                    'type' => 'multiselect',
-                    'description' => __( 'Card logos shown for the Card payment method.', 'wc-onpay' ),
-                    'desc_tip' => true,
-                    'class'             => 'wc-enhanced-select',
-                    'custom_attributes' => [
-                        'data-placeholder' => __( 'Select logos', 'wc-onpay' )
-                    ],
-                    'default' => '',
-                    'options' => $this->get_card_logo_options(),
                 ],
             ];
 		}
