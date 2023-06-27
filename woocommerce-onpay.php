@@ -1313,6 +1313,8 @@ function init_onpay() {
         if (class_exists('Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType') ) {
 			require_once 'classes/blocks/gateway-card-block.php';
 			require_once 'classes/blocks/gateway-anyday-block.php';
+            require_once 'classes/blocks/gateway-applepay-block.php';
+            require_once 'classes/blocks/gateway-googlepay-block.php';
 			require_once 'classes/blocks/gateway-mobilepay-block.php';
 			require_once 'classes/blocks/gateway-paypal-block.php';
 			require_once 'classes/blocks/gateway-swish-block.php';
@@ -1323,6 +1325,8 @@ function init_onpay() {
 				function(Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry) {
 					$payment_method_registry->register(new wc_onpay_gateway_card_block());
 					$payment_method_registry->register(new wc_onpay_gateway_anyday_block());
+					$payment_method_registry->register(new wc_onpay_gateway_applepay_block());
+					$payment_method_registry->register(new wc_onpay_gateway_googlepay_block());
 					$payment_method_registry->register(new wc_onpay_gateway_mobilepay_block());
 					$payment_method_registry->register(new wc_onpay_gateway_paypal_block());
 					$payment_method_registry->register(new wc_onpay_gateway_swish_block());
