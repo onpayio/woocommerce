@@ -542,6 +542,18 @@ function init_onpay() {
                     'type' => 'checkbox',
                     'default' => 'yes',
                 ],
+                self::SETTING_ONPAY_CARDLOGOS => [
+                    'title' => __('Card logos', 'wc-onpay'),
+                    'type' => 'multiselect',
+                    'description' => __( 'Card logos shown for the Card payment method.', 'wc-onpay' ),
+                    'desc_tip' => true,
+                    'class'             => 'wc-enhanced-select',
+                    'custom_attributes' => [
+                        'data-placeholder' => __( 'Select logos', 'wc-onpay' )
+                    ],
+                    'default' => '',
+                    'options' => $this->get_card_logo_options(),
+                ],
                 self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY => [
                     'title' => __('MobilePay Online', 'wc-onpay'),
                     'label' => __('Enable MobilePay Online as payment method', 'wc-onpay'),
@@ -610,18 +622,6 @@ function init_onpay() {
                     'label' => ' ',
                     'type' => 'checkbox',
                     'default' => 'no',
-                ],
-                self::SETTING_ONPAY_CARDLOGOS => [
-                    'title' => __('Card logos', 'wc-onpay'),
-                    'type' => 'multiselect',
-                    'description' => __( 'Card logos shown for the Card payment method.', 'wc-onpay' ),
-                    'desc_tip' => true,
-                    'class'             => 'wc-enhanced-select',
-                    'custom_attributes' => [
-                        'data-placeholder' => __( 'Select logos', 'wc-onpay' )
-                    ],
-                    'default' => '',
-                    'options' => $this->get_card_logo_options(),
                 ],
             ];
 		}
@@ -1313,6 +1313,8 @@ function init_onpay() {
         if (class_exists('Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType') ) {
 			require_once 'classes/blocks/gateway-card-block.php';
 			require_once 'classes/blocks/gateway-anyday-block.php';
+            require_once 'classes/blocks/gateway-applepay-block.php';
+            require_once 'classes/blocks/gateway-googlepay-block.php';
 			require_once 'classes/blocks/gateway-mobilepay-block.php';
 			require_once 'classes/blocks/gateway-paypal-block.php';
 			require_once 'classes/blocks/gateway-swish-block.php';
@@ -1323,6 +1325,8 @@ function init_onpay() {
 				function(Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry) {
 					$payment_method_registry->register(new wc_onpay_gateway_card_block());
 					$payment_method_registry->register(new wc_onpay_gateway_anyday_block());
+					$payment_method_registry->register(new wc_onpay_gateway_applepay_block());
+					$payment_method_registry->register(new wc_onpay_gateway_googlepay_block());
 					$payment_method_registry->register(new wc_onpay_gateway_mobilepay_block());
 					$payment_method_registry->register(new wc_onpay_gateway_paypal_block());
 					$payment_method_registry->register(new wc_onpay_gateway_swish_block());
