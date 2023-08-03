@@ -8,13 +8,9 @@ ACTUAL_SIGNATURE="$(php -r "echo hash_file('sha256', 'composer.phar');")"
 if [ "$EXPECTED_SIGNATURE" != "$ACTUAL_SIGNATURE" ]
 then
     >&2 echo 'ERROR: Invalid installer signature'
-    rm composer-setup.php
+    rm composer.phar
     exit 1
 fi
-
-# Run composer
-php composer-setup.php
-rm composer-setup.php
 
 # Remove vendor directory
 rm -rf vendor
