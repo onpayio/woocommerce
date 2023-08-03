@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 - Restructured the settings page into sevaral sections
 - Implemented block layout for payment methods
+- Removed unused code from build script
+- Fixed Apple and Google pay methods being activated in a buggy way
 
 ## [1.0.33] - 2023-06-12
 - Updated subscriptions (early) renwal logic, to reflect the WooCommerce guidelines.
