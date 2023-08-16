@@ -30,7 +30,7 @@
 * Author URI: https://onpay.io/
 * Text Domain: wc-onpay
 * Domain Path: /languages
-* Version: 1.0.33
+* Version: 1.0.34
 **/
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -63,7 +63,7 @@ function init_onpay() {
     include_once __DIR__ . '/classes/gateway-paypal.php';
 
     class WC_OnPay extends WC_Payment_Gateway {
-        const PLUGIN_VERSION = '1.0.33';
+        const PLUGIN_VERSION = '1.0.34';
 
         const SETTING_ONPAY_GATEWAY_ID = 'gateway_id';
         const SETTING_ONPAY_SECRET = 'secret';

@@ -34,6 +34,12 @@ Don't  have an OnPay account yet? Order one through <a href="https://dandomain.d
 
 == Changelog ==
 
+= [1.0.34] =
+Restructured the settings page into sevaral sections
+Implemented block layout for payment methods
+Removed unused code from build script
+Fixed Apple and Google pay methods being activated in a buggy way
+
 = [1.0.33] =
 Updated subscriptions (early) renwal logic, to reflect the WooCommerce guidelines.
 Fixed minor bug when getting order reference for subscriptions early renewal.
