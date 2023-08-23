@@ -78,6 +78,7 @@ function init_onpay() {
         const SETTING_ONPAY_EXTRA_PAYMENTS_CARD = 'extra_payments_card';
         const SETTING_ONPAY_PAYMENTWINDOW_DESIGN = 'paymentwindow_design';
         const SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE = 'paymentwindow_language';
+        const SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE_AUTO = 'paymentwindow_language_auto';
         const SETTING_ONPAY_TESTMODE = 'testmode_enabled';
         const SETTING_ONPAY_CARDLOGOS = 'card_logos';
         const SETTING_ONPAY_STATUS_AUTOCAPTURE = 'status_autocapture';
@@ -616,6 +617,12 @@ function init_onpay() {
                     'title' => __('Payment window language', 'wc-onpay'),
                     'type' => 'select',
                     'options' => $this->get_payment_window_language_options(),
+                ],
+                self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE_AUTO => [
+                    'title' => __('Automatic payment window language', 'wc-onpay'),
+                    'type' => 'checkbox',
+                    'default' => 'no',
+                    'label' => __('Overrides language chosen above, and instead use frontoffice language', 'wc-onpay'),
                 ],
                 self::SETTING_ONPAY_TESTMODE => [
                     'title' => __('Test Mode', 'wc-onpay'),
