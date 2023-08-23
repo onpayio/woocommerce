@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Added ability to set language of created payments according to frontoffice language
 
 ## [1.0.34] - 2023-08-16
 - Restructured the settings page into sevaral sections
