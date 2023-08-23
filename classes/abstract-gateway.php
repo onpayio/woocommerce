@@ -224,8 +224,10 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         if($this->get_option(WC_OnPay::SETTING_ONPAY_PAYMENTWINDOW_DESIGN) && $this->get_option(WC_OnPay::SETTING_ONPAY_PAYMENTWINDOW_DESIGN) !== 'ONPAY_DEFAULT_WINDOW') {
             $paymentWindow->setDesign($this->get_option(WC_OnPay::SETTING_ONPAY_PAYMENTWINDOW_DESIGN));
         }
-        if($this->get_option(WC_OnPay::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE)) {
-            $paymentWindow->setLanguage($this->get_option(WC_OnPay::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE));
+
+        $language = $this->getLanguage();
+        if(null !== $language) {
+            $paymentWindow->setLanguage($language);
         }
 
         $customer = new WC_Customer($orderData['customer_id']);
@@ -337,6 +339,32 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
             }
         }
         return true;
+    }
+
+    // Get language based on configuration or frontoffice language
+    protected function getLanguage() {
+        if ($this->get_option(WC_OnPay::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE_AUTO)) {
+            $languageIso = substr(get_locale(), 0, 2);
+            $languageRelations = [
+                'en' => 'en',
+                'es' => 'es',
+                'da' => 'da',
+                'de' => 'de',
+                'fo' => 'fo',
+                'fr' => 'fr',
+                'it' => 'it',
+                'nl' => 'nl',
+                'no' => 'no',
+                'pl' => 'pl',
+                'sv' => 'sv',
+            ];
+            if (array_key_exists($languageIso, $languageRelations)) {
+                return $languageRelations[$languageIso];
+            }
+        } else if ($this->get_option(WC_OnPay::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE)) {
+            return $this->get_option(WC_OnPay::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE);
+        }
+        return 'en';
     }
 
     // WooCommerce function indicating available state of method.
