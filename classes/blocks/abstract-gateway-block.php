@@ -33,7 +33,7 @@ abstract class wc_onpay_abstract_gateway_block extends AbstractPaymentMethodType
 	protected $hasRegisteredJs = false;
 
 	public function is_active() {
-		return $this->gateway->is_available();
+		return $this->gateway->enabled;
 	}
 
 	public function get_payment_method_script_handles() {
@@ -43,6 +43,7 @@ abstract class wc_onpay_abstract_gateway_block extends AbstractPaymentMethodType
 			'description' => $this->gateway->description,
 			'icon' => $this->gateway->icon,
 			'logos' => $this->gateway->getMethodLogos(),
+			'supports' => $this->gateway->supports
 		];
 
 		if (false === $this->hasRegisteredJs) {

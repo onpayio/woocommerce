@@ -51,7 +51,10 @@ function registerMethod(method) {
         content: Object(element.createElement)(content, null),
         edit: element.createElement('div', {}, method.description),
         canMakePayment: () => true,
-        ariaLabel: method.id
+        ariaLabel: method.id,
+        supports: {
+            features: method.supports,
+        }
     };
     
     // Register method
