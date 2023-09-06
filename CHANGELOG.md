@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Added ability to set language of created payments according to frontoffice language
+- Performance optimization of payment creation.
+- Bugfix of subscriptions not being available in block layout.
 
 ## [1.0.34] - 2023-08-16
 - Restructured the settings page into sevaral sections

@@ -2,7 +2,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2019 OnPay.io
+ * Copyright (c) 2023 OnPay.io
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,17 +24,13 @@
  */
 
 abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
-    private $apiAuthorized;
-    
     public function admin_options() {
         // Redirect to general plugin settings page
         wp_redirect(wc_onpay_query_helper::generate_url(['page' => 'wc-settings','tab' => WC_OnPay::WC_ONPAY_ID, 'section' => 'methods']));
         exit;
     }
 
-    public function __construct() {
-        add_action('woocommerce_receipt_' . $this->id, [$this, 'checkout']);
-    }
+    public function __construct() {}
 
     public function getMethodTitle() {
         if (is_admin()) {
@@ -49,33 +45,42 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         return $this->method_title;
     }
 
-    public function process_payment($order_id) {
-        $order = new WC_Order($order_id);
-        $redirectUrl = $order->get_checkout_payment_url(true);
-        if (class_exists('WC_Subscriptions_Change_Payment_Gateway') && WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment) {
-            $redirectUrl = add_query_arg('update_method', true, $redirectUrl);
-        }
-        return [
-            'result'   => 'success',
-            'redirect' => $redirectUrl
-        ];
-    }
-
     /**
      * Gets payment link and redirects browser to newly created payment
      */
-    public function checkout($order_id) {
+    public function process_payment($order_id) {
         $order = new WC_Order($order_id);
-        $updateMethod = wc_onpay_query_helper::get_query_value('update_method') !== null ? true : false;
+        $updateMethod = class_exists('WC_Subscriptions_Change_Payment_Gateway') && WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment;
+        $error = '';
+
         try {
             $paymentWindow = self::get_payment_window($order, $updateMethod);
-            wp_redirect(self::getPaymentLink($paymentWindow));
-            exit;
+            $redirect = self::getPaymentLink($paymentWindow);
+
+            if ($updateMethod) {
+                // If we're doing an update of method, do a manual redirect.
+                wp_redirect($redirect);
+                exit;
+            }
+
+            return [
+                'result' => 'success',
+                'redirect' => $redirect
+            ];
         } catch (InvalidArgumentException $e) {
-            echo 'Invalid data provided(' . $e->getMessage() . '). Unable to create OnPay payment.';
+            $error = __('Invalid data provided. Unable to create OnPay payment', 'wc-onpay') . ' (' . $e->getMessage() . ')';
         } catch (WoocommerceOnpay\OnPay\API\Exception\TokenException $e) {
-            echo 'Authorized connection to OnPay failed.';
+            $error = __('Authorized connection to OnPay failed', 'wc-onpay');
         }
+
+        if ($updateMethod) {
+            // If we're doing an update of method, manually echo error.
+            echo $error;
+            exit;
+        }
+    
+        wc_add_notice($error, 'error');
+        return [];
     }
 
     /**
@@ -369,26 +374,10 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
 
     // WooCommerce function indicating available state of method.
     public function is_available() {
-        if ($this->enabled === 'yes' && $this->isApiAuthorized()) {
+        if ($this->enabled === 'yes') {
             return true;
         }
         return false;
-    }
-
-    // Function that checks if connection to OnPay APi is authorized. Caches result by default.
-    private function isApiAuthorized($refresh = false) {
-        if(isset($this->isApiAuthorized) && !$refresh) {
-            return $this->isApiAuthorized;
-        }
-        $onpayApi = $this->getOnPayClient();
-        try {
-            $this->isApiAuthorized = $onpayApi->isAuthorized();
-        } catch (OnPay\API\Exception\ConnectionException $e) {
-            $this->isApiAuthorized = false;
-        } catch (OnPay\API\Exception\TokenException $e) {
-            $this->isApiAuthorized = false;
-        }
-        return $this->isApiAuthorized;
     }
 
     private function sanitizeFieldValue($value) {
