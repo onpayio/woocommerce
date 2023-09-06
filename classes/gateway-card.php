@@ -73,11 +73,14 @@ class wc_onpay_gateway_card extends wc_onpay_gateway_abstract {
 
     public function getMethodLogos() {
         $logos = [];
-        foreach($this->get_option(WC_OnPay::SETTING_ONPAY_CARDLOGOS) as $cardLogo) {
-            $logos[$cardLogo] = plugin_dir_url(__DIR__) . '/assets/img/' . $cardLogo . '.svg';
-            if ($cardLogo === 'mastercard') {
-                // If Mastercard, also show Maestro logo
-                $logos['maestro'] = plugin_dir_url(__DIR__) . '/assets/img/maestro.svg';
+        $option = $this->get_option(WC_OnPay::SETTING_ONPAY_CARDLOGOS, []);
+        if (is_array($option) && count($option) > 0) {
+            foreach($option as $cardLogo) {
+                $logos[$cardLogo] = plugin_dir_url(__DIR__) . '/assets/img/' . $cardLogo . '.svg';
+                if ($cardLogo === 'mastercard') {
+                    // If Mastercard, also show Maestro logo
+                    $logos['maestro'] = plugin_dir_url(__DIR__) . '/assets/img/maestro.svg';
+                }
             }
         }
         return $logos;
