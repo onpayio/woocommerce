@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.36] - 2023-09-06
+- Ensure proper type of card method logo list before looping it
+
 ## [1.0.35] - 2023-09-06
 - Added ability to set language of created payments according to frontoffice language
 - Performance optimization of payment creation.
