@@ -148,7 +148,7 @@ function init_onpay() {
             add_action('woocommerce_settings_save_'. $this->id, [$this, 'process_admin_options']);
             add_action('woocommerce_api_'. $this->id . '_callback', [$this, 'callback']);
             add_action('woocommerce_before_checkout_form', [$this, 'declinedReturnMessage']);
-            add_action('woocommerce_thankyou', [$this, 'completedPage']);
+            add_action('woocommerce_thankyou', [$this, 'declinedReturnMessage']);
             add_action('woocommerce_order_status_completed', [$this, 'orderStatusCompleteEvent']);
             add_action('woocommerce_scheduled_subscription_payment_onpay_card', [$this, 'subscriptionPayment'], 1, 2);
             add_action('woocommerce_subscription_cancelled_onpay_card', [$this, 'subscriptionCancellation']);
@@ -183,8 +183,10 @@ function init_onpay() {
             $paymentWindow = new \OnPay\API\PaymentWindow();
             $paymentWindow->setSecret($this->get_option(self::SETTING_ONPAY_SECRET));
 
+            // Get IDs and reference
             $onpayNumber = wc_onpay_query_helper::get_query_value('onpay_number');
             $onpayReference = wc_onpay_query_helper::get_query_value('onpay_reference');
+            $createdTransactionNumber = wc_onpay_query_helper::get_query_value('onpay_number_transaction');
 
             // Validate query parameters and check that onpay_number is present
             if (!$paymentWindow->validatePayment(wc_onpay_query_helper::get_query()) || null === $onpayNumber) {
@@ -201,43 +203,8 @@ function init_onpay() {
             $type = wc_onpay_query_helper::get_query_value('onpay_type');
             // Is order in pending state
             if ($order->has_status('pending')) {
-                
                 // If we're dealing with a subscription
                 if ($type === 'subscription') {
-                    $orderItems = $order->get_items();
-                    // If order is subscription and has more than 1 item, we'll split the remaining items in a new order, and complete the current order with only the subscription.
-                    if(count($orderItems) > 1) {
-                        $newOrder = $this->cloneOrder($order);
-                        $subscriptionFound = false;
-                        foreach($orderItems as $itemId => $orderItem) {
-                            if (!$subscriptionFound && WC_Subscriptions_Product::is_subscription(wcs_get_canonical_product_id($orderItem))) {
-                                $subscriptionFound = true;
-                                continue;
-                            } else {
-                                $order->remove_item($itemId);
-                                $newOrder->add_item($orderItem);
-                            }
-                        }
-                        $order->calculate_totals();
-                        $order->calculate_shipping();
-                        $order->recalculate_coupons();
-                        $order->save();
-                    }
-
-                    // If a new order is created, add note and relation to original order, and save the new order.
-                    if (isset($newOrder)) {
-                        $newOrder->add_order_note( __( 'Order split from: ' . $order->get_id(), 'wc-onpay' ));
-                        $newOrder->calculate_totals();
-                        $newOrder->calculate_shipping();
-                        $newOrder->recalculate_coupons();
-                        $newOrder->save();
-
-                        $order->add_meta_data($this::WC_ONPAY_ID . '_order_split', $newOrder->get_id());
-                        $order->save_meta_data();
-                    }
-
-                    $order->add_order_note(__( 'Subscription authorized in OnPay.', 'wc-onpay' ));
-
                     // Write subscription id to subscription order for later reference. 
                     $wcSubscriptions = wcs_get_subscriptions_for_order($order->get_id());
                     foreach ($wcSubscriptions as $id => $subscription) {
@@ -245,21 +212,28 @@ function init_onpay() {
                         $subscriptionOrder->set_transaction_id($onpayNumber);
                         $subscriptionOrder->save();
                     }
-                    
-                    // Create the initial transaction from subscription
-                    $currencyHelper = new wc_onpay_currency_helper();
-                    $orderCurrency = $currencyHelper->fromAlpha3($order->get_currency());
-                    $orderAmount = $currencyHelper->majorToMinor($order->get_total(), $orderCurrency->numeric, '.');
-                    $onpaySubscription = $this->get_onpay_client()->subscription()->getSubscription($onpayNumber);
-                    $createdTransaction = $this->get_onpay_client()->subscription()->createTransactionFromSubscription($onpaySubscription->uuid, $orderAmount, strval($order->get_order_number()));
 
-                    // Set onpayNumber to value from newly created transaction
-                    $onpayNumber = $createdTransaction->transactionNumber;
+                    // If we're dealing with an renewal, we need to create a new transaction from the subscription
+                    if ($orderHelper->isOrderSubscriptionRenewal($order) || $orderHelper->isOrderSubscriptionEarlyRenewal($order)) {
+                        $currencyHelper = new wc_onpay_currency_helper();
+                        $orderCurrency = $currencyHelper->fromAlpha3($order->get_currency());
+                        $orderAmount = $currencyHelper->majorToMinor($order->get_total(), $orderCurrency->numeric, '.');
+                        $onpaySubscription = $this->get_onpay_client()->subscription()->getSubscription($onpayNumber);
+                        $createdTransaction = $this->get_onpay_client()->subscription()->createTransactionFromSubscription($onpaySubscription->uuid, $orderAmount, strval($order->get_order_number()));
+                        $createdTransactionNumber = $createdTransaction->transactionNumber;
+                    }
                 }
 
-                // Regular completion of order with onpayNumber from callback
+                // Completion of order
+                // Check if we have an ID of a created transaction, and use that for reference if so
+                if (null !== $createdTransactionNumber) {
+                    $order->payment_complete($createdTransactionNumber);
+                } else {
+                    // Otherwise use the number provided
+                    $order->payment_complete($onpayNumber);
+                }
+                // Add remaining data regarding order and save it.
                 $order->add_order_note(__( 'Transaction authorized in OnPay. Remember to capture amount.', 'wc-onpay' ));
-                $order->payment_complete($onpayNumber);
                 $order->add_meta_data($this::WC_ONPAY_ID . '_test_mode', wc_onpay_query_helper::get_query_value('onpay_testmode'));
                 $order->save_meta_data();
                 $order->save();
@@ -351,43 +325,6 @@ function init_onpay() {
             $newOrder->set_shipping_country($order->get_shipping_country());
 
             return $newOrder;
-        }
-
-        /**
-         * Hook for order complete page
-         */
-        public function completedPage($orderId) {
-            $type = wc_onpay_query_helper::get_query_value('onpay_type');
-            if ($type === 'subscription') {
-                $order = new WC_Order($orderId);
-                // More than 1 item, or order is split into a new order
-                if (count($order->get_items()) > 1 || $order->meta_exists($this::WC_ONPAY_ID . '_order_split')) {
-                    $waitCount = 0;
-                    // If no split id is found on order, we'll try and wait for up to 5 seconds for it to appear.
-                    while (!$order->meta_exists($this::WC_ONPAY_ID . '_order_split') && $waitCount < 5) {
-                        sleep(1);
-                        $order->read_meta_data(true);
-                        $waitCount++;
-                    }
-
-                    $order->read_meta_data(true);
-                    $splitOrderId = $order->get_meta($this::WC_ONPAY_ID . '_order_split');
-                    if ($splitOrderId !== '') {
-                        echo $splitOrderId;
-                        $splitOrder = new WC_Order($splitOrderId);
-                        $orderActions = wc_get_account_orders_actions($splitOrder);
-                        if (array_key_exists('pay', $orderActions)) {
-                            wc_add_notice(__( 'Subscription added, please continue with payment for the rest of the order.', 'wc-onpay' ));
-                            wp_redirect($orderActions['pay']['url']);
-                            return;
-                        }
-                    }
-
-                    // No split order id found, we'll show the orders overview.
-                    wc_add_notice(__( 'Subscription added, please continue with the rest of the order from the list below.', 'wc-onpay' ));
-                    wp_redirect(site_url('/my-account/orders/'));
-                }
-            }
         }
 
         public function declinedReturnMessage() {
@@ -796,7 +733,7 @@ function init_onpay() {
                     echo __('Error: ', 'wc-onpay') . $exception->getMessage();
                     exit;
                 }
-                
+
                 $currencyHelper = new wc_onpay_currency_helper();
                 $currency = $currencyHelper->fromNumeric($transaction->currencyCode);
 
@@ -830,6 +767,11 @@ function init_onpay() {
                 $html .= '<tr><td><strong>' . __('Amount', 'wc-onpay') . '</strong></td><td>' . $currency->alpha3 . ' ' . $amount . '</td></tr>';
                 $html .= '<tr><td><strong>' . __('Charged', 'wc-onpay') . '</strong></td><td>' . $currency->alpha3 . ' ' . $charged . '</td></tr>';
                 $html .= '<tr><td><strong>' . __('Refunded', 'wc-onpay') . '</strong></td><td>' . $currency->alpha3 . ' ' . $refunded . '</td></tr>';
+
+                $html .= '<tr><td colspan="2">';
+                $html .= '<a href="' . $this->getOnPayManageLink($transaction->uuid, 'transaction') . '" target="_blank" class="button button-small button-secondary" id="button_onpay_manage_link">' . __('View transaction in OnPay', 'wc-onpay') . '</a>';
+                $html .= '</td></tr>';
+
                 $html .= '</tbody></table>';
                 $html .= '</td>';
 
@@ -856,7 +798,7 @@ function init_onpay() {
                 $html .= '</td>';
                 $html .= '</tr></table></div>';
 
-                $html .= '<br /><hr />';
+                $html .= '<hr />';
 
                 // Add buttons for handling transaction
                 $html .= '<div id="onpay_action_buttons">';
@@ -882,6 +824,7 @@ function init_onpay() {
                 if ($buttonsShown) {
                     $html .= '<p style="color: #888; font-size: .92em; margin-bottom: 0;">' . __('The buttons above only affect the transaction in OnPay, and do not update the order here in WooCommerce.', 'wc-onpay') . '</p>';
                 }
+
                 $html .= '</div>';
 
                 // Hidden capture form, revealed by button above
@@ -1300,6 +1243,18 @@ function init_onpay() {
 
     	    return $html;
 	    }
+
+        private function getOnPayManageLink($uuid, $type) {
+            $url = 'https://manage.onpay.io/';
+            $url .= $this->get_option(self::SETTING_ONPAY_GATEWAY_ID) . '/';
+            if ('transaction' === $type) {
+                $url .= 'transactions/';
+            } else if ('subscription' === $type) {
+                $url .= 'subscriptions/';
+            }
+            $url .= 'view/' . $uuid;
+            return $url;
+        }
 
         /**
          * Return the name of the option in the WP DB.
