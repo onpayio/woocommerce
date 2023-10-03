@@ -188,6 +188,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         // Generate decline URL
         $declineUrl = get_permalink(wc_get_page_id('checkout'));
         $declineUrl = add_query_arg('declined_from_onpay', '1', $declineUrl);
+        $declineUrl = add_query_arg('order_key', $order->get_order_key(), $declineUrl);
 
         // Add parameters to callback URL
         $callbackUrl = WC()->api_request_url('wc_onpay' . '_callback');
