@@ -31,9 +31,9 @@ class wc_onpay_order_helper {
         // Check if order is or contains a subscription or is renwal
         if (
             (function_exists('wcs_is_subscription') && wcs_is_subscription($order->get_id())) || // Order is a subscription
-            (function_exists('wcs_order_contains_subscription') && wcs_order_contains_subscription($order->get_id())) || // Order contains a subscription
-            (function_exists('wcs_order_contains_renewal') && wcs_order_contains_renewal($order->get_id())) || // Is a subscription renewal
-            (function_exists('wcs_order_contains_early_renewal') && wcs_order_contains_early_renewal($order->get_id())) // Is an early subscription renewal
+            $this->isOrderContainingSubscription($order) || // Order contains a subscription
+            $this->isOrderSubscriptionRenewal($order) || // Is a subscription renewal
+            $this->isOrderSubscriptionEarlyRenewal($order) // Is an early subscription renewal
         ) {
             return true;
         }
@@ -60,11 +60,32 @@ class wc_onpay_order_helper {
      * @return bool
      */
     public function isOrderSubscriptionRenewal($order) {
-        // Check if order is subscription renwal
-        if (
-            (function_exists('wcs_order_contains_renewal') && wcs_order_contains_renewal($order->get_id())) || // Is a subscription renewal
-            (function_exists('wcs_order_contains_early_renewal') && wcs_order_contains_early_renewal($order->get_id())) // Is an early subscription renewal
-        ) {
+        // Check if order is subscription renewal
+        if (function_exists('wcs_order_contains_renewal') && wcs_order_contains_renewal($order->get_id())) {
+            return true;
+        }
+        return false;
+    }    
+    
+    /**
+     * @param WC_Order $order
+     * @return bool
+     */
+    public function isOrderSubscriptionEarlyRenewal($order) {
+        // Check if order is early subscription renwal
+        if (function_exists('wcs_order_contains_early_renewal') && wcs_order_contains_early_renewal($order->get_id())) {
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * @param WC_Order $order
+     * @return bool
+     */
+    public function isOrderContainingSubscription($order) {
+        // Check if order is containing a subscription
+        if (function_exists('wcs_order_contains_subscription') && wcs_order_contains_subscription($order->get_id())) {
             return true;
         }
         return false;
@@ -76,15 +97,19 @@ class wc_onpay_order_helper {
      */
     public function getOrderReference($order) {
         $reference = $order->get_order_number();
-        // Check if order is subscription
-        if ($this->orderMethodSupportsSubscriptions($order) && $this->isOrderSubscription($order)) {
-            // Attempt extracting initial subscription order number if subscription
+        // Check if order method supports subscriptions, that order is a subscription, and is not the initial subscription, and is not an early
+        if (
+            $this->orderMethodSupportsSubscriptions($order) &&
+            $this->isOrderSubscription($order) &&
+            !$this->isOrderContainingSubscription($order)
+        ) {
+            // Attempt extracting initial subscription order number
             foreach (wcs_get_subscriptions_for_order($order, ['order_type' => 'any']) as $subscription) {
                 $reference = $subscription->get_order_number();
                 continue;
             }
         }
-        
+
         return $reference;
     }
 }

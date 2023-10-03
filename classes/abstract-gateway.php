@@ -55,6 +55,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
 
         try {
             $paymentWindow = self::get_payment_window($order, $updateMethod);
+
             $redirect = self::getPaymentLink($paymentWindow);
 
             if ($updateMethod) {
@@ -124,7 +125,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
             $isSubscription = $orderHelper->isOrderSubscription($order);
             // Enforce method update if order is subscription renewal
             if (!$updateMethod) { // If not already instructed to update method, find out if we need to
-                $updateMethod = $orderHelper->isOrderSubscriptionRenewal($order);
+                $updateMethod = $orderHelper->isOrderSubscriptionEarlyRenewal($order) || $orderHelper->isOrderSubscriptionRenewal($order);
             }
         }
 
@@ -135,46 +136,52 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
 
         // Check if we're dealing with a subscription order
         if ($isSubscription) {
-            $orderTotal = 0; // Set order total to zero when we have a subscription.
             $paymentWindow->setType("subscription");
-        } else {
-            $orderTotal = number_format($this->get_order_total(), $isoCurrency->exp, '', '');
-            $shippingTax = $order->get_shipping_tax();
-            $shippingTotal = $shippingTax + $order->get_shipping_total();
-            $discountTotal = $order->get_discount_total() + $order->get_discount_tax();
-
-            // Construct cart object that we're going to send to OnPay
-            $cart = new \OnPay\API\PaymentWindow\Cart();
-            $cart->setShipping(
-                intval(number_format($shippingTotal, $isoCurrency->exp, '', '')),
-                intval(number_format($shippingTax, $isoCurrency->exp, '', ''))
-            );
-            $cart->setDiscount(intval(number_format($discountTotal, $isoCurrency->exp, '', '')));
-            // Loop through cart items, adding them to the cart object.
-            foreach($order->get_items() as $item) {
-                $itemTax = $item->get_total_tax() / $item->get_quantity(); // Tax is taxTotal divided by quantity
-                $itemTotal = $itemTax + ($item->get_total() / $item->get_quantity()); // Total is total divided by quantity plus tax total from above
-                $cartItem = new \OnPay\API\PaymentWindow\CartItem(
-                    $item->get_name(),
-                    intval(number_format($itemTotal, $isoCurrency->exp, '', '')),
-                    $item->get_quantity(),
-                    intval(number_format($itemTax, $isoCurrency->exp, '', ''))
-                );
-                $cart->addItem($cartItem);
-            }
-
-            // Try to add the cart object to payment window
-            try {
-                $cart->throwOnInvalid($orderTotal); // First we check if the cart calculation will fail, if it does, an InvalidCartException will be thrown.
-                $paymentWindow->setCart($cart);
-            } catch (\OnPay\API\Exception\InvalidCartException $e) {
-                // The cart object failed calculation. In this case we will simply not add the cart object to the paymentWindow then.
+            // If we're not updating method
+            if (!$updateMethod) {
+                // Instruct to create initial transaction with amount supplied.
+                // The Callback from OnPay will contain information about created transaction.
+                $paymentWindow->setSubscriptionWithTransaction(true);
             }
             
+        } else {
             $paymentWindow->setType("transaction");
         }
 
+        // Calculate amounts
+        $orderTotal = number_format($this->get_order_total(), $isoCurrency->exp, '', '');
         $paymentWindow->setAmount($orderTotal);
+        $shippingTax = $order->get_shipping_tax();
+        $shippingTotal = $shippingTax + $order->get_shipping_total();
+        $discountTotal = $order->get_discount_total() + $order->get_discount_tax();
+
+        // Construct cart object that we're going to send to OnPay
+        $cart = new \OnPay\API\PaymentWindow\Cart();
+        $cart->setShipping(
+            intval(number_format($shippingTotal, $isoCurrency->exp, '', '')),
+            intval(number_format($shippingTax, $isoCurrency->exp, '', ''))
+        );
+        $cart->setDiscount(intval(number_format($discountTotal, $isoCurrency->exp, '', '')));
+        // Loop through cart items, adding them to the cart object.
+        foreach($order->get_items() as $item) {
+            $itemTax = $item->get_total_tax() / $item->get_quantity(); // Tax is taxTotal divided by quantity
+            $itemTotal = $itemTax + ($item->get_total() / $item->get_quantity()); // Total is total divided by quantity plus tax total from above
+            $cartItem = new \OnPay\API\PaymentWindow\CartItem(
+                $item->get_name(),
+                intval(number_format($itemTotal, $isoCurrency->exp, '', '')),
+                $item->get_quantity(),
+                intval(number_format($itemTax, $isoCurrency->exp, '', ''))
+            );
+            $cart->addItem($cartItem);
+        }
+
+        // Try to add the cart object to payment window
+        try {
+            $cart->throwOnInvalid($orderTotal); // First we check if the cart calculation will fail, if it does, an InvalidCartException will be thrown.
+            $paymentWindow->setCart($cart);
+        } catch (\OnPay\API\Exception\InvalidCartException $e) {
+            // The cart object failed calculation. In this case we will simply not add the cart object to the paymentWindow then.
+        }
 
         // Get reference to be used with OnPay
         $reference = $orderHelper->getOrderReference($order);
