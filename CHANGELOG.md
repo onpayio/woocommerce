@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Shifted declineURL order reference to wc_order key instead of onpay reference.
 
 ## [1.0.36] - 2023-09-06
 - Ensure proper type of card method logo list before looping it
