@@ -103,6 +103,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         $onPayAPI = new \OnPay\OnPayAPI($tokenStorage, [
             'client_id' => 'Onpay WooCommerce',
             'redirect_uri' => $url,
+            'platform' => WC_OnPay::WC_ONPAY_PLATFORM_STRING,
         ]);
         return $onPayAPI;
     }

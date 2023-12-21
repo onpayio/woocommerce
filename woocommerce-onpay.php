@@ -86,6 +86,7 @@ function init_onpay() {
 
         const WC_ONPAY_ID = 'wc_onpay';
         const WC_ONPAY_SETTINGS_ID = 'onpay';
+        const WC_ONPAY_PLATFORM_STRING = 'woocommerce/' . self::PLUGIN_VERSION . '/'. WC_VERSION;
 
         const WC_ONPAY_SESSION_ADMIN_NOTICES = 'onpay_admin_notices';
 
@@ -1092,6 +1093,7 @@ function init_onpay() {
             $onPayAPI = new \OnPay\OnPayAPI($tokenStorage, [
                 'client_id' => 'Onpay WooCommerce',
                 'redirect_uri' => $url,
+                'platform' => self::WC_ONPAY_PLATFORM_STRING,
             ]);
             return $onPayAPI;
         }
