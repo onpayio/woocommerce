@@ -1265,15 +1265,16 @@ function init_onpay() {
             die(wp_json_encode($response));
         }
 
-        private function getOnboardingHtml() {
-            $html = '<span>' . __('Don\'t  have an OnPay account yet? Order one through DanDomain from DKK 0,- per month.', 'wc-onpay') . '</span>';
-            $html .= '&nbsp;';
-            $html .= '<a href="https://dandomain.dk/betalingssystem/priser" class="button-primary" target="_blank">' . __('Get OnPay now', 'wc-onpay') . '</a>';
-            $html .= '&nbsp;';
-            $html .= '<a href="https://onpay.io/#brands" class="button" target="_blank">' . __('OnPay sellers', 'wc-onpay') . '</a>';
+	private function getOnboardingHtml() {
+	    $html = '<div style="margin-top: 20px; margin-bottom: 20px; text-align: center; background-color: #ffffff; box-shadow: 0px 0px 5px #fb617f; padding: 30px 20px; border-radius: 10px; max-width: 500px; margin: 0 auto; height: 250px; display: flex; flex-direction: column; justify-content: space-between;">';
+	    $html .= '<h2 style="margin-bottom: 15px;">' . __('Don\'t have an OnPay account yet?', 'wc-onpay') . '</h2>';
+	    $html .= '<span style="margin-bottom: auto;">' . __('Order one through DanDomain from DKK 0,- per month.', 'wc-onpay') . '</span>';
+	    $html .= '<a href="https://dandomain.dk/betalingssystem/priser" style="display: inline-block; background-color:#fb617f; color:white; border-radius:5px; padding: 15px 12px; font-weight: bold; text-decoration:none; margin: 5px;" target="_blank">' . __('Get OnPay now', 'wc-onpay') . '</a>';
+	    $html .= '<a href="https://onpay.io/#brands" style="display: inline-block; color:#fb617f; border-radius:5px; padding: 15px 12px; font-weight: bold; text-decoration:none; margin: 5px;" target="_blank">' . __('OnPay sellers', 'wc-onpay') . '</a>';
+	    $html .= '</div>';
 
-            return $html;
-        }
+    	    return $html;
+	}
 
         /**
          * Return the name of the option in the WP DB.
