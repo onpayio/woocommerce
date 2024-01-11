@@ -727,7 +727,7 @@ function init_onpay() {
                         $availableAmount = $this->getAvailableAmount($order, $transaction);
                         // If transaction has status active, and charged amount is less than the full amount, we'll capture the remaining amount on transaction
                         if ($transaction->status === 'active' && $availableAmount > 0) {
-                            $this->get_onpay_client()->transaction()->captureTransaction($transaction->uuid);
+                            $this->get_onpay_client()->transaction()->captureTransaction($transaction->uuid, $availableAmount);
                             $order->add_order_note( __( 'Status changed to completed. Amount was automatically captured on transaction in OnPay.', 'wc-onpay' ));
                         }
                     } catch (OnPay\API\Exception\ConnectionException $exception) { // No connection to OnPay API
@@ -1238,10 +1238,17 @@ function init_onpay() {
             $orderCurrency = $currencyHelper->fromAlpha3($order->get_currency());
             $orderRefunded = $order->get_total_refunded() * (10 ** $orderCurrency->exp);
 
+            // If order amount is lower than transaction amount, we'll roll with that instead
+            $orderTotal = $order->get_total() * (10 ** $orderCurrency->exp);
+            $total = $transaction->amount;
+            if($orderTotal < $total) {
+                $total = $orderTotal;
+            }
+
             if ($this->get_option(WC_OnPay::SETTING_ONPAY_REFUND_INTEGRATION) === 'yes') {
-                $availableAmount = $transaction->amount - $transaction->charged - $orderRefunded;
+                $availableAmount = $total - $transaction->charged - $orderRefunded;
             } else {
-                $availableAmount = $transaction->amount - $transaction->charged;
+                $availableAmount = $total - $transaction->charged;
             }
 
             if ($availableAmount < 0) {
