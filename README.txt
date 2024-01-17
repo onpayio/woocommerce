@@ -4,7 +4,7 @@ Tags: onpay, gateway, payment, payment gateway, woocommerce, psp
 Requires at least: 5.8
 Tested up to: 6.3.1
 Requires PHP: 7.2
-Stable tag: 1.0.36
+Stable tag: 1.0.37
 License: MIT
 License URI: https://mit-license.org/
 
@@ -33,6 +33,11 @@ Don't  have an OnPay account yet? Order one through <a href="https://dandomain.d
 2. WooCommerce >= 6.5
 
 == Changelog ==
+
+= [1.0.37] =
+Take adjusted total amounts into account on available amounts for capture
+Added general platform that identifies the pluin with the API.
+Shifted declineURL order reference to wc_order key instead of onpay reference.
 
 = [1.0.36] =
 Ensure proper type of card method logo list before looping it
