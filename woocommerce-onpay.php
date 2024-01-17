@@ -429,9 +429,7 @@ function init_onpay() {
                 echo ent2ncr($html);
                 return;
             } catch (OnPay\API\Exception\TokenException $exception) { // Something's wrong with the token, print link to reauth
-                $html .= $this->getOnboardingHtml();
-                $html .= '<hr>';
-                $html .= '<a href="' . $onpayApi->authorize() . '" class="button-primary">' . __('Log in with OnPay account', 'wc-onpay') . '</a>';
+                $html .= $this->getOnboardingHtml($onpayApi->authorize());
                 $GLOBALS['hide_save_button'] = true;
                 $hideForm = true;
             }
@@ -1265,16 +1263,19 @@ function init_onpay() {
             die(wp_json_encode($response));
         }
 
-	private function getOnboardingHtml() {
-	    $html = '<div style="margin-top: 20px; margin-bottom: 20px; text-align: center; background-color: #ffffff; box-shadow: 0px 0px 5px #fb617f; padding: 30px 20px; border-radius: 10px; max-width: 500px; margin: 0 auto; height: 250px; display: flex; flex-direction: column; justify-content: space-between;">';
-	    $html .= '<h2 style="margin-bottom: 15px;">' . __('Don\'t have an OnPay account yet?', 'wc-onpay') . '</h2>';
-	    $html .= '<span style="margin-bottom: auto;">' . __('Order one through DanDomain from DKK 0,- per month.', 'wc-onpay') . '</span>';
-	    $html .= '<a href="https://dandomain.dk/betalingssystem/priser" style="display: inline-block; background-color:#fb617f; color:white; border-radius:5px; padding: 15px 12px; font-weight: bold; text-decoration:none; margin: 5px;" target="_blank">' . __('Get OnPay now', 'wc-onpay') . '</a>';
-	    $html .= '<a href="https://onpay.io/#brands" style="display: inline-block; color:#fb617f; border-radius:5px; padding: 15px 12px; font-weight: bold; text-decoration:none; margin: 5px;" target="_blank">' . __('OnPay sellers', 'wc-onpay') . '</a>';
-	    $html .= '</div>';
+	private function getOnboardingHtml($authUrl) {
+            $html = '<div style="border-radius: .25rem; text-align: center; background-color: #ffffff; box-shadow: 0 15px 35px rgba(50,50,93,.1), 0 5px 15px rgba(0,0,0,.07); -webkit-box-shadow: 0 15px 35px rgba(50,50,93,.1), 0 5px 15px rgba(0,0,0,.07); padding: 1.25rem; max-width: 500px; min-height: 200px; display: flex; flex-direction: column; justify-content: space-between;">';
+            $html .= '<a href="' . $authUrl . '" style="background-color: #fb617f; color: #fff; border-color: #fb617f; font-weight: bold; padding: .75rem; font-size: 1rem; line-height: 1.5; border-radius: .25rem; text-decoration: none;">' . __('Log in with OnPay account', 'wc-onpay') . '</a>';
+            $html .= '<hr style="border-top: 1px solid rgba(0,0,0,.1); width: 100%; margin: 20px 0 20px 0;">';
+            $html .= '<h3 style="margin: 0 0 15px 0;">' . __('Don\'t have an OnPay account yet?', 'wc-onpay') . '</h3>';
+            $html .= '<span style="margin-bottom: auto;">' . __('Order one through DanDomain from DKK 0,- per month.', 'wc-onpay') . '</span>';
+            $html .= '<div style="display: flex;flex-wrap: wrap;align-content: space-between;">';
+            $html .= '<a href="https://dandomain.dk/betalingssystem/priser" style="margin: auto; width: 43%; background-color: #fb617f; color: #fff; border-color: #fb617f; font-weight: bold; padding: .375rem .75rem; line-height: 1.5; border-radius: .25rem; text-decoration: none;" target="_blank">' . __('Get OnPay now', 'wc-onpay') . '</a>';
+            $html .= '<a href="https://onpay.io/#brands" style="margin: auto; width: 43%; background-color: #fff; color: #fb617f; border: 1px solid #fb617f; font-weight: bold; padding: .375rem .75rem; line-height: 1.5; border-radius: .25rem; text-decoration: none;" target="_blank">' . __('OnPay sellers', 'wc-onpay') . '</a>';
+            $html .= '</div></div>';
 
     	    return $html;
-	}
+	    }
 
         /**
          * Return the name of the option in the WP DB.
