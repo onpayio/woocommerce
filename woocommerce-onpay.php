@@ -154,7 +154,7 @@ function init_onpay() {
             add_action('woocommerce_subscription_cancelled_onpay_card', [$this, 'subscriptionCancellation']);
             add_action('woocommerce_order_refunded', [$this, 'refundEvent'], 10, 2);
             add_action('admin_init', [$this, 'gateway_toggle']);
-            add_action('save_post', [$this, 'handle_order_metabox']);
+            add_action('woocommerce_process_shop_order_meta', [$this, 'handle_order_meta_box']);
             add_action('add_meta_boxes', [$this, 'meta_boxes']);
             add_action('wp_enqueue_scripts', [$this, 'register_scripts']);
             add_action('admin_notices', [$this, 'showAdminNotices']);
@@ -698,20 +698,6 @@ function init_onpay() {
 
 
         /**
-         * Method for setting meta boxes in admin
-         */
-        public function meta_boxes() {
-            global $post;
-            // Determine that we're on the correct controller
-            if (null !== $post && $post->post_type === 'shop_order') {
-                $order = new WC_Order($post->ID);
-                if ($this->isOnPayMethod($order->get_payment_method())) {
-                    add_meta_box('mv_other_fields', __('OnPay.io', 'wc-onpay'), [$this,'order_meta_box'], 'shop_order', 'advanced', 'high', ['order' => $order]);
-                }
-            }
-        }
-
-        /**
          * Method that fires when orders change status to completed
          */
         public function orderStatusCompleteEvent($orderId) {
@@ -735,48 +721,6 @@ function init_onpay() {
                     }
                 }
             } 
-        }
-
-        /**
-         * Method that handles postback of OnPay order meta box
-         */
-        public function handle_order_metabox() {
-            global $post;
-
-            // Determine that we're on the correct controller
-            if (null !== $post && $post->post_type === 'shop_order') {
-                $order = new WC_Order($post->ID);
-                // Determine that the required data for getting transaction is available.
-                if ($this->isOnPayMethod($order->get_payment_method()) && null !== $order->get_transaction_id() && $order->get_transaction_id() !== '') {
-                    // Get the transaction from API
-                    $transaction = $this->get_onpay_client()->transaction()->getTransaction($order->get_transaction_id());
-                    $currencyHelper = new wc_onpay_currency_helper();
-
-                    try {
-                        if (null !== wc_onpay_query_helper::get_post_value('onpay_capture') && null !== wc_onpay_query_helper::get_post_value('onpay_capture_amount')) { // If transaction is requested captured.                            
-                            $value = str_replace(',', '.', wc_onpay_query_helper::get_post_value('onpay_capture_amount'));
-                            $amount = $currencyHelper->majorToMinor($value, $transaction->currencyCode, '.');
-                            $this->get_onpay_client()->transaction()->captureTransaction($transaction->uuid, $amount);
-                            $order->add_order_note( __( 'Amount captured on transaction in OnPay.', 'wc-onpay' ));
-                            $this->addAdminNotice(__( 'Amount captured on transaction in OnPay.', 'wc-onpay' ), 'success');
-
-                        } else if (null !== wc_onpay_query_helper::get_post_value('onpay_refund') && null !== wc_onpay_query_helper::get_post_value('onpay_refund_amount')) { // If transaction is requested refunded.
-                            $value = str_replace('.', ',', wc_onpay_query_helper::get_post_value('onpay_refund_amount'));
-                            $amount = $currencyHelper->majorToMinor($value, $transaction->currencyCode, ',');
-                            $this->get_onpay_client()->transaction()->refundTransaction($transaction->uuid, $amount);
-                            $order->add_order_note( __( 'Amount refunded on transaction in OnPay.', 'wc-onpay' ));
-                            $this->addAdminNotice(__( 'Amount refunded on transaction in OnPay.', 'wc-onpay' ), 'success');
-
-                        } else if (null !== wc_onpay_query_helper::get_post_value('onpay_cancel')) { // If transaction is requested cancelled.
-                            $this->get_onpay_client()->transaction()->cancelTransaction($transaction->uuid);
-                            $order->add_order_note( __( 'Transaction finished/cancelled in OnPay.', 'wc-onpay' ));
-                            $this->addAdminNotice(__( 'Transaction finished/cancelled in OnPay.', 'wc-onpay' ), 'info');
-                        }
-                    } catch (OnPay\API\Exception\ApiException $exception) {
-                        $this->addAdminNotice(__('OnPay error: ', 'wc-onpay') . $exception->getMessage(), 'error');
-                    }
-                }
-            }
         }
 
         /**
@@ -804,6 +748,21 @@ function init_onpay() {
                         $order->add_order_note( __( 'Unable to automatically refund on transaction in OnPay.', 'wc-onpay' ));
                         $this->addAdminNotice(__( 'Unable to refund on transaction in OnPay.', 'wc-onpay' ), 'success');
                     }
+                }
+            }
+        }
+
+        /**
+         * Method for setting meta boxes in admin
+         */
+        public function meta_boxes() {
+            // If in admin
+            if (is_admin()) {
+                // Get order from WooCommerce function
+                $order = wc_get_order();
+                // Determine that we have an order
+                if ($order instanceof WC_Order && $this->isOnPayMethod($order->get_payment_method())) {
+                    add_meta_box('mv_other_fields', __('OnPay.io', 'wc-onpay'), [$this,'order_meta_box'], null, 'advanced', 'high', ['order' => $order]);
                 }
             }
         }
@@ -950,6 +909,44 @@ function init_onpay() {
         }
 
         /**
+         * Method that handles postback of OnPay order meta box
+         */
+        public function handle_order_meta_box($postId) {
+            // Get Order from post id provided
+            $order = wc_get_order($postId);
+
+            // Determine that we have an order and the required data for getting transaction is available.
+            if ($order instanceof WC_Order && $this->isOnPayMethod($order->get_payment_method()) && null !== $order->get_transaction_id() && $order->get_transaction_id() !== '') {
+                // Get the transaction from API
+                $transaction = $this->get_onpay_client()->transaction()->getTransaction($order->get_transaction_id());
+                $currencyHelper = new wc_onpay_currency_helper();
+                try {
+                    if (null !== wc_onpay_query_helper::get_post_value('onpay_capture') && null !== wc_onpay_query_helper::get_post_value('onpay_capture_amount')) { // If transaction is requested captured.                            
+                        $value = str_replace(',', '.', wc_onpay_query_helper::get_post_value('onpay_capture_amount'));
+                        $amount = $currencyHelper->majorToMinor($value, $transaction->currencyCode, '.');
+                        $this->get_onpay_client()->transaction()->captureTransaction($transaction->uuid, $amount);
+                        $order->add_order_note( __( 'Amount captured on transaction in OnPay.', 'wc-onpay' ));
+                        $this->addAdminNotice(__( 'Amount captured on transaction in OnPay.', 'wc-onpay' ), 'success');
+
+                    } else if (null !== wc_onpay_query_helper::get_post_value('onpay_refund') && null !== wc_onpay_query_helper::get_post_value('onpay_refund_amount')) { // If transaction is requested refunded.
+                        $value = str_replace('.', ',', wc_onpay_query_helper::get_post_value('onpay_refund_amount'));
+                        $amount = $currencyHelper->majorToMinor($value, $transaction->currencyCode, ',');
+                        $this->get_onpay_client()->transaction()->refundTransaction($transaction->uuid, $amount);
+                        $order->add_order_note( __( 'Amount refunded on transaction in OnPay.', 'wc-onpay' ));
+                        $this->addAdminNotice(__( 'Amount refunded on transaction in OnPay.', 'wc-onpay' ), 'success');
+
+                    } else if (null !== wc_onpay_query_helper::get_post_value('onpay_cancel')) { // If transaction is requested cancelled.
+                        $this->get_onpay_client()->transaction()->cancelTransaction($transaction->uuid);
+                        $order->add_order_note( __( 'Transaction finished/cancelled in OnPay.', 'wc-onpay' ));
+                        $this->addAdminNotice(__( 'Transaction finished/cancelled in OnPay.', 'wc-onpay' ), 'info');
+                    }
+                } catch (OnPay\API\Exception\ApiException $exception) {
+                    $this->addAdminNotice(__('OnPay error: ', 'wc-onpay') . $exception->getMessage(), 'error');
+                }
+            }
+        }
+
+        /**
          * Hook that handles renewal of subscriptions. Creating transactions from subscriptions in OnPay.
          */
         public function subscriptionPayment($amountToCharge, $newOrder) {
@@ -1011,6 +1008,17 @@ function init_onpay() {
             }
             return $this->get_onpay_client()->subscription()->cancelSubscription($onpaySubscription->uuid);
         }
+
+        /**
+         * Returns whether High Performance Order Storage is enabled in WooCommerce
+         */
+        function isHposEnabled() {
+            if (function_exists('wc_get_container')) {
+                $cotc = wc_get_container()->get(Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class);
+                return $cotc->custom_orders_table_usage_is_enabled();
+            }
+            return false;
+      }
 
         private function addAdminNotice($text, $type = 'success', $dismissable = true) {
             $classes = [
