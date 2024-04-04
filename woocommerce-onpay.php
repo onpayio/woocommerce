@@ -860,19 +860,27 @@ function init_onpay() {
 
                 // Add buttons for handling transaction
                 $html .= '<div id="onpay_action_buttons">';
+                $buttonsShown = false;
                 if ($transaction->charged < $transaction->amount && $transaction->status === 'active') {
                     $html .= '<button class="button-primary" id="button_onpay_capture_reveal">' . __('Capture', 'wc-onpay') . '</button>&nbsp;';
                     wc_enqueue_js('$("#button_onpay_capture_reveal").on("click", function(event) {event.preventDefault(); $("#onpay_action_capture").slideDown(); $("#onpay_action_buttons").slideUp(); })');
+                    $buttonsShown = true;
                 }
 
+                // Show refund button if transaction is refundable, and refund integration setting is disabled.
                 if (0 < $transaction->charged && $transaction->refunded < $transaction->charged) {
-                    $html .= '<button class="button-secondary" id="button_onpay_refund_reveal">' . __('Refund', 'wc-onpay') . '</button>&nbsp;';
+                    $html .= '<button class="button-secondary" id="button_onpay_refund_reveal">' . __('Refund in OnPay', 'wc-onpay') . '</button>&nbsp;';
                     wc_enqueue_js('$("#button_onpay_refund_reveal").on("click", function(event) {event.preventDefault(); $("#onpay_action_refund").slideDown(); $("#onpay_action_buttons").slideUp(); })');
+                    $buttonsShown = true;
                 }
 
                 if ($transaction->status === 'active') {
                     $html .= '<button class="button-secondary" id="button_onpay_cancel_reveal">' . ($transaction->charged === 0 ? __('Cancel transaction', 'wc-onpay') : __('Finish transaction', 'wc-onpay')) . '</button>&nbsp;';
                     wc_enqueue_js('$("#button_onpay_cancel_reveal").on("click", function(event) {event.preventDefault(); $("#onpay_action_cancel").slideDown(); $("#onpay_action_buttons").slideUp(); })');
+                    $buttonsShown = true;
+                }
+                if ($buttonsShown) {
+                    $html .= '<p style="color: #888; font-size: .92em; margin-bottom: 0;">' . __('The buttons above only affect the transaction in OnPay, and do not update the order here in WooCommerce.', 'wc-onpay') . '</p>';
                 }
                 $html .= '</div>';
 
