@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: OnPay.io for WooCommerce\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2020-05-15 09:32+0000\n"
-"PO-Revision-Date: 2023-09-05 09:43+0000\n"
+"PO-Revision-Date: 2024-04-04 13:53+0000\n"
 "Language-Team: Danish\n"
 "Language: da_DK\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
@@ -13,48 +13,48 @@ msgstr ""
 "Last-Translator: \n"
 "X-Generator: Loco https://localise.biz/"
 
-#: woocommerce-onpay.php:878
+#: woocommerce-onpay.php:840
 msgid "Action"
 msgstr "Handling"
 
-#: woocommerce-onpay.php:1214
+#: woocommerce-onpay.php:1234
 msgid "American Express/AMEX"
 msgstr "American Express/AMEX"
 
-#: woocommerce-onpay.php:868 woocommerce-onpay.php:879
+#: woocommerce-onpay.php:830 woocommerce-onpay.php:841
 msgid "Amount"
 msgstr "Beløb"
 
-#: woocommerce-onpay.php:798
+#: woocommerce-onpay.php:745
 msgid "Amount automatically refunded on transaction in OnPay."
 msgstr "Beløbet blev automatisk hævet på transaktion i OnPay"
 
-#: woocommerce-onpay.php:757 woocommerce-onpay.php:758
+#: woocommerce-onpay.php:936 woocommerce-onpay.php:937
 msgid "Amount captured on transaction in OnPay."
 msgstr "Beløbet blev hævet på transaktionen i OnPay"
 
-#: woocommerce-onpay.php:764 woocommerce-onpay.php:765
-#: woocommerce-onpay.php:799
+#: woocommerce-onpay.php:746 woocommerce-onpay.php:943
+#: woocommerce-onpay.php:944
 msgid "Amount refunded on transaction in OnPay."
 msgstr "Beløbet blev refunderet på transaktionen i OnPay"
 
-#: woocommerce-onpay.php:992
+#: woocommerce-onpay.php:1000
 msgid "An error occured cancelling subscription in OnPay."
 msgstr "Der opstod en fejl under opsigelse af abonnement i OnPay."
 
-#: woocommerce-onpay.php:601 classes/gateway-anyday.php:38
+#: woocommerce-onpay.php:604 classes/gateway-anyday.php:38
 msgid "Anyday"
 msgstr "Anyday"
 
-#: woocommerce-onpay.php:565 classes/gateway-applepay.php:38
+#: woocommerce-onpay.php:568 classes/gateway-applepay.php:38
 msgid "Apple Pay"
 msgstr "Apple Pay"
 
-#: woocommerce-onpay.php:657
+#: woocommerce-onpay.php:660
 msgid "Are you sure you want to logout from Onpay?"
 msgstr "Er du sikker på at du ønsker at logge ud fra OnPay?"
 
-#: woocommerce-onpay.php:658
+#: woocommerce-onpay.php:661
 msgid "Are you sure you want to refresh gateway ID and secret?"
 msgstr "Er du sikker på at du ønsker at genopfriske gateway ID og secret?"
 
@@ -62,23 +62,23 @@ msgstr "Er du sikker på at du ønsker at genopfriske gateway ID og secret?"
 msgid "Authorized connection to OnPay failed"
 msgstr "Forbindelse til OnPay fejlede under autorisering."
 
-#: woocommerce-onpay.php:972 woocommerce-onpay.php:973
+#: woocommerce-onpay.php:980 woocommerce-onpay.php:981
 msgid "Authorizing new transaction failed."
 msgstr "Autorisering af en ny betaling fejlede."
 
-#: woocommerce-onpay.php:521
+#: woocommerce-onpay.php:524
 msgid "Automatic capture"
 msgstr "Automatisk hævning"
 
-#: woocommerce-onpay.php:522
+#: woocommerce-onpay.php:525
 msgid "Automatic capture of transactions on status completed"
 msgstr "Automatisk hævning af transaktioner ved gennemført"
 
-#: woocommerce-onpay.php:622
+#: woocommerce-onpay.php:625
 msgid "Automatic payment window language"
 msgstr "Automatisk betalingsvindue sprog"
 
-#: woocommerce-onpay.php:523
+#: woocommerce-onpay.php:526
 msgid ""
 "Automatically capture remaining amounts on transactions, when orders are "
 "marked with status completed"
@@ -86,36 +86,36 @@ msgstr ""
 "Automatisk hævning af det resterende beløb på transaktioner, når en ordre "
 "markeres med status gennemført."
 
-#: woocommerce-onpay.php:923 woocommerce-onpay.php:933
-#: woocommerce-onpay.php:942
+#: woocommerce-onpay.php:893 woocommerce-onpay.php:903
+#: woocommerce-onpay.php:912
 msgid "Cancel"
 msgstr "Annuller "
 
-#: woocommerce-onpay.php:912 woocommerce-onpay.php:941
+#: woocommerce-onpay.php:878 woocommerce-onpay.php:911
 msgid "Cancel transaction"
 msgstr "Annuller transaktion"
 
-#: woocommerce-onpay.php:902 woocommerce-onpay.php:922
+#: woocommerce-onpay.php:865 woocommerce-onpay.php:892
 msgid "Capture"
 msgstr "Hæv"
 
-#: woocommerce-onpay.php:541
+#: woocommerce-onpay.php:544
 msgid "Card"
 msgstr "Kort"
 
-#: woocommerce-onpay.php:547
+#: woocommerce-onpay.php:550
 msgid "Card logos"
 msgstr "Kort logoer"
 
-#: woocommerce-onpay.php:549
+#: woocommerce-onpay.php:552
 msgid "Card logos shown for the Card payment method."
 msgstr "Kort logoer som vises på kreditkort betalingsmuligheden"
 
-#: woocommerce-onpay.php:865
+#: woocommerce-onpay.php:827
 msgid "Card type"
 msgstr "Kort type"
 
-#: woocommerce-onpay.php:869
+#: woocommerce-onpay.php:831
 msgid "Charged"
 msgstr "Hævet"
 
@@ -123,47 +123,43 @@ msgstr "Hævet"
 msgid "Credit card"
 msgstr "Kreditkort"
 
-#: woocommerce-onpay.php:1194
+#: woocommerce-onpay.php:1214
 msgid "Danish"
 msgstr "Dansk"
 
-#: woocommerce-onpay.php:1215
+#: woocommerce-onpay.php:1235
 msgid "Dankort"
 msgstr "Dankort"
 
-#: woocommerce-onpay.php:877
+#: woocommerce-onpay.php:839
 msgid "Date & Time"
 msgstr "Tid og dato"
 
-#: woocommerce-onpay.php:1178
+#: woocommerce-onpay.php:1198
 msgid "Default design"
 msgstr "Standard design"
 
-#: woocommerce-onpay.php:1216
+#: woocommerce-onpay.php:1236
 msgid "Diners"
 msgstr "Diners"
 
-#: woocommerce-onpay.php:1217
+#: woocommerce-onpay.php:1237
 msgid "Discover"
 msgstr "Discover"
 
-#: woocommerce-onpay.php:1263
-msgid ""
-"Don't  have an OnPay account yet? Order one through DanDomain from DKK 0,- "
-"per month."
-msgstr ""
-"Har du endnu ikke en OnPay konto? Gå til DanDomain for at oprette en nu fra "
-"kr. 0,- /mdr."
+#: woocommerce-onpay.php:1293
+msgid "Don't have an OnPay account yet?"
+msgstr "Ingen OnPay konto?"
 
-#: woocommerce-onpay.php:1195
+#: woocommerce-onpay.php:1215
 msgid "Dutch"
 msgstr "Hollandsk"
 
-#: woocommerce-onpay.php:602
+#: woocommerce-onpay.php:605
 msgid "Enable Anyday as payment method"
 msgstr "Aktivér Anyday som betalingsmulighed"
 
-#: woocommerce-onpay.php:566
+#: woocommerce-onpay.php:569
 msgid ""
 "Enable Apple Pay as payment method (Only shown if customer browser supports "
 "method)"
@@ -171,11 +167,11 @@ msgstr ""
 "Aktivér Apple Pay som betalingsmulighed (Kun vist hvis kundens browser "
 "understøtter metoden)"
 
-#: woocommerce-onpay.php:542
+#: woocommerce-onpay.php:545
 msgid "Enable card as payment method"
 msgstr "Aktivér kort som betalingsmulighed"
 
-#: woocommerce-onpay.php:572
+#: woocommerce-onpay.php:575
 msgid ""
 "Enable Google Pay as payment method (Only shown if customer browser supports "
 "method)"
@@ -183,75 +179,75 @@ msgstr ""
 "Aktivér Google Pay som betalingsmulighed (Kun vist hvis kundens browser "
 "understøtter metoden)"
 
-#: woocommerce-onpay.php:560
+#: woocommerce-onpay.php:563
 msgid "Enable MobilePay Online as payment method"
 msgstr "Aktivér MobilePay Online som betalingsmulighed"
 
-#: woocommerce-onpay.php:578
+#: woocommerce-onpay.php:581
 msgid "Enable PayPal as payment method"
 msgstr "Aktivér PayPal som betalingsmulighed"
 
-#: woocommerce-onpay.php:590
+#: woocommerce-onpay.php:593
 msgid "Enable Swish as payment method"
 msgstr "Aktivér Swish som betalingsmulighed"
 
-#: woocommerce-onpay.php:596
+#: woocommerce-onpay.php:599
 msgid "Enable ViaBill as payment method"
 msgstr "Aktivér ViaBill som betalingsmulighed"
 
-#: woocommerce-onpay.php:584
+#: woocommerce-onpay.php:587
 msgid "Enable Vipps as payment method"
 msgstr "Aktivér Vipps som betalingsmulighed"
 
-#: woocommerce-onpay.php:1193
+#: woocommerce-onpay.php:1213
 msgid "English"
 msgstr "Engelsk"
 
-#: woocommerce-onpay.php:834
+#: woocommerce-onpay.php:796
 msgid "Error: "
 msgstr "Fejl: "
 
-#: woocommerce-onpay.php:1196
+#: woocommerce-onpay.php:1216
 msgid "Faroese"
 msgstr "Færøsk"
 
-#: woocommerce-onpay.php:912 woocommerce-onpay.php:941
+#: woocommerce-onpay.php:878 woocommerce-onpay.php:911
 msgid "Finish transaction"
 msgstr "Fuldfør transaktion"
 
-#: woocommerce-onpay.php:1218
+#: woocommerce-onpay.php:1238
 msgid "Forbrugsforeningen"
 msgstr "Forbrugsforeningen"
 
-#: woocommerce-onpay.php:1197
+#: woocommerce-onpay.php:1217
 msgid "French"
 msgstr "Fransk"
 
-#: woocommerce-onpay.php:641
+#: woocommerce-onpay.php:644
 msgid "Gateway ID"
 msgstr "Gateway ID"
 
-#: woocommerce-onpay.php:1152
+#: woocommerce-onpay.php:1172
 msgid "Gateway ID and secret was refreshed"
 msgstr "Gateway ID og secret blev genopfrisket"
 
-#: woocommerce-onpay.php:637
+#: woocommerce-onpay.php:640
 msgid "Gateway information"
 msgstr "Gateway information"
 
-#: woocommerce-onpay.php:470
+#: woocommerce-onpay.php:473
 msgid "General settings"
 msgstr "Generelle indstillinger"
 
-#: woocommerce-onpay.php:1198
+#: woocommerce-onpay.php:1218
 msgid "German"
 msgstr "Tysk"
 
-#: woocommerce-onpay.php:1265
+#: woocommerce-onpay.php:1296
 msgid "Get OnPay now"
 msgstr "Bestil OnPay her"
 
-#: woocommerce-onpay.php:571 classes/gateway-googlepay.php:38
+#: woocommerce-onpay.php:574 classes/gateway-googlepay.php:38
 msgid "Google Pay"
 msgstr "Google Pay"
 
@@ -259,11 +255,11 @@ msgstr "Google Pay"
 msgid "https://onpay.io/"
 msgstr "https://onpay.io/"
 
-#: woocommerce-onpay.php:529
+#: woocommerce-onpay.php:532
 msgid "Integrate with refund feature"
 msgstr "Integrér med refunderings-funktion"
 
-#: woocommerce-onpay.php:530
+#: woocommerce-onpay.php:533
 msgid "Integrate with the built in refund feature in WooCommerce"
 msgstr "Integrér med den indbyggede refunderings-funktion i WooCommerce"
 
@@ -271,31 +267,31 @@ msgstr "Integrér med den indbyggede refunderings-funktion i WooCommerce"
 msgid "Invalid data provided. Unable to create OnPay payment"
 msgstr "Ugyldig data. Betaling i OnPay kunne ikke oprettes"
 
-#: woocommerce-onpay.php:731 woocommerce-onpay.php:820
+#: woocommerce-onpay.php:720 woocommerce-onpay.php:782
 msgid "Invalid OnPay token, please login on settings page"
 msgstr "Ugyldig OnPay token, log ind igen under plugin indstillinger"
 
-#: woocommerce-onpay.php:881
+#: woocommerce-onpay.php:843
 msgid "IP"
 msgstr "IP"
 
-#: woocommerce-onpay.php:1199
+#: woocommerce-onpay.php:1219
 msgid "Italian"
 msgstr "Italiensk"
 
-#: woocommerce-onpay.php:1219
+#: woocommerce-onpay.php:1239
 msgid "JCB"
 msgstr "JCB"
 
-#: woocommerce-onpay.php:429
+#: woocommerce-onpay.php:1291
 msgid "Log in with OnPay account"
 msgstr "Log ind med OnPay konto"
 
-#: woocommerce-onpay.php:652
+#: woocommerce-onpay.php:655
 msgid "Log out from OnPay"
 msgstr "Log ud fra OnPay"
 
-#: woocommerce-onpay.php:1220
+#: woocommerce-onpay.php:1240
 msgid "Mastercard/Maestro"
 msgstr "Mastercard/Maestro"
 
@@ -303,30 +299,30 @@ msgstr "Mastercard/Maestro"
 msgid "MobilePay"
 msgstr "MobilePay"
 
-#: woocommerce-onpay.php:559
+#: woocommerce-onpay.php:562
 msgid "MobilePay Online"
 msgstr "MobilePay Online"
 
-#: woocommerce-onpay.php:422 woocommerce-onpay.php:729
-#: woocommerce-onpay.php:817
+#: woocommerce-onpay.php:427 woocommerce-onpay.php:718
+#: woocommerce-onpay.php:779
 msgid "No connection to OnPay"
 msgstr "Ingen forbindelse til OnPay"
 
-#: woocommerce-onpay.php:1200
+#: woocommerce-onpay.php:1220
 msgid "Norwegian"
 msgstr "Norsk"
 
-#: woocommerce-onpay.php:773
+#: woocommerce-onpay.php:952
 msgid "OnPay error: "
 msgstr "OnPay fejl:"
 
-#: woocommerce-onpay.php:1267
+#: woocommerce-onpay.php:1297
 msgid "OnPay sellers"
 msgstr "OnPay-forhandlere"
 
 #. Author of the plugin
-#: woocommerce-onpay.php:114 woocommerce-onpay.php:414
-#: woocommerce-onpay.php:706 classes/abstract-gateway.php:40
+#: woocommerce-onpay.php:115 woocommerce-onpay.php:419
+#: woocommerce-onpay.php:765 classes/abstract-gateway.php:40
 #: classes/abstract-gateway.php:43
 msgid "OnPay.io"
 msgstr "OnPay.io"
@@ -339,12 +335,16 @@ msgstr "OnPay.io til WooCommerce"
 msgid "OnPay.io payment plugin for WooCommerce"
 msgstr "OnPay.io betalings-plugin for WooCommerce"
 
-#: woocommerce-onpay.php:625
+#: woocommerce-onpay.php:1294
+msgid "Order one through DanDomain from DKK 0,- per month."
+msgstr "Bestil en igennem DanDomain fra 0,- kroner om måneden"
+
+#: woocommerce-onpay.php:628
 msgid "Overrides language chosen above, and instead use frontoffice language"
 msgstr ""
 "Overskriver sproget valgt ovenfor, og bruger frontoffice sproget i stedet"
 
-#: woocommerce-onpay.php:471
+#: woocommerce-onpay.php:474
 msgid "Payment methods"
 msgstr "Betalingsmetoder"
 
@@ -384,75 +384,79 @@ msgstr "Betaling Google Pay"
 msgid "Payment using MobilePay"
 msgstr "Betaling med MobilePay"
 
-#: woocommerce-onpay.php:472
+#: woocommerce-onpay.php:475
 msgid "Payment window"
 msgstr "Betalingsvindue"
 
-#: woocommerce-onpay.php:612
+#: woocommerce-onpay.php:615
 msgid "Payment window design"
 msgstr "Betalingsvindue design"
 
-#: woocommerce-onpay.php:617
+#: woocommerce-onpay.php:620
 msgid "Payment window language"
 msgstr "Betalingsvindue sprog"
 
-#: woocommerce-onpay.php:577 classes/gateway-paypal.php:38
+#: woocommerce-onpay.php:580 classes/gateway-paypal.php:38
 msgid "PayPal"
 msgstr "PayPal"
 
-#: woocommerce-onpay.php:829
+#: woocommerce-onpay.php:791
 msgid "Pending payment"
 msgstr "Afventende betaling"
 
-#: woocommerce-onpay.php:919
+#: woocommerce-onpay.php:889
 msgid "Please enter amount to capture"
 msgstr "Indtast beløb der skal hæves"
 
-#: woocommerce-onpay.php:929
+#: woocommerce-onpay.php:899
 msgid "Please enter amount to refund"
 msgstr "Indtast beløb der skal refunderes"
 
-#: woocommerce-onpay.php:1201
+#: woocommerce-onpay.php:1221
 msgid "Polish"
 msgstr "Polsk"
 
-#: woocommerce-onpay.php:116
+#: woocommerce-onpay.php:117
 msgid "Receive payments with cards and more through OnPay.io"
 msgstr "Modtag betalinger med kreditkort mm. igennem OnPay.io"
 
-#: woocommerce-onpay.php:652
+#: woocommerce-onpay.php:655
 msgid "Refresh"
 msgstr "Genopfrisk"
 
-#: woocommerce-onpay.php:907 woocommerce-onpay.php:932
+#: woocommerce-onpay.php:902
 msgid "Refund"
 msgstr "Refunder"
 
-#: woocommerce-onpay.php:870
+#: woocommerce-onpay.php:872
+msgid "Refund in OnPay"
+msgstr "Refunder i OnPay"
+
+#: woocommerce-onpay.php:832
 msgid "Refunded"
 msgstr "Refunderet"
 
-#: woocommerce-onpay.php:646
+#: woocommerce-onpay.php:649
 msgid "Secret"
 msgstr "Secret"
 
-#: woocommerce-onpay.php:553
+#: woocommerce-onpay.php:556
 msgid "Select logos"
 msgstr "Vælg logoer"
 
-#: woocommerce-onpay.php:1351
+#: woocommerce-onpay.php:1382
 msgid "Settings"
 msgstr "Indstillinger"
 
-#: woocommerce-onpay.php:1202
+#: woocommerce-onpay.php:1222
 msgid "Spanish"
 msgstr "Spansk"
 
-#: woocommerce-onpay.php:858
+#: woocommerce-onpay.php:820
 msgid "Status"
 msgstr "Status"
 
-#: woocommerce-onpay.php:726
+#: woocommerce-onpay.php:715
 msgid ""
 "Status changed to completed. Amount was automatically captured on "
 "transaction in OnPay."
@@ -460,13 +464,13 @@ msgstr ""
 "Status ændret til gennemført. Beløb blev automatisk hævet på transaktion i "
 "OnPay."
 
-#: woocommerce-onpay.php:379
+#: woocommerce-onpay.php:380
 msgid ""
 "Subscription added, please continue with payment for the rest of the order."
 msgstr ""
 "Abonnement blev oprettet, fortsæt venligst med betaling af resten af ordren."
 
-#: woocommerce-onpay.php:386
+#: woocommerce-onpay.php:387
 msgid ""
 "Subscription added, please continue with the rest of the order from the list "
 "below."
@@ -474,91 +478,99 @@ msgstr ""
 "Abonnement blev oprettet, fortsæt venligst med resten af ordren fra listen "
 "nedenfor."
 
-#: woocommerce-onpay.php:238
+#: woocommerce-onpay.php:239
 msgid "Subscription authorized in OnPay."
 msgstr "Abonnement autoriseret i OnPay."
 
-#: woocommerce-onpay.php:994
+#: woocommerce-onpay.php:1002
 msgid "Subscription cancelled in OnPay."
 msgstr "Abonnement opsagt i OnPay."
 
-#: woocommerce-onpay.php:965
+#: woocommerce-onpay.php:973
 msgid "Subscription no longer active in OnPay."
 msgstr "Abonnement er ikke længere aktiv i OnPay."
 
-#: woocommerce-onpay.php:288
+#: woocommerce-onpay.php:289
 msgid "Subscription updated with new payment info in OnPay."
 msgstr "Abonnementet blev opdateret med nye betalingsoplysninger i OnPay."
 
-#: woocommerce-onpay.php:1203
+#: woocommerce-onpay.php:1223
 msgid "Swedish"
 msgstr "Svensk"
 
-#: woocommerce-onpay.php:589 classes/gateway-swish.php:38
+#: woocommerce-onpay.php:592 classes/gateway-swish.php:38
 msgid "Swish"
 msgstr "Swish"
 
-#: woocommerce-onpay.php:628
+#: woocommerce-onpay.php:631
 msgid "Test Mode"
 msgstr "Test-tilstand"
 
-#: woocommerce-onpay.php:400
+#: woocommerce-onpay.php:883
+msgid ""
+"The buttons above only affect the transaction in OnPay, and do not update "
+"the order here in WooCommerce."
+msgstr ""
+"Knapperne ovenfor påvirker kun transaktionen i OnPay, og opdaterer ikke "
+"ordren her i WooCommerce"
+
+#: woocommerce-onpay.php:405
 msgid "The payment failed. Please try again."
 msgstr "Betalingen blev ikke gennemført. Prøv venligst igen."
 
-#: woocommerce-onpay.php:849
+#: woocommerce-onpay.php:811
 msgid "This transaction was performed in testmode."
 msgstr "Denne transaktion blev gennemført i test-tilstand"
 
-#: woocommerce-onpay.php:260 woocommerce-onpay.php:980
+#: woocommerce-onpay.php:261 woocommerce-onpay.php:988
 msgid "Transaction authorized in OnPay. Remember to capture amount."
 msgstr "Transaktion autoriseret i Onpay. Husk at hæve beløb."
 
-#: woocommerce-onpay.php:856
+#: woocommerce-onpay.php:818
 msgid "Transaction details"
 msgstr "Transaktion detaljer"
 
-#: woocommerce-onpay.php:769 woocommerce-onpay.php:770
+#: woocommerce-onpay.php:948 woocommerce-onpay.php:949
 msgid "Transaction finished/cancelled in OnPay."
 msgstr "Transaktion afsluttet/annulleret i OnPay"
 
-#: woocommerce-onpay.php:875
+#: woocommerce-onpay.php:837
 msgid "Transaction history"
 msgstr "Transaktion historik"
 
-#: woocommerce-onpay.php:867
+#: woocommerce-onpay.php:829
 msgid "Transaction number"
 msgstr "Transaktionsnummer"
 
-#: woocommerce-onpay.php:801
+#: woocommerce-onpay.php:748
 msgid "Unable to automatically refund on transaction in OnPay."
 msgstr "En fejl opstod under automatisk refundering på transaktion i OnPay."
 
-#: woocommerce-onpay.php:802
+#: woocommerce-onpay.php:749
 msgid "Unable to refund on transaction in OnPay."
 msgstr "En fejl opstod under hævning af transaktion i OnPay."
 
-#: woocommerce-onpay.php:1221
+#: woocommerce-onpay.php:1241
 msgid "UnionPay"
 msgstr "UnionPay"
 
-#: woocommerce-onpay.php:880
+#: woocommerce-onpay.php:842
 msgid "User"
 msgstr "Bruger"
 
-#: woocommerce-onpay.php:595 classes/gateway-viabill.php:38
+#: woocommerce-onpay.php:598 classes/gateway-viabill.php:38
 msgid "ViaBill"
 msgstr "ViaBill"
 
-#: woocommerce-onpay.php:583 classes/gateway-vipps.php:38
+#: woocommerce-onpay.php:586 classes/gateway-vipps.php:38
 msgid "Vipps"
 msgstr "Vipps"
 
-#: woocommerce-onpay.php:1222
+#: woocommerce-onpay.php:1242
 msgid "Visa/VPay/Visa Electron "
 msgstr "Visa/VPay/Visa Electron"
 
-#: woocommerce-onpay.php:939
+#: woocommerce-onpay.php:909
 msgid ""
 "When finishing or cancelling a transaction, no further capturing of amount "
 "will be possible on transaction."
