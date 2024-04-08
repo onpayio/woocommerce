@@ -2,9 +2,9 @@
 Contributors: onpayio
 Tags: onpay, gateway, payment, payment gateway, woocommerce, psp
 Requires at least: 5.8
-Tested up to: 6.3.1
+Tested up to: 6.5
 Requires PHP: 7.2
-Stable tag: 1.0.37
+Stable tag: 1.0.38
 License: MIT
 License URI: https://mit-license.org/
 
@@ -33,6 +33,10 @@ Don't  have an OnPay account yet? Order one through <a href="https://dandomain.d
 2. WooCommerce >= 6.5
 
 == Changelog ==
+
+= [1.0.38] =
+Tweaked texts on actions buttons in admin
+Added support fro HPOS in WooCommerce
 
 = [1.0.37] =
 Take adjusted total amounts into account on available amounts for capture
