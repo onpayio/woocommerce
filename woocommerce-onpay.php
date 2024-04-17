@@ -1195,10 +1195,10 @@ function init_onpay() {
             $currencyHelper = new wc_onpay_currency_helper();
             
             $orderCurrency = $currencyHelper->fromAlpha3($order->get_currency());
-            $orderRefunded = $order->get_total_refunded() * (10 ** $orderCurrency->exp);
+            $orderRefunded = $currencyHelper->majorToMinor($order->get_total_refunded(), $orderCurrency->numeric, '.');
 
             // If order amount is lower than transaction amount, we'll roll with that instead
-            $orderTotal = $order->get_total() * (10 ** $orderCurrency->exp);
+            $orderTotal = $currencyHelper->majorToMinor($order->get_total(), $orderCurrency->numeric, '.');
             $total = $transaction->amount;
             if($orderTotal < $total) {
                 $total = $orderTotal;
