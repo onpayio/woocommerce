@@ -1216,6 +1216,7 @@ function init_onpay() {
                 'fo' => __('Faroese', 'wc-onpay'),
                 'fr' => __('French', 'wc-onpay'),
                 'de' => __('German', 'wc-onpay'),
+                'is' => __('Icelandic', 'wc-onpay'),
                 'it' => __('Italian', 'wc-onpay'),
                 'no' => __('Norwegian', 'wc-onpay'),
                 'pl' => __('Polish', 'wc-onpay'),
