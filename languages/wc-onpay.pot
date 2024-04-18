@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OnPay.io for WooCommerce\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-04-04 13:50+0000\n"
+"POT-Creation-Date: 2024-04-18 08:27+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Language-Team: \n"
 "Language: \n"
@@ -17,7 +17,7 @@ msgstr ""
 msgid "Action"
 msgstr ""
 
-#: woocommerce-onpay.php:1234
+#: woocommerce-onpay.php:1235
 msgid "American Express/AMEX"
 msgstr ""
 
@@ -125,7 +125,7 @@ msgstr ""
 msgid "Danish"
 msgstr ""
 
-#: woocommerce-onpay.php:1235
+#: woocommerce-onpay.php:1236
 msgid "Dankort"
 msgstr ""
 
@@ -137,15 +137,15 @@ msgstr ""
 msgid "Default design"
 msgstr ""
 
-#: woocommerce-onpay.php:1236
+#: woocommerce-onpay.php:1237
 msgid "Diners"
 msgstr ""
 
-#: woocommerce-onpay.php:1237
+#: woocommerce-onpay.php:1238
 msgid "Discover"
 msgstr ""
 
-#: woocommerce-onpay.php:1293
+#: woocommerce-onpay.php:1294
 msgid "Don't have an OnPay account yet?"
 msgstr ""
 
@@ -209,7 +209,7 @@ msgstr ""
 msgid "Finish transaction"
 msgstr ""
 
-#: woocommerce-onpay.php:1238
+#: woocommerce-onpay.php:1239
 msgid "Forbrugsforeningen"
 msgstr ""
 
@@ -237,7 +237,7 @@ msgstr ""
 msgid "German"
 msgstr ""
 
-#: woocommerce-onpay.php:1296
+#: woocommerce-onpay.php:1297
 msgid "Get OnPay now"
 msgstr ""
 
@@ -247,6 +247,10 @@ msgstr ""
 
 #. Author URI of the plugin
 msgid "https://onpay.io/"
+msgstr ""
+
+#: woocommerce-onpay.php:1219
+msgid "Icelandic"
 msgstr ""
 
 #: woocommerce-onpay.php:532
@@ -269,15 +273,15 @@ msgstr ""
 msgid "IP"
 msgstr ""
 
-#: woocommerce-onpay.php:1219
+#: woocommerce-onpay.php:1220
 msgid "Italian"
 msgstr ""
 
-#: woocommerce-onpay.php:1239
+#: woocommerce-onpay.php:1240
 msgid "JCB"
 msgstr ""
 
-#: woocommerce-onpay.php:1291
+#: woocommerce-onpay.php:1292
 msgid "Log in with OnPay account"
 msgstr ""
 
@@ -285,7 +289,7 @@ msgstr ""
 msgid "Log out from OnPay"
 msgstr ""
 
-#: woocommerce-onpay.php:1240
+#: woocommerce-onpay.php:1241
 msgid "Mastercard/Maestro"
 msgstr ""
 
@@ -302,7 +306,7 @@ msgstr ""
 msgid "No connection to OnPay"
 msgstr ""
 
-#: woocommerce-onpay.php:1220
+#: woocommerce-onpay.php:1221
 msgid "Norwegian"
 msgstr ""
 
@@ -310,7 +314,7 @@ msgstr ""
 msgid "OnPay error: "
 msgstr ""
 
-#: woocommerce-onpay.php:1297
+#: woocommerce-onpay.php:1298
 msgid "OnPay sellers"
 msgstr ""
 
@@ -329,7 +333,7 @@ msgstr ""
 msgid "OnPay.io payment plugin for WooCommerce"
 msgstr ""
 
-#: woocommerce-onpay.php:1294
+#: woocommerce-onpay.php:1295
 msgid "Order one through DanDomain from DKK 0,- per month."
 msgstr ""
 
@@ -405,7 +409,7 @@ msgstr ""
 msgid "Please enter amount to refund"
 msgstr ""
 
-#: woocommerce-onpay.php:1221
+#: woocommerce-onpay.php:1222
 msgid "Polish"
 msgstr ""
 
@@ -437,11 +441,11 @@ msgstr ""
 msgid "Select logos"
 msgstr ""
 
-#: woocommerce-onpay.php:1382
+#: woocommerce-onpay.php:1383
 msgid "Settings"
 msgstr ""
 
-#: woocommerce-onpay.php:1222
+#: woocommerce-onpay.php:1223
 msgid "Spanish"
 msgstr ""
 
@@ -482,7 +486,7 @@ msgstr ""
 msgid "Subscription updated with new payment info in OnPay."
 msgstr ""
 
-#: woocommerce-onpay.php:1223
+#: woocommerce-onpay.php:1224
 msgid "Swedish"
 msgstr ""
 
@@ -536,7 +540,7 @@ msgstr ""
 msgid "Unable to refund on transaction in OnPay."
 msgstr ""
 
-#: woocommerce-onpay.php:1241
+#: woocommerce-onpay.php:1242
 msgid "UnionPay"
 msgstr ""
 
@@ -552,7 +556,7 @@ msgstr ""
 msgid "Vipps"
 msgstr ""
 
-#: woocommerce-onpay.php:1242
+#: woocommerce-onpay.php:1243
 msgid "Visa/VPay/Visa Electron "
 msgstr ""
 

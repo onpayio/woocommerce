@@ -350,7 +350,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
 
     // Get language based on configuration or frontoffice language
     protected function getLanguage() {
-        if ($this->get_option(WC_OnPay::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE_AUTO)) {
+        if ($this->get_option(WC_OnPay::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE_AUTO) === 'yes') {
             $languageIso = substr(get_locale(), 0, 2);
             $languageRelations = [
                 'en' => 'en',
@@ -359,6 +359,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
                 'de' => 'de',
                 'fo' => 'fo',
                 'fr' => 'fr',
+                'is' => 'is',
                 'it' => 'it',
                 'nl' => 'nl',
                 'no' => 'no',
