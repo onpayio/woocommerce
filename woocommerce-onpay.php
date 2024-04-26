@@ -205,12 +205,12 @@ function init_onpay() {
             if ($order->has_status('pending')) {
                 // If we're dealing with a subscription
                 if ($type === 'subscription') {
-                    // Write subscription id to subscription order for later reference. 
+                    // Write subscription id to subscription order and save it. This is the created subscription
                     $wcSubscriptions = wcs_get_subscriptions_for_order($order->get_id());
                     foreach ($wcSubscriptions as $id => $subscription) {
-                        $subscriptionOrder = new WC_order($id);
-                        $subscriptionOrder->set_transaction_id($onpayNumber);
-                        $subscriptionOrder->save();
+                        $subscription->add_order_note(__( 'Subscription authorized in OnPay.', 'wc-onpay' ));
+                        $this->setOnpayId($subscription, $onpayNumber);
+                        $subscription->save();
                     }
 
                     // If we're dealing with an renewal, we need to create a new transaction from the subscription
@@ -227,9 +227,11 @@ function init_onpay() {
                 // Completion of order
                 // Check if we have an ID of a created transaction, and use that for reference if so
                 if (null !== $createdTransactionNumber) {
+                    $this->setOnpayId($order, $createdTransactionNumber);
                     $order->payment_complete($createdTransactionNumber);
                 } else {
                     // Otherwise use the number provided
+                    $this->setOnpayId($order, $onpayNumber);
                     $order->payment_complete($onpayNumber);
                 }
                 // Add remaining data regarding order and save it.
@@ -247,19 +249,19 @@ function init_onpay() {
                 if ($originalSubscription !== '') {
                     // If originalSubscription is present, we'll set the subscription order that is to be updated to this.
                     // This is during the flow of an early renewal.
-                    $subscriptionOrder = new WC_order($originalSubscription);
+                    $subscriptionOrder = new WC_Subscription($originalSubscription);
                     $this->cancelOnpaySubscription($subscriptionOrder); // Cancel current subscription in OnPay if possible.
                 } else {
                     // Otherwise we'll set the subscription to be updated as the current.
                     // This is during the flow of a method update.
-                    $subscriptionOrder = new WC_order($order->get_id());
+                    $subscriptionOrder = new WC_Subscription($order->get_id());
                     // Current subscription will be automatically cancelled.
                 }
 
                 // Check that the current subscription order transaction ID is not already the OnPay number submitted.
-                if ($subscriptionOrder->get_transaction_id() !== $onpayNumber) {
+                if ($this->getOnpayId($subscriptionOrder) !== $onpayNumber) {
                     // We'll simply update the transaction ID on the subscription order
-                    $subscriptionOrder->set_transaction_id($onpayNumber);
+                    $this->setOnpayId($subscriptionOrder, $onpayNumber);
                     $subscriptionOrder->add_order_note(__( 'Subscription updated with new payment info in OnPay.', 'wc-onpay' ));
                     $subscriptionOrder->save();
                 }
@@ -291,40 +293,6 @@ function init_onpay() {
             $orderId = wc_get_order_id_by_order_key($key);
             $order = wc_get_order($orderId);
             return $order;
-        }
-
-        // Clones existing order as a new order.
-        private function cloneOrder($order) {
-            $newOrder = wc_create_order([
-                'customer_id' => $order->get_customer_id(),
-                'customer_note' => $order->get_customer_note(),
-                'created_via' => $order->get_created_via(),
-            ]);
-            $newOrder->set_currency($order->get_currency());
-
-            $newOrder->set_billing_first_name($order->get_billing_first_name());
-            $newOrder->set_billing_last_name($order->get_billing_last_name());
-            $newOrder->set_billing_company($order->get_billing_company());
-            $newOrder->set_billing_address_1($order->get_billing_address_1());
-            $newOrder->set_billing_address_2($order->get_billing_address_2());
-            $newOrder->set_billing_city($order->get_billing_city());
-            $newOrder->set_billing_state($order->get_billing_state());
-            $newOrder->set_billing_postcode($order->get_billing_postcode());
-            $newOrder->set_billing_country($order->get_billing_country());
-            $newOrder->set_billing_email($order->get_billing_email());
-            $newOrder->set_billing_phone($order->get_billing_phone());
-
-            $newOrder->set_shipping_first_name($order->get_shipping_first_name());
-            $newOrder->set_shipping_last_name($order->get_shipping_last_name());
-            $newOrder->set_shipping_company($order->get_shipping_company());
-            $newOrder->set_shipping_address_1($order->get_shipping_address_1());
-            $newOrder->set_shipping_address_2($order->get_shipping_address_2());
-            $newOrder->set_shipping_city($order->get_shipping_city());
-            $newOrder->set_shipping_state($order->get_shipping_state());
-            $newOrder->set_shipping_postcode($order->get_shipping_postcode());
-            $newOrder->set_shipping_country($order->get_shipping_country());
-
-            return $newOrder;
         }
 
         public function declinedReturnMessage() {
@@ -639,12 +607,13 @@ function init_onpay() {
          */
         public function orderStatusCompleteEvent($orderId) {
             $order = new WC_Order($orderId);
+            $transactionId = $this->getOnpayId($order);
             // Check if order payment method is OnPay
-            if ($this->isOnPayMethod($order->get_payment_method()) && null !== $order->get_transaction_id() && $order->get_transaction_id() !== '') {
+            if ($this->isOnPayMethod($order->get_payment_method()) && null !== $transactionId) {
                 // If autocapture is not enabled, no need to do anything
                 if($this->get_option(WC_OnPay::SETTING_ONPAY_STATUS_AUTOCAPTURE) === 'yes') {
                     try {
-                        $transaction = $this->get_onpay_client()->transaction()->getTransaction($order->get_transaction_id());
+                        $transaction = $this->get_onpay_client()->transaction()->getTransaction($transactionId);
                         $availableAmount = $this->getAvailableAmount($order, $transaction);
                         // If transaction has status active, and charged amount is less than the full amount, we'll capture the remaining amount on transaction
                         if ($transaction->status === 'active' && $availableAmount > 0) {
@@ -667,9 +636,10 @@ function init_onpay() {
             // Only perform refund if setting is enabled
             if ($this->get_option(WC_OnPay::SETTING_ONPAY_REFUND_INTEGRATION) === 'yes') {
                 $order = wc_get_order($order_id);
-                if ($this->isOnPayMethod($order->get_payment_method()) && null !== $order->get_transaction_id() && $order->get_transaction_id() !== '') {
+                $transactionId = $this->getOnpayId($order);
+                if ($this->isOnPayMethod($order->get_payment_method()) && null !== $transactionId) {
                     // Get the transaction from API
-                    $transaction = $this->get_onpay_client()->transaction()->getTransaction($order->get_transaction_id());
+                    $transaction = $this->get_onpay_client()->transaction()->getTransaction($transactionId);
                     // Get refund data
                     $refund = new WC_Order_Refund($refund_id);
                     // Get amount as minor units
@@ -698,7 +668,7 @@ function init_onpay() {
                 // Get order from WooCommerce function
                 $order = wc_get_order();
                 // Determine that we have an order
-                if ($order instanceof WC_Order && $this->isOnPayMethod($order->get_payment_method())) {
+                if ($order instanceof WC_Order && !$order instanceof WC_Subscription && $this->isOnPayMethod($order->get_payment_method())) {
                     add_meta_box('mv_other_fields', __('OnPay.io', 'wc-onpay'), [$this,'order_meta_box'], null, 'advanced', 'high', ['order' => $order]);
                 }
             }
@@ -721,14 +691,15 @@ function init_onpay() {
             }
 
             $order = $meta['args']['order'];
+            $transactionId = $this->getOnpayId($order);
             $html = '';
 
             // If order is pending, no need to find the transaction.
-            if (null === $order->get_transaction_id() || $order->get_transaction_id() === '' || $order->has_status('pending')) {
+            if (null === $transactionId || $order->has_status('pending')) {
                 echo __('Pending payment', 'wc-onpay');
             } else {
                 try {
-                    $transaction = $onpayApi->transaction()->getTransaction($order->get_transaction_id());
+                    $transaction = $onpayApi->transaction()->getTransaction($transactionId);
                 } catch (OnPay\API\Exception\ApiException $exception) {
                     echo __('Error: ', 'wc-onpay') . $exception->getMessage();
                     exit;
@@ -865,11 +836,13 @@ function init_onpay() {
         public function handle_order_meta_box($postId) {
             // Get Order from post id provided
             $order = wc_get_order($postId);
+            $transactionId = $this->getOnpayId($order);
 
             // Determine that we have an order and the required data for getting transaction is available.
-            if ($order instanceof WC_Order && $this->isOnPayMethod($order->get_payment_method()) && null !== $order->get_transaction_id() && $order->get_transaction_id() !== '') {
+            // We're not interested in handling on subscriptions here
+            if ($order instanceof WC_Order && !$order instanceof WC_Subscription && $this->isOnPayMethod($order->get_payment_method()) && null !== $transactionId) {
                 // Get the transaction from API
-                $transaction = $this->get_onpay_client()->transaction()->getTransaction($order->get_transaction_id());
+                $transaction = $this->get_onpay_client()->transaction()->getTransaction($transactionId);
                 $currencyHelper = new wc_onpay_currency_helper();
                 try {
                     if (null !== wc_onpay_query_helper::get_post_value('onpay_capture') && null !== wc_onpay_query_helper::get_post_value('onpay_capture_amount')) { // If transaction is requested captured.                            
@@ -902,13 +875,14 @@ function init_onpay() {
          */
         public function subscriptionPayment($amountToCharge, $newOrder) {
             // Get subscription order
-            $subscriptionOrder = new WC_Order($newOrder->get_meta('_subscription_renewal'));
+            $subscriptionOrder = new WC_Subscription($newOrder->get_meta('_subscription_renewal'));
+            $subscriptionId = $this->getOnpayId($subscriptionOrder);
 
             // Create transaction from subscription in OnPay.
             $currencyHelper = new wc_onpay_currency_helper();
             $orderCurrency = $currencyHelper->fromAlpha3($newOrder->get_currency());
             $orderAmount = $currencyHelper->majorToMinor($newOrder->get_total(), $orderCurrency->numeric, '.');
-            $onpaySubscription = $this->get_onpay_client()->subscription()->getSubscription($subscriptionOrder->get_transaction_id());
+            $onpaySubscription = $this->get_onpay_client()->subscription()->getSubscription($subscriptionId);
 
             // Subscription no longer active.
             if ($onpaySubscription->status !== 'active') {
@@ -930,6 +904,7 @@ function init_onpay() {
             // Finalize order
             $newOrder->add_order_note(__('Transaction authorized in OnPay. Remember to capture amount.', 'wc-onpay'));
             $newOrder->payment_complete($onpayNumber);
+            $this->setOnpayId($newOrder, $onpayNumber);
             $newOrder->add_meta_data($this::WC_ONPAY_ID . '_test_mode', wc_onpay_query_helper::get_query_value('onpay_testmode'));
             $newOrder->save_meta_data();
         }
@@ -947,13 +922,15 @@ function init_onpay() {
         }
 
         private function cancelOnpaySubscription($subscriptionOrder) {
+            $subscriptionId = $this->getOnpayId($subscriptionOrder);
             // No need to do anything is no transaction ID is currently assigned.
-            if ($subscriptionOrder->get_transaction_id() === '') {
+            if (null === $subscriptionId) {
                 return;
             }
 
             // No need to do anything if no subscription is found by current Transaction ID in OnPay.
-            $onpaySubscription = $this->get_onpay_client()->subscription()->getSubscription($subscriptionOrder->get_transaction_id());
+            $onpaySubscription = $this->get_onpay_client()->subscription()->getSubscription($subscriptionId);
+
             if ($onpaySubscription->status === 'cancelled') {
                 return;
             }
@@ -1185,6 +1162,30 @@ function init_onpay() {
                 'unionpay'              => __('UnionPay', 'wc-onpay'),
                 'visa'                  => __('Visa/VPay/Visa Electron ', 'wc-onpay')
             ];
+        }
+
+        private function setOnpayId(WC_Order $wcOrder, string$transactionId) {
+            $key = '_onpay_id';
+            if ($wcOrder->meta_exists($key)) {
+                $wcOrder->update_meta_data($key, $transactionId);
+            } else {
+                $wcOrder->add_meta_data($key, $transactionId);
+            }
+            $wcOrder->set_transaction_id($transactionId);
+            $wcOrder->save_meta_data();
+        }
+
+        private function getOnpayId(WC_Order $wcOrder) {
+            // Attempt getting transaction id using our own meta value
+            $transaction_id = $wcOrder->get_meta('_onpay_id');
+		    if (empty($transaction_id)) {
+                // Failing getting by our value, check for generic transaction_id
+                $transaction_id = $wcOrder->get_transaction_id();
+            }
+            if ($transaction_id === '') {
+                return null;
+            }
+            return $transaction_id;
         }
 
         /**
