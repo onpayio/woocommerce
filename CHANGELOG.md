@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Added Icelandic option
+- Streamlined and optimized subscriptions
 
 ## [1.0.38] - 2024-04-08
 - Tweaked texts on actions buttons in admin
