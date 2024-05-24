@@ -49,4 +49,5 @@
     /**
      * Other Classes
      */
+    class_alias('WoocommerceOnpay\League\ISO3166\ISO3166', 'League\ISO3166\ISO3166');
     class_alias('WoocommerceOnpay\Alcohol\ISO4217', 'Alcohol\ISO4217');

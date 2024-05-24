@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed floating point conversion error when performing bulk comple capture
 - Added Icelandic option
 - Streamlined and optimized subscriptions
+- Properly format country coeds when creating payments
 
 ## [1.0.38] - 2024-04-08
 - Tweaked texts on actions buttons in admin

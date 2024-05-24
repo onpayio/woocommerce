@@ -6,6 +6,7 @@
     },
     "require": {
         "onpayio/php-sdk": "^1.0",
-        "alcohol/iso4217": "^3.1"
+        "alcohol/iso4217": "^3.1",
+        "league/iso3166": "^2.1"
     }
 }

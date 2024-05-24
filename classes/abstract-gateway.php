@@ -118,6 +118,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         }
         $orderHelper = new wc_onpay_order_helper();
         $currencyHelper = new wc_onpay_currency_helper();
+        $countryHelper = new wc_onpay_country_helper();
         $orderData = $order->get_data();
 
         // Check for subscription presence
@@ -269,14 +270,14 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         }
 
         $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressCity', $this->sanitizeFieldValue($customer->get_billing_city()));
-        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressCountry', $this->sanitizeFieldValue($customer->get_billing_country()));
+        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressCountry', $this->sanitizeFieldValue($countryHelper->alpha2toNumeric($customer->get_billing_country())));
         $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressLine1', $this->sanitizeFieldValue($customer->get_billing_address_1()));
         $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressLine2', $this->sanitizeFieldValue($customer->get_billing_address_2()));
         $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressPostalCode', $this->sanitizeFieldValue($customer->get_billing_postcode()));
         $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressState', $this->sanitizeFieldValue($customer->get_billing_state()));
 
         $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressCity', $this->sanitizeFieldValue($customer->get_shipping_city()));
-        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressCountry', $this->sanitizeFieldValue($customer->get_shipping_country()));
+        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressCountry', $this->sanitizeFieldValue($countryHelper->alpha2toNumeric($customer->get_shipping_country())));
         $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressLine1', $this->sanitizeFieldValue($customer->get_shipping_address_1()));
         $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressLine2', $this->sanitizeFieldValue($customer->get_shipping_address_2()));
         $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressPostalCode', $this->sanitizeFieldValue($customer->get_shipping_postcode()));
