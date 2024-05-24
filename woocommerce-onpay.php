@@ -48,6 +48,7 @@ function init_onpay() {
     include_once __DIR__ . '/require.php';
 
     include_once __DIR__ . '/classes/currency-helper.php';
+    include_once __DIR__ . '/classes/country-helper.php';
     include_once __DIR__ . '/classes/order-helper.php';
     include_once __DIR__ . '/classes/query-helper.php';
     include_once __DIR__ . '/classes/token-storage.php';
