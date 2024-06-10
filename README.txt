@@ -2,9 +2,9 @@
 Contributors: onpayio
 Tags: onpay, gateway, payment, payment gateway, woocommerce, psp
 Requires at least: 5.8
-Tested up to: 6.5
+Tested up to: 6.5.4
 Requires PHP: 7.2
-Stable tag: 1.0.38
+Stable tag: 1.0.39
 License: MIT
 License URI: https://mit-license.org/
 
@@ -33,6 +33,13 @@ Don't  have an OnPay account yet? Order one through <a href="https://dandomain.d
 2. WooCommerce >= 6.5
 
 == Changelog ==
+
+= [1.0.39] =
+Added Klarna
+Fixed floating point conversion error when performing bulk comple capture
+Added Icelandic option
+Streamlined and optimized subscriptions
+Properly format country coeds when creating payments
 
 = [1.0.38] =
 Tweaked texts on actions buttons in admin
