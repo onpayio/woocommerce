@@ -234,6 +234,8 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
             $paymentWindow->setMethod($paymentWindow::METHOD_SWISH);
         } else if($order->get_payment_method() === 'onpay_paypal') {
             $paymentWindow->setMethod($paymentWindow::METHOD_PAYPAL);
+        } else if($order->get_payment_method() === 'onpay_klarna') {
+            $paymentWindow->setMethod($paymentWindow::METHOD_KLARNA);
         }
 
         if($this->get_option(WC_OnPay::SETTING_ONPAY_PAYMENTWINDOW_DESIGN) && $this->get_option(WC_OnPay::SETTING_ONPAY_PAYMENTWINDOW_DESIGN) !== 'ONPAY_DEFAULT_WINDOW') {

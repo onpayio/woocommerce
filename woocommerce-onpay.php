@@ -62,6 +62,7 @@ function init_onpay() {
     include_once __DIR__ . '/classes/gateway-vipps.php';
     include_once __DIR__ . '/classes/gateway-swish.php';
     include_once __DIR__ . '/classes/gateway-paypal.php';
+    include_once __DIR__ . '/classes/gateway-klarna.php';
 
     class WC_OnPay extends WC_Payment_Gateway {
         const PLUGIN_VERSION = '1.0.38';
@@ -76,6 +77,7 @@ function init_onpay() {
         const SETTING_ONPAY_EXTRA_PAYMENTS_VIPPS = 'extra_payments_vipps';
         const SETTING_ONPAY_EXTRA_PAYMENTS_SWISH = 'extra_payments_swish';
         const SETTING_ONPAY_EXTRA_PAYMENTS_PAYPAL = 'extra_payments_paypal';
+        const SETTING_ONPAY_EXTRA_PAYMENTS_KLARNA = 'extra_payments_klarna';
         const SETTING_ONPAY_EXTRA_PAYMENTS_CARD = 'extra_payments_card';
         const SETTING_ONPAY_PAYMENTWINDOW_DESIGN = 'paymentwindow_design';
         const SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE = 'paymentwindow_language';
@@ -488,6 +490,12 @@ function init_onpay() {
                     'type' => 'checkbox',
                     'default' => 'no',
                 ],
+                self::SETTING_ONPAY_EXTRA_PAYMENTS_KLARNA => [
+                    'title' => __('Klarna', 'wc-onpay'),
+                    'label' => __('Enable Klarna as payment method', 'wc-onpay'),
+                    'type' => 'checkbox',
+                    'default' => 'no',
+                ],
                 self::SETTING_ONPAY_EXTRA_PAYMENTS_VIPPS => [
                     'title' => __('Vipps', 'wc-onpay'),
                     'label' => __('Enable Vipps as payment method', 'wc-onpay'),
@@ -585,6 +593,7 @@ function init_onpay() {
                     wc_onpay_gateway_vipps::WC_ONPAY_GATEWAY_VIPPS_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_VIPPS,
                     wc_onpay_gateway_swish::WC_ONPAY_GATEWAY_SWISH_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_SWISH,
                     wc_onpay_gateway_paypal::WC_ONPAY_GATEWAY_PAYPAL_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_PAYPAL,
+                    wc_onpay_gateway_klarna::WC_ONPAY_GATEWAY_KLARNA_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_KLARNA,
                 ];
                 if (in_array($gatewayId, $this->getGateways()) && array_key_exists($gatewayId, $gatewaySettings)) {
                     $enabled = false;
@@ -1008,6 +1017,7 @@ function init_onpay() {
                 wc_onpay_gateway_vipps::WC_ONPAY_GATEWAY_VIPPS_ID,
                 wc_onpay_gateway_swish::WC_ONPAY_GATEWAY_SWISH_ID,
                 wc_onpay_gateway_paypal::WC_ONPAY_GATEWAY_PAYPAL_ID,
+                wc_onpay_gateway_klarna::WC_ONPAY_GATEWAY_KLARNA_ID,
             ];
         }
         
@@ -1071,6 +1081,7 @@ function init_onpay() {
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_VIPPS, null);
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_SWISH, null);
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_PAYPAL, null);
+                $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_KLARNA, null);
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD, null);
                 $this->update_option(self::SETTING_ONPAY_PAYMENTWINDOW_DESIGN, null);
                 $this->update_option(self::SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE, null);
@@ -1299,6 +1310,7 @@ function init_onpay() {
         $methods[] = 'wc_onpay_gateway_vipps';
         $methods[] = 'wc_onpay_gateway_swish';
         $methods[] = 'wc_onpay_gateway_paypal';
+        $methods[] = 'wc_onpay_gateway_klarna';
 
         return $methods;
     }
@@ -1316,6 +1328,7 @@ function init_onpay() {
 			require_once 'classes/blocks/gateway-swish-block.php';
 			require_once 'classes/blocks/gateway-viabill-block.php';
 			require_once 'classes/blocks/gateway-vipps-block.php';
+			require_once 'classes/blocks/gateway-klarna-block.php';
 			add_action(
 				'woocommerce_blocks_payment_method_type_registration',
 				function(Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry) {
@@ -1328,6 +1341,7 @@ function init_onpay() {
 					$payment_method_registry->register(new wc_onpay_gateway_swish_block());
 					$payment_method_registry->register(new wc_onpay_gateway_viabill_block());
 					$payment_method_registry->register(new wc_onpay_gateway_vipps_block());
+					$payment_method_registry->register(new wc_onpay_gateway_klarna_block());
 				}
 			);
 		}
