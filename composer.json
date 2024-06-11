@@ -1,12 +1,12 @@
 {
     "config": {
         "platform": {
-            "php": "7.2"
+            "php": "7.4"
         }
     },
     "require": {
         "onpayio/php-sdk": "^1.0",
-        "alcohol/iso4217": "^3.1",
-        "league/iso3166": "^2.1"
+        "alcohol/iso4217": "^4.1",
+        "league/iso3166": "^4.3"
     }
 }
