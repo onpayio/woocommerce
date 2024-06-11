@@ -6,7 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.39] - 2024-04-08
+## [1.0.40] - 2024-06-11
+- Bumped target php version and updated dependencies
+
+## [1.0.39] - 2024-06-10
 - Added Klarna
 - Fixed floating point conversion error when performing bulk comple capture
 - Added Icelandic option
