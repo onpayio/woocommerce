@@ -29,6 +29,9 @@ class wc_onpay_country_helper {
         $this->converter = new \League\ISO3166\ISO3166();
     }
     public function alpha2toNumeric(string $alpha2) {
+        if ('' === $alpha2) {
+            return '0';
+        }
         return $this->converter->alpha2($alpha2)['numeric'];
     }
 }
