@@ -152,8 +152,8 @@ function init_onpay() {
             add_action('woocommerce_api_'. $this->id . '_callback', [$this, 'callback']);
             add_action('woocommerce_before_checkout_form', [$this, 'declinedReturnMessage']);
             add_action('woocommerce_thankyou', [$this, 'declinedReturnMessage']);
-            add_action('woocommerce_order_status_completed', [$this, 'orderStatusCompleteEvent']);
             add_action('woocommerce_scheduled_subscription_payment_onpay_card', [$this, 'subscriptionPayment'], 1, 2);
+            add_action('woocommerce_order_status_completed', [$this, 'orderStatusCompleteEvent']);
             add_action('woocommerce_subscription_cancelled_onpay_card', [$this, 'subscriptionCancellation']);
             add_action('woocommerce_order_refunded', [$this, 'refundEvent'], 10, 2);
             add_action('admin_init', [$this, 'gateway_toggle']);
@@ -913,9 +913,11 @@ function init_onpay() {
 
             // Finalize order
             $newOrder->add_order_note(__('Transaction authorized in OnPay. Remember to capture amount.', 'wc-onpay'));
-            $newOrder->payment_complete($onpayNumber);
             $this->setOnpayId($newOrder, $onpayNumber);
             $newOrder->add_meta_data($this::WC_ONPAY_ID . '_test_mode', wc_onpay_query_helper::get_query_value('onpay_testmode'));
+
+            // Mark order as complete. This must be done as one of the last things, since it will trigger the woocommerce_order_status_completed hook.
+            $newOrder->payment_complete($onpayNumber);
             $newOrder->save_meta_data();
         }
 
@@ -1176,7 +1178,7 @@ function init_onpay() {
             ];
         }
 
-        private function setOnpayId(WC_Order $wcOrder, string$transactionId) {
+        private function setOnpayId(WC_Order $wcOrder, string $transactionId) {
             $key = '_onpay_id';
             if ($wcOrder->meta_exists($key)) {
                 $wcOrder->update_meta_data($key, $transactionId);
