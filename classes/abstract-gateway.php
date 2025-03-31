@@ -292,6 +292,20 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
 
         $paymentWindow->setInfo($paymentInfo);
 
+        // Add surcharge fee if enabled
+        if($this->get_option(WC_OnPay::SETTING_ONPAY_SURCHARGE_ENABLE) === 'yes') {
+            $paymentWindow->setSurchargeEnabled(true);
+
+            // Time to get rate
+            $surchargeVatRateOption = $this->get_option(WC_OnPay::SETTING_ONPAY_SURCHARGE_VAT_RATE);
+            $rate = wc_onpay_surcharge_helper::getSurchargeVatRate($surchargeVatRateOption, $customer, $order);
+            $formattedRate = wc_onpay_surcharge_helper::formatSurchargeRate($rate);
+            if (null !== $rate && 0 < $rate) {
+                $paymentWindow->setSurchargeVatRate($formattedRate);
+                wc_onpay_surcharge_helper::saveOrderTaxClass($order, $surchargeVatRateOption); // Save rate to order meta for later use
+            }
+        }        
+        
         // Enable testmode
         if($this->get_option(WC_OnPay::SETTING_ONPAY_TESTMODE) === 'yes') {
             $paymentWindow->setTestMode(1);
