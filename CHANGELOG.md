@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.0.42] - 2025-03-31
 - Add card scheme to end of method title, when paying with card.
 - Perform complete order in the correct sequence on subscription renewals
 
