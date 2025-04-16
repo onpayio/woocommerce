@@ -270,6 +270,7 @@ function init_onpay() {
                     // Add Fee item to the order and recalculate totals
                     $order->add_item($itemFee);
                     $order->calculate_totals(true);
+                    $order->add_order_note(__('Card surcharge fee from OnPay added to order', 'wc-onpay'));
                 }
 
                 // Completion of order
@@ -1034,6 +1035,15 @@ function init_onpay() {
             $newOrder->add_order_note(__('Transaction authorized in OnPay. Remember to capture amount.', 'wc-onpay'));
             $this->setOnpayId($newOrder, $onpayNumber);
             $newOrder->add_meta_data($this::WC_ONPAY_ID . '_test_mode', wc_onpay_query_helper::get_query_value('onpay_testmode'));
+
+            // Check if a fee is reported back
+            if (null !== $createdOnpayTransaction->fee) {
+                $itemFee = wc_onpay_surcharge_helper::getSurchargeItemFee($createdOnpayTransaction->fee, $newOrder, $customer);
+                // Add Fee item to the order and recalculate totals
+                $newOrder->add_item($itemFee);
+                $newOrder->calculate_totals(true);
+                $newOrder->add_order_note(__('Card surcharge fee from OnPay added to order', 'wc-onpay'));
+            }
 
             // Mark order as complete. This must be done as one of the last things, since it will trigger the woocommerce_order_status_completed hook.
             $newOrder->payment_complete($onpayNumber);
