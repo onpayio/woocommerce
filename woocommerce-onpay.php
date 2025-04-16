@@ -190,10 +190,13 @@ function init_onpay() {
             $paymentWindow = new \OnPay\API\PaymentWindow();
             $paymentWindow->setSecret($this->get_option(self::SETTING_ONPAY_SECRET));
 
-            // Get IDs and reference
+            // Get query values from callback
             $onpayNumber = wc_onpay_query_helper::get_query_value('onpay_number');
             $onpayReference = wc_onpay_query_helper::get_query_value('onpay_reference');
-            $createdTransactionNumber = wc_onpay_query_helper::get_query_value('onpay_number_transaction');
+            $onpayTransactionNumber = wc_onpay_query_helper::get_query_value('onpay_number_transaction');
+            $onpayFee = wc_onpay_query_helper::get_query_value('onpay_fee');
+            $onpayType = wc_onpay_query_helper::get_query_value('onpay_type');
+            $onpayTestmode = wc_onpay_query_helper::get_query_value('onpay_testmode');
 
             // Validate query parameters and check that onpay_number is present
             if (!$paymentWindow->validatePayment(wc_onpay_query_helper::get_query()) || null === $onpayNumber) {
@@ -214,11 +217,10 @@ function init_onpay() {
             $currencyHelper = new wc_onpay_currency_helper();
             $orderCurrency = $currencyHelper->fromAlpha3($order->get_currency());
 
-            $type = wc_onpay_query_helper::get_query_value('onpay_type');
             // Is order in pending state
             if ($order->has_status('pending')) {
                 // If we're dealing with a subscription
-                if ($type === 'subscription') {
+                if ($onpayType === 'subscription') {
                     // Write subscription id to subscription order and save it. This is the created subscription
                     $wcSubscriptions = wcs_get_subscriptions_for_order($order->get_id());
                     foreach ($wcSubscriptions as $id => $subscription) {
@@ -251,22 +253,25 @@ function init_onpay() {
                             $surchargeEnabled,
                             $surchargeVatRate
                         );
-                        $createdTransactionNumber = $createdTransaction->transactionNumber;
+
+                        // Set transaction number to the one returned from OnPay authorization
+                        $onpayTransactionNumber = $createdTransaction->transactionNumber;
+
+                        // Set fee value to the one returned from OnPay authorization
+                        $onpayFee = $createdTransaction->fee;
                     }
                 }
 
                 // Set card type if present
-                $cardType = wc_onpay_query_helper::get_query_value('onpay_cardtype');
-                $method = wc_onpay_query_helper::get_query_value('onpay_method');
-
-                if ('card' === $method && null !== $cardType) {
-                    $this->applyCardTypeToOrder($order, $cardType);
+                $onpayCardType = wc_onpay_query_helper::get_query_value('onpay_cardtype');
+                $onpayMethod = wc_onpay_query_helper::get_query_value('onpay_method');
+                if ('card' === $onpayMethod && null !== $onpayCardType) {
+                    $this->applyCardTypeToOrder($order, $onpayCardType);
                 }
 
-                // Check if a fee is reported back
-                $fee = wc_onpay_query_helper::get_query_value('onpay_fee');
-                if (null !== $fee) {
-                    $itemFee = wc_onpay_surcharge_helper::getSurchargeItemFee((int)$fee, $order, $customer);
+                // Apply fee if present
+                if (null !== $onpayFee) {
+                    $itemFee = wc_onpay_surcharge_helper::getSurchargeItemFee((int)$onpayFee, $order, $customer);
                     // Add Fee item to the order and recalculate totals
                     $order->add_item($itemFee);
                     $order->calculate_totals(true);
@@ -275,9 +280,9 @@ function init_onpay() {
 
                 // Completion of order
                 // Check if we have an ID of a created transaction, and use that for reference if so
-                if (null !== $createdTransactionNumber) {
-                    $this->setOnpayId($order, $createdTransactionNumber);
-                    $order->payment_complete($createdTransactionNumber);
+                if (null !== $onpayTransactionNumber) {
+                    $this->setOnpayId($order, $onpayTransactionNumber);
+                    $order->payment_complete($onpayTransactionNumber);
                 } else {
                     // Otherwise use the number provided
                     $this->setOnpayId($order, $onpayNumber);
@@ -286,14 +291,13 @@ function init_onpay() {
 
                 // Add remaining data regarding order and save it.
                 $order->add_order_note(__( 'Transaction authorized in OnPay. Remember to capture amount.', 'wc-onpay' ));
-                $order->add_meta_data($this::WC_ONPAY_ID . '_test_mode', wc_onpay_query_helper::get_query_value('onpay_testmode'));
+                $order->add_meta_data($this::WC_ONPAY_ID . '_test_mode', $onpayTestmode);
                 $order->save_meta_data();
                 $order->save();
             }
-            
-            if ($type === 'subscription' && null !== wc_onpay_query_helper::get_query_value('update_method')) { // Order is subscription and an update of method is requested.
-                // Set OnpayNumber from callback query
-                $onpayNumber = wc_onpay_query_helper::get_query_value('onpay_number');
+
+            $onpayUpdateMethod = wc_onpay_query_helper::get_query_value('update_method');
+            if ($onpayType === 'subscription' && null !== $onpayUpdateMethod) { // Order is subscription and an update of method is requested.
                 // Try getting original subscription Id
                 $originalSubscription = get_post_meta($order->get_id(), '_subscription_renewal', true);
                 if ($originalSubscription !== '') {
