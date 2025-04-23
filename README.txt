@@ -2,9 +2,9 @@
 Contributors: onpayio
 Tags: onpay, gateway, payment, payment gateway, woocommerce, psp
 Requires at least: 5.8
-Tested up to: 6.5.4
+Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.0.42
+Stable tag: 1.0.43
 License: MIT
 License URI: https://mit-license.org/
 
@@ -33,6 +33,10 @@ Don't  have an OnPay account yet? Order one through <a href="https://dandomain.d
 2. WooCommerce >= 6.5
 
 == Changelog ==
+
+= [1.0.43] =
+Properly sanitize outputted strings.
+Added support for surcharge fee feature
 
 = [1.0.42] =
 Add card scheme to end of method title, when paying with card.
