@@ -373,7 +373,7 @@ function init_onpay() {
             if ($isDeclined === '1' && $order && !$order->is_paid()) {
                 // Order is not paid yet and user is returned through declined url from OnPay.
                 // Valid OnPay URL params are also present, which indicates that user did not simply quit payment, but an actual error was encountered.
-                echo '<div class="woocommerce-error">' . __('The payment failed. Please try again.', 'wc-onpay') . '</div>';
+                $this->outputString('<div class="woocommerce-error">' . __('The payment failed. Please try again.', 'wc-onpay') . '</div>');
             }
         }
 
@@ -397,7 +397,7 @@ function init_onpay() {
             } catch (OnPay\API\Exception\ConnectionException $exception) { // No connection to OnPay API
                 $html .= '<h3>' . __('No connection to OnPay', 'wc-onpay') . '</h3>';
                 $GLOBALS['hide_save_button'] = true;
-                echo ent2ncr($html);
+                $this->outputString($html);
                 return;
             } catch (OnPay\API\Exception\TokenException $exception) { // Something's wrong with the token, print link to reauth
                 $html .= $this->getOnboardingHtml($onpayApi->authorize());
@@ -431,7 +431,7 @@ function init_onpay() {
                 $html .= '</div></div>';
             }
 
-            echo ent2ncr($html);
+            $this->outputString($html);
         }
 
         function admin_options_sections($currentSection) {
@@ -791,10 +791,10 @@ function init_onpay() {
             try {
                 $onpayApi->ping();
             } catch (OnPay\API\Exception\ConnectionException $exception) { // No connection to OnPay API
-                echo ent2ncr('<h3>' . __('No connection to OnPay', 'wc-onpay') . '</h3>');
+                $this->outputString('<h3>' . __('No connection to OnPay', 'wc-onpay') . '</h3>');
                 return;
             } catch (OnPay\API\Exception\TokenException $exception) { // Something's wrong with the token, print link to reauth
-                echo ent2ncr('<h3>' . __('Invalid OnPay token, please login on settings page', 'wc-onpay') . '</h3>');
+                $this->outputString('<h3>' . __('Invalid OnPay token, please login on settings page', 'wc-onpay') . '</h3>');
                 return;
             }
 
@@ -804,12 +804,12 @@ function init_onpay() {
 
             // If order is pending, no need to find the transaction.
             if (null === $transactionId || $order->has_status('pending')) {
-                echo __('Pending payment', 'wc-onpay');
+                $this->outputString(__('Pending payment', 'wc-onpay'));
             } else {
                 try {
                     $transaction = $onpayApi->transaction()->getTransaction($transactionId);
                 } catch (OnPay\API\Exception\ApiException $exception) {
-                    echo __('Error: ', 'wc-onpay') . $exception->getMessage();
+                    $this->outputString(__('Error: ', 'wc-onpay') . $this->cleanOutput($exception->getMessage()));
                     exit;
                 }
 
@@ -833,23 +833,23 @@ function init_onpay() {
                 $html .= '<td style="vertical-align: top;">';
                 $html .= '<p><strong>' . __('Transaction details', 'wc-onpay') . ':</strong></p>';
                 $html .= '<table class="widefat striped"><tbody>';
-                $html .= '<tr><td><strong>' . __('Status', 'wc-onpay') . '</strong></td><td>' . $transaction->status . '</td></tr>';
+                $html .= '<tr><td><strong>' . __('Status', 'wc-onpay') . '</strong></td><td>' . $this->cleanOutput($transaction->status) . '</td></tr>';
 
                 $cardType = $transaction->cardType;
                 if ($cardType === null) {
                     $cardType = $transaction->acquirer;
                 }
 
-                $html .= '<tr><td><strong>' . __('Card type', 'wc-onpay') . '</strong></td><td>' . $cardType . '</td></tr>';
+                $html .= '<tr><td><strong>' . __('Card type', 'wc-onpay') . '</strong></td><td>' . $this->cleanOutput($cardType) . '</td></tr>';
 
-                $html .= '<tr><td><strong>' . __('Transaction number', 'wc-onpay') . '</strong></td><td>' . $transaction->transactionNumber . '</td></tr>';
-                $html .= '<tr><td><strong>' . __('Amount', 'wc-onpay') . '</strong></td><td>' . $currency->alpha3 . ' ' . $amount . '</td></tr>';
-                $html .= '<tr><td><strong>' . __('Charged', 'wc-onpay') . '</strong></td><td>' . $currency->alpha3 . ' ' . $charged . '</td></tr>';
-                $html .= '<tr><td><strong>' . __('Refunded', 'wc-onpay') . '</strong></td><td>' . $currency->alpha3 . ' ' . $refunded . '</td></tr>';
+                $html .= '<tr><td><strong>' . __('Transaction number', 'wc-onpay') . '</strong></td><td>' . $this->cleanOutput($transaction->transactionNumber) . '</td></tr>';
+                $html .= '<tr><td><strong>' . __('Amount', 'wc-onpay') . '</strong></td><td>' . $this->cleanOutput($currency->alpha3 . ' ' . $amount) . '</td></tr>';
+                $html .= '<tr><td><strong>' . __('Charged', 'wc-onpay') . '</strong></td><td>' . $this->cleanOutput($currency->alpha3 . ' ' . $charged) . '</td></tr>';
+                $html .= '<tr><td><strong>' . __('Refunded', 'wc-onpay') . '</strong></td><td>' . $this->cleanOutput($currency->alpha3 . ' ' . $refunded) . '</td></tr>';
 
                 if (null !== $transaction->fee) {
                     $fee = $currencyHelper->minorToMajor($transaction->fee, $currency->numeric);
-                    $html .= '<tr><td><strong>' . __('Card surcharge fee', 'wc-onpay') . '</strong></td><td>' . $currency->alpha3 . ' ' . $fee . '</td></tr>';
+                    $html .= '<tr><td><strong>' . __('Card surcharge fee', 'wc-onpay') . '</strong></td><td>' . $this->cleanOutput($currency->alpha3 . ' ' . $fee) . '</td></tr>';
                 }
 
                 $html .= '<tr><td colspan="2">';
@@ -871,11 +871,11 @@ function init_onpay() {
                 foreach ($transaction->history as $history) {
                    $history->dateTime->setTimeZone(wp_timezone());
                    $html .= '<tr>';
-                   $html .= '<td>' . $history->dateTime->format('Y-m-d H:i:s') . '</td>';
-                   $html .= '<td>' . $history->action . '</td>';
-                   $html .= '<td>' . $currency->alpha3 . ' ' . $currencyHelper->minorToMajor($history->amount, $currency->numeric) . '</td>';
-                   $html .= '<td>' . $history->author . '</td>';
-                   $html .= '<td>' . $history->ip . '</td>';
+                   $html .= '<td>' . $this->cleanOutput($history->dateTime->format('Y-m-d H:i:s')) . '</td>';
+                   $html .= '<td>' . $this->cleanOutput($history->action) . '</td>';
+                   $html .= '<td>' . $this->cleanOutput($currency->alpha3 . ' ' . $currencyHelper->minorToMajor($history->amount, $currency->numeric)) . '</td>';
+                   $html .= '<td>' . $this->cleanOutput($history->author) . '</td>';
+                   $html .= '<td>' . $this->cleanOutput($history->ip) . '</td>';
                    $html .= '</tr>';
                 }
                 $html .= '</tbody></table>';
@@ -914,7 +914,7 @@ function init_onpay() {
                 // Hidden capture form, revealed by button above
                 $html .= '<div id="onpay_action_capture" style="display: none;">';
                 $html .= '<p>' . __('Please enter amount to capture', 'wc-onpay') . '</p>';
-                $html .= '<input type="text" name="onpay_capture_amount" value="' . $availableAmount . '">';
+                $html .= '<input type="text" name="onpay_capture_amount" value="' . $this->cleanOutput($availableAmount) . '">';
                 $html .= '<hr />';
                 $html .= '<input class="button-primary" type="submit" name="onpay_capture" value="' . __('Capture', 'wc-onpay') . '">&nbsp;';
                 $html .= '<button class="button-secondary" id="button_onpay_capture_hide">' . __('Cancel', 'wc-onpay') . '</button>';
@@ -924,7 +924,7 @@ function init_onpay() {
                 // Hidden refund form, revealed by button above
                 $html .= '<div id="onpay_action_refund" style="display: none;">';
                 $html .= '<p>' . __('Please enter amount to refund', 'wc-onpay') . '</p>';
-                $html .= '<input type="text" name="onpay_refund_amount" value="' . $availableCharged . '">';
+                $html .= '<input type="text" name="onpay_refund_amount" value="' . $this->cleanOutput($availableCharged) . '">';
                 $html .= '<hr />';
                 $html .= '<input class="button-primary" type="submit" name="onpay_refund" value="' . __('Refund', 'wc-onpay') . '">&nbsp;';
                 $html .= '<button class="button-secondary" id="button_onpay_refund_hide">' . __('Cancel', 'wc-onpay') . '</button>';
@@ -940,7 +940,7 @@ function init_onpay() {
                 $html .= '</div>';
                 wc_enqueue_js('$("#button_onpay_cancel_hide").on("click", function(event) {event.preventDefault(); $("#onpay_action_cancel").slideUp(); $("#onpay_action_buttons").slideDown(); })');
             }
-            echo ent2ncr($html);
+            $this->outputString($html);
         }
 
         /**
@@ -1124,7 +1124,7 @@ function init_onpay() {
             $transientNotices = get_transient(self::WC_ONPAY_SESSION_ADMIN_NOTICES . '_' . get_current_user_id());
             if ($transientNotices !== false) {
                 foreach($transientNotices as $notice) {
-                    echo $notice;
+                    $this->outputString($this->cleanOutput($notice));
                 }
                 delete_transient(self::WC_ONPAY_SESSION_ADMIN_NOTICES . '_' . get_current_user_id());
             }
@@ -1404,6 +1404,14 @@ function init_onpay() {
                 $response = ['error' => $message];
             }
             die(wp_json_encode($response));
+        }
+
+        private function cleanOutput($string) {
+            return (string)ent2ncr(htmlentities($string));
+        }
+
+        private function outputString($string) {
+            echo $string;
         }
 
 	    private function getOnboardingHtml($authUrl) {
