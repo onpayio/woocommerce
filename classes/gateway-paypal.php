@@ -35,14 +35,15 @@ class wc_onpay_gateway_paypal extends wc_onpay_gateway_abstract {
 
         // Define gateway
         $this->id = $this::WC_ONPAY_GATEWAY_PAYPAL_ID;
+        $this->method_settings_key = WC_OnPay::SETTING_ONPAY_EXTRA_PAYMENTS_PAYPAL;
         $this->method_title = __('PayPal', 'wc-onpay');
-        $this->description = __('Payment through PayPal', 'wc-onpay');
-        $this->method_description = $this->description;
+        $this->method_description = __('Payment through PayPal', 'wc-onpay');
+        $this->description = $this->getDescriptionString();
         $this->has_fields = false;
         $this->icon = plugin_dir_url(__DIR__) . 'assets/img/paypal.svg';
         $this->title = $this->getMethodTitle();
 
-        if ($this->get_option(WC_OnPay::SETTING_ONPAY_EXTRA_PAYMENTS_PAYPAL) !== 'yes') {
+        if ($this->get_option($this->method_settings_key) !== 'yes') {
             $this->enabled = 'no';
         } else {
             $this->enabled = 'yes';

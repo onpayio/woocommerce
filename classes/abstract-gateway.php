@@ -407,6 +407,20 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         return false;
     }
 
+    /**
+     * @return string
+     */
+    protected function getDescriptionString() {
+        if (isset($this->method_settings_key)) {
+            $key = $this->method_settings_key . WC_OnPay::SETTING_ONPAY_EXTRA_PAYMENTS_DESCRIPTION_POSTFIX;
+            $overwrite = $this->get_option($key);
+            if (null !== $overwrite && '' !== $overwrite) {
+                return $this->sanitizeFieldValue($overwrite);
+            }
+        }
+        return $this->method_description;
+    }
+
     private function sanitizeFieldValue($value) {
         $value = strval($value);
         $value = htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML401, 'UTF-8');
