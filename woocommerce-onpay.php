@@ -79,6 +79,7 @@ function init_onpay() {
         const SETTING_ONPAY_EXTRA_PAYMENTS_SWISH = 'extra_payments_swish';
         const SETTING_ONPAY_EXTRA_PAYMENTS_PAYPAL = 'extra_payments_paypal';
         const SETTING_ONPAY_EXTRA_PAYMENTS_KLARNA = 'extra_payments_klarna';
+        const SETTING_ONPAY_EXTRA_PAYMENTS_DESCRIPTION_POSTFIX = '_description';
         const SETTING_ONPAY_EXTRA_PAYMENTS_CARD = 'extra_payments_card';
         const SETTING_ONPAY_PAYMENTWINDOW_DESIGN = 'paymentwindow_design';
         const SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE = 'paymentwindow_language';
@@ -505,6 +506,8 @@ function init_onpay() {
             } else if ('surcharge_fee' === $section) {
                 $this->init_surcharge_fee_settings();
             }
+            wp_enqueue_style(WC_OnPay::WC_ONPAY_ID . '_style', plugin_dir_url(__FILE__) . 'assets/admin/css/admin.css');
+            wp_enqueue_script(WC_OnPay::WC_ONPAY_ID . '_script', plugin_dir_url(__FILE__) . 'assets/admin/js/admin.js');
         }
 
         private function init_general_settings() {
@@ -540,67 +543,97 @@ function init_onpay() {
                     'type' => 'multiselect',
                     'description' => __( 'Card logos shown for the Card payment method.', 'wc-onpay' ),
                     'desc_tip' => true,
-                    'class'             => 'wc-enhanced-select',
+                    'class'             => 'wc-enhanced-select field-deselect-hide' . ($this->isMethodEnabled(WC_OnPay::SETTING_ONPAY_EXTRA_PAYMENTS_CARD) ? ' show' : ''),
                     'custom_attributes' => [
-                        'data-placeholder' => __( 'Select logos', 'wc-onpay' )
+                        'data-placeholder' => __( 'Select logos', 'wc-onpay' ),
+                        'data-selection-source' => '#woocommerce_' . $this->id . '_' . self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD
                     ],
                     'default' => '',
                     'options' => $this->get_card_logo_options(),
                 ],
+                // Overwrite description field
+                $this->getMethodDescriptionKey(self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD) => $this->getMethodDescriptionField(self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD),
+                
                 self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY => [
                     'title' => __('MobilePay Online', 'wc-onpay'),
                     'label' => __('Enable MobilePay Online as payment method', 'wc-onpay'),
                     'type' => 'checkbox',
                     'default' => 'no',
                 ],
+                // Overwrite description field
+                $this->getMethodDescriptionKey(self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY) => $this->getMethodDescriptionField(self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY),
+                
                 self::SETTING_ONPAY_EXTRA_PAYMENTS_APPLEPAY => [
                     'title' => __('Apple Pay', 'wc-onpay'),
                     'label' => __('Enable Apple Pay as payment method (Only shown if customer browser supports method)', 'wc-onpay'),
                     'type' => 'checkbox',
                     'default' => 'no',
                 ],
+                // Overwrite description field
+                $this->getMethodDescriptionKey(self::SETTING_ONPAY_EXTRA_PAYMENTS_APPLEPAY) => $this->getMethodDescriptionField(self::SETTING_ONPAY_EXTRA_PAYMENTS_APPLEPAY),
+
                 self::SETTING_ONPAY_EXTRA_PAYMENTS_GOOGLEPAY => [
                     'title' => __('Google Pay', 'wc-onpay'),
                     'label' => __('Enable Google Pay as payment method (Only shown if customer browser supports method)', 'wc-onpay'),
                     'type' => 'checkbox',
                     'default' => 'no',
                 ],
+                // Overwrite description field
+                $this->getMethodDescriptionKey(self::SETTING_ONPAY_EXTRA_PAYMENTS_GOOGLEPAY) => $this->getMethodDescriptionField(self::SETTING_ONPAY_EXTRA_PAYMENTS_GOOGLEPAY),
+
                 self::SETTING_ONPAY_EXTRA_PAYMENTS_PAYPAL => [
                     'title' => __('PayPal', 'wc-onpay'),
                     'label' => __('Enable PayPal as payment method', 'wc-onpay'),
                     'type' => 'checkbox',
                     'default' => 'no',
                 ],
+                // Overwrite description field
+                $this->getMethodDescriptionKey(self::SETTING_ONPAY_EXTRA_PAYMENTS_PAYPAL) => $this->getMethodDescriptionField(self::SETTING_ONPAY_EXTRA_PAYMENTS_PAYPAL),
+
                 self::SETTING_ONPAY_EXTRA_PAYMENTS_KLARNA => [
                     'title' => __('Klarna', 'wc-onpay'),
                     'label' => __('Enable Klarna as payment method', 'wc-onpay'),
                     'type' => 'checkbox',
                     'default' => 'no',
                 ],
+                // Overwrite description field
+                $this->getMethodDescriptionKey(self::SETTING_ONPAY_EXTRA_PAYMENTS_KLARNA) => $this->getMethodDescriptionField(self::SETTING_ONPAY_EXTRA_PAYMENTS_KLARNA),
+
                 self::SETTING_ONPAY_EXTRA_PAYMENTS_VIPPS => [
                     'title' => __('Vipps', 'wc-onpay'),
                     'label' => __('Enable Vipps as payment method', 'wc-onpay'),
                     'type' => 'checkbox',
                     'default' => 'no',
                 ],
+                // Overwrite description field
+                $this->getMethodDescriptionKey(self::SETTING_ONPAY_EXTRA_PAYMENTS_VIPPS) => $this->getMethodDescriptionField(self::SETTING_ONPAY_EXTRA_PAYMENTS_VIPPS),
+
                 self::SETTING_ONPAY_EXTRA_PAYMENTS_SWISH => [
                     'title' => __('Swish', 'wc-onpay'),
                     'label' => __('Enable Swish as payment method', 'wc-onpay'),
                     'type' => 'checkbox',
                     'default' => 'no',
                 ],
+                // Overwrite description field
+                $this->getMethodDescriptionKey(self::SETTING_ONPAY_EXTRA_PAYMENTS_SWISH) => $this->getMethodDescriptionField(self::SETTING_ONPAY_EXTRA_PAYMENTS_SWISH),
+
                 self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL => [
                     'title' => __('ViaBill', 'wc-onpay'),
                     'label' => __('Enable ViaBill as payment method', 'wc-onpay'),
                     'type' => 'checkbox',
                     'default' => 'no',
                 ],
+                // Overwrite description field
+                $this->getMethodDescriptionKey(self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL) => $this->getMethodDescriptionField(self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL),
+
                 self::SETTING_ONPAY_EXTRA_PAYMENTS_ANYDAY => [
                     'title' => __('Anyday', 'wc-onpay'),
                     'label' => __('Enable Anyday as payment method', 'wc-onpay'),
                     'type' => 'checkbox',
                     'default' => 'no',
                 ],
+                // Overwrite description field
+                $this->getMethodDescriptionKey(self::SETTING_ONPAY_EXTRA_PAYMENTS_ANYDAY) => $this->getMethodDescriptionField(self::SETTING_ONPAY_EXTRA_PAYMENTS_ANYDAY),
             ];
 		}
 
@@ -673,6 +706,39 @@ function init_onpay() {
                 wc_enqueue_js('$("#button_onpay_refreshsecret").on("click", function(event) {event.preventDefault(); if(confirm(\''. __('Are you sure you want to refresh gateway ID and secret?', 'wc-onpay') . '\')) {window.location.href = window.location.href+"&refresh=1";}})');
             
                 return $html;
+        }
+
+        /**
+         * @param string $methodName
+         * @return bool
+         */
+        private function isMethodEnabled($methodName) {
+            return $this->get_option($methodName) === 'yes';
+        }
+
+        /**
+         * @param string $methodName
+         * @return string
+         */
+        private function getMethodDescriptionKey($methodName) {
+            return $methodName . self::SETTING_ONPAY_EXTRA_PAYMENTS_DESCRIPTION_POSTFIX;
+        }
+
+        /**
+         * @param string $methodName
+         * @return array
+         */
+        private function getMethodDescriptionField($methodName) {
+            return [
+                'description' => __('Overwrite method description with your own text in this field. Leave empty for the default text.', 'wc-onpay'),
+                'desc_tip' => true,
+                'type' => 'text',
+                'class' => 'field-deselect-hide' . ($this->isMethodEnabled($methodName) ? ' show' : ''),
+                'placeholder' => __('Overwrite method description', 'wc-onpay'),
+                'custom_attributes' => [
+                    'data-selection-source' => '#woocommerce_' . $this->id . '_' . $methodName,
+                ],
+            ];
         }
 
         /**

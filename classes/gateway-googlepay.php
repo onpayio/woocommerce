@@ -35,14 +35,15 @@ class wc_onpay_gateway_googlepay extends wc_onpay_gateway_abstract {
 
         // Define gateway
         $this->id = $this::WC_ONPAY_GATEWAY_GOOGLEPAY_ID;
+        $this->method_settings_key = WC_OnPay::SETTING_ONPAY_EXTRA_PAYMENTS_GOOGLEPAY;
         $this->method_title = __('Google Pay', 'wc-onpay');
-        $this->description = __('Payment using Google Pay', 'wc-onpay');
-        $this->method_description = $this->description;
+        $this->method_description = __('Payment using Google Pay', 'wc-onpay');
+        $this->description = $this->getDescriptionString();
         $this->has_fields = false;
         $this->icon = plugin_dir_url(__DIR__) . 'assets/img/google-pay.svg';
         $this->title = $this->getMethodTitle();
 
-        if ($this->get_option(WC_OnPay::SETTING_ONPAY_EXTRA_PAYMENTS_GOOGLEPAY) !== 'yes') {
+        if ($this->get_option($this->method_settings_key) !== 'yes') {
             $this->enabled = 'no';
         } else {
             $this->enabled = 'yes';

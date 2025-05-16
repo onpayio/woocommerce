@@ -35,14 +35,15 @@ class wc_onpay_gateway_applepay extends wc_onpay_gateway_abstract {
 
         // Define gateway
         $this->id = $this::WC_ONPAY_GATEWAY_APPLEPAY_ID;
+        $this->method_settings_key = WC_OnPay::SETTING_ONPAY_EXTRA_PAYMENTS_APPLEPAY;
         $this->method_title = __('Apple Pay', 'wc-onpay');
-        $this->description = __('Payment using Apple Pay', 'wc-onpay');
-        $this->method_description = $this->description;
+        $this->method_description = __('Payment using Apple Pay', 'wc-onpay');
+        $this->description = $this->getDescriptionString();
         $this->has_fields = false;
         $this->icon = plugin_dir_url(__DIR__) . 'assets/img/apple-pay.svg';
         $this->title = $this->getMethodTitle();
 
-        if ($this->get_option(WC_OnPay::SETTING_ONPAY_EXTRA_PAYMENTS_APPLEPAY) !== 'yes') {
+        if ($this->get_option($this->method_settings_key) !== 'yes') {
             $this->enabled = 'no';
         } else {
             $this->enabled = 'yes';
