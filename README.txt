@@ -2,9 +2,9 @@
 Contributors: onpayio
 Tags: onpay, gateway, payment, payment gateway, woocommerce, psp
 Requires at least: 5.8
-Tested up to: 6.8
+Tested up to: 6.8.1
 Requires PHP: 7.4
-Stable tag: 1.0.43
+Stable tag: 1.0.44
 License: MIT
 License URI: https://mit-license.org/
 
@@ -33,6 +33,9 @@ Don't  have an OnPay account yet? Order one through <a href="https://dandomain.d
 2. WooCommerce >= 6.5
 
 == Changelog ==
+
+= [1.0.44] =
+Add custom method description setting, that allows overwriting descriptions with custom texts.
 
 = [1.0.43] =
 Properly sanitize outputted strings.
