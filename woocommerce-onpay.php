@@ -1394,6 +1394,7 @@ function init_onpay() {
         private function get_card_logo_options() {
             return [
                 'american-express'      => __('American Express/AMEX', 'wc-onpay'),
+                'click_to_pay'          => __('Click to Pay', 'wc-onpay'),
                 'dankort'               => __('Dankort', 'wc-onpay'),
                 'diners'                => __('Diners', 'wc-onpay'),
                 'discover'              => __('Discover', 'wc-onpay'),
