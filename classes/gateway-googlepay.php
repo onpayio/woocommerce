@@ -27,6 +27,7 @@ include_once 'abstract-gateway.php';
 
 class wc_onpay_gateway_googlepay extends wc_onpay_gateway_abstract {
     const WC_ONPAY_GATEWAY_GOOGLEPAY_ID = 'onpay_googlepay';
+    private string $method_settings_key;
 
     public function __construct() {
         // Initialize settings
