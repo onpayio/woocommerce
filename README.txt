@@ -2,7 +2,7 @@
 Contributors: onpayio
 Tags: onpay, gateway, payment, payment gateway, woocommerce, psp
 Requires at least: 5.8
-Tested up to: 6.8.1
+Tested up to: 6.8.3
 Requires PHP: 7.4
 Stable tag: 1.0.44
 License: MIT
@@ -28,9 +28,9 @@ Don't  have an OnPay account yet? Order one through <a href="https://dandomain.d
 5. You're ready to go.
 
 == Dependencies ==
-1. PHP: >= 7.2
-2. Wordpress >= 5.8
-2. WooCommerce >= 6.5
+1. PHP: >= 7.4
+2. Wordpress >= 6.7
+2. WooCommerce >= 8.2
 
 == Changelog ==
 

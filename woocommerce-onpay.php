@@ -120,13 +120,15 @@ function init_onpay() {
          */
         public function __construct() {
             $this->id = $this::WC_ONPAY_ID;
-            $this->method_title = __('OnPay.io', 'wc-onpay');
-            $this->has_fields   = false;
-            $this->method_description = __('Receive payments with cards and more through OnPay.io', 'wc-onpay');
+            $this->has_fields = false;
+        }
 
-            $this->init_settings();
-
+        public function initPlugin() {
             load_plugin_textdomain( 'wc-onpay', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+            $this->init_settings();
+            
+            $this->method_title = __('OnPay.io', 'wc-onpay');
+            $this->method_description = __('Receive payments with cards and more through OnPay.io', 'wc-onpay');
         }
 
         /**
@@ -152,6 +154,7 @@ function init_onpay() {
          * Initialize hooks
          */
         public function init_hooks() {
+            add_action('init'. $this->id, [$this, 'initPlugin']);
             add_filter('woocommerce_settings_'. $this->id, [$this, 'admin_options']);
             add_action('woocommerce_settings_save_'. $this->id, [$this, 'process_admin_options']);
             add_action('woocommerce_api_'. $this->id . '_callback', [$this, 'callback']);
@@ -1596,7 +1599,7 @@ function init_onpay() {
     // Add tab in woocommerce settings for OnPay
     add_filter('woocommerce_settings_tabs_array', 'add_settings_tab', 50);
     function add_settings_tab( $settings_tabs ) {
-        $settings_tabs['wc_onpay'] = __( 'OnPay.io', 'wc_onpay' );
+        $settings_tabs['wc_onpay'] = __( 'OnPay.io', 'wc-onpay' );
         return $settings_tabs;
     }
 
