@@ -160,6 +160,7 @@ function init_onpay() {
             add_action('woocommerce_api_'. $this->id . '_callback', [$this, 'callback']);
             add_action('woocommerce_before_checkout_form', [$this, 'returnMessage']);
             add_action('woocommerce_before_thankyou', [$this, 'returnMessage']);
+            add_action('template_redirect', [$this, 'handleCheckoutNotices']);
             add_action('woocommerce_scheduled_subscription_payment_onpay_card', [$this, 'subscriptionPayment'], 1, 2);
             add_action('woocommerce_order_status_completed', [$this, 'orderStatusCompleteEvent']);
             add_action('woocommerce_subscription_cancelled_onpay_card', [$this, 'subscriptionCancellation']);
@@ -353,32 +354,63 @@ function init_onpay() {
             return $order;
         }
 
-        public function returnMessage($orderId) {
-            $paymentWindow = new \OnPay\API\PaymentWindow();
-            $paymentWindow->setSecret($this->get_option($this::SETTING_ONPAY_SECRET));
-            
+        /**
+         * Handle checkout notices early in the request lifecycle for both classic and React checkout
+         */
+        public function handleCheckoutNotices() {
+            // Only run on frontend pages (not admin)
+            if (is_admin()) {
+                return;
+            }
+
+            // Check if we're on a relevant page (checkout, cart, or order-received)
+            if (is_checkout() || is_cart() || is_wc_endpoint_url('order-received') || is_account_page()) {
+                $this->processPaymentReturnNotices();
+            }
+        }
+
+        /**
+         * Process payment return notices - used by both classic and React checkout
+         */
+        private function processPaymentReturnNotices() {
             $key = wc_onpay_query_helper::get_query_value('order_key');
             if (null === $key) {
                 $key = wc_onpay_query_helper::get_query_value('key');
             }
+
+            // Get OnPay-related query parameters
             $onPayMethod = wc_onpay_query_helper::get_query_value('onpay_method');
-            $onPayCardType = wc_onpay_query_helper::get_query_value('onpay_cardtype');
-
-            $orderId = wc_get_order_id_by_order_key($key);
-            $order = wc_get_order($orderId);
-
-            // Extend the method title with card type if present and not already applied
-            if ('card' === $onPayMethod && null !== $onPayCardType) {
-                $this->applyCardTypeToOrder($order, $onPayCardType);
-                $order->save();
-            }
-            
             $isDeclined = wc_onpay_query_helper::get_query_value('declined_from_onpay');
-            if ($isDeclined === '1' && $order && !$order->is_paid()) {
-                // Order is not paid yet and user is returned through declined url from OnPay.
-                // Valid OnPay URL params are also present, which indicates that user did not simply quit payment, but an actual error was encountered.
-                $this->outputString('<div class="woocommerce-error">' . __('The payment failed. Please try again.', 'wc-onpay') . '</div>');
+            
+            // If we have a declined payment, show the notice regardless of other parameters
+            if ($isDeclined === '1') {
+                // Always show error for declined payments
+                wc_add_notice(__('The payment failed. Please try again.', 'wc-onpay'), 'error');
+                
+                // Try to update order if we have the necessary data
+                if (null !== $key) {
+                    $orderId = wc_get_order_id_by_order_key($key);
+                    $order = wc_get_order($orderId);
+
+                    if ($order) {
+                        // Extend the method title with card type if present and not already applied
+                        $onPayCardType = wc_onpay_query_helper::get_query_value('onpay_cardtype');
+                        if ('card' === $onPayMethod && null !== $onPayCardType) {
+                            $this->applyCardTypeToOrder($order, $onPayCardType);
+                            $order->save();
+                        }
+                    }
+                }
             }
+        }
+
+        public function returnMessage($orderId) {
+            // This method is kept for backward compatibility with classic checkout
+            // The actual notice processing is now handled by handleCheckoutNotices/processPaymentReturnNotices
+            // which works for both classic and React checkout
+            
+            // But as a fallback, also process notices here for classic checkout
+            $this->processPaymentReturnNotices();
         }
 
         /**
