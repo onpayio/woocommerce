@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.46] - 2025-10-16
+- Add handling for checkout notices and improve payment failure messaging 
+
 ## [1.0.45] - 2025-10-07
 - Confirmed WooCommerce 10 support
 - Fixed minor deprecation warnings
