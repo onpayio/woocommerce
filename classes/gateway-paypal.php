@@ -27,7 +27,7 @@ include_once 'abstract-gateway.php';
 
 class wc_onpay_gateway_paypal extends wc_onpay_gateway_abstract {
     const WC_ONPAY_GATEWAY_PAYPAL_ID = 'onpay_paypal';
-    private string $method_settings_key;
+    protected string $method_settings_key;
 
     public function __construct() {
         // Initialize settings
