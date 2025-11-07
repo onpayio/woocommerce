@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Rely on scoped namespaces directly instead of relying on aliases
+- Fixed uncaught exception when getting non-existing transaction in order meta box
 
 ## [1.0.47] - 2025-10-30
 - Set key used to grab custom name, to protected instead of private
