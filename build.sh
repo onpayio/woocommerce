@@ -22,7 +22,7 @@ php composer.phar install
 # Require and run php-scoper
 php composer.phar global require humbug/php-scoper
 COMPOSER_BIN_DIR="$(composer global config bin-dir --absolute)"
-"$COMPOSER_BIN_DIR"/php-scoper add-prefix
+"$COMPOSER_BIN_DIR"/php-scoper add-prefix --output-dir="build"
 
 # Dump composer autoload for build folder
 php composer.phar dump-autoload --working-dir build --classmap-authoritative
@@ -56,4 +56,5 @@ zip -r woocommerce-onpay.zip ./woocommerce-onpay
 
 # Clean up
 rm -rf woocommerce-onpay
+rm -rf vendor
 rm -rf build
