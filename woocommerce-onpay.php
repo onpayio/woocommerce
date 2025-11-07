@@ -31,7 +31,7 @@
 * Text Domain: wc-onpay
 * Domain Path: /languages
 * Version: 1.0.47
-**/
+*/
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly
@@ -192,7 +192,7 @@ function init_onpay() {
             $orderHelper = new wc_onpay_order_helper();
 
             // Validate query parameters from OnPay
-            $paymentWindow = new \OnPay\API\PaymentWindow();
+            $paymentWindow = new \WoocommerceOnpay\OnPay\API\PaymentWindow();
             $paymentWindow->setSecret($this->get_option(self::SETTING_ONPAY_SECRET));
 
             // Get query values from callback
@@ -430,12 +430,12 @@ function init_onpay() {
             // Print information if OnPay is not pingable.
             try {
                 $onpayApi->ping();
-            } catch (OnPay\API\Exception\ConnectionException $exception) { // No connection to OnPay API
+            } catch (\WoocommerceOnpay\OnPay\API\Exception\ConnectionException $exception) { // No connection to OnPay API
                 $html .= '<h3>' . __('No connection to OnPay', 'wc-onpay') . '</h3>';
                 $GLOBALS['hide_save_button'] = true;
                 $this->outputString($html);
                 return;
-            } catch (OnPay\API\Exception\TokenException $exception) { // Something's wrong with the token, print link to reauth
+            } catch (\WoocommerceOnpay\OnPay\API\Exception\TokenException $exception) { // Something's wrong with the token, print link to reauth
                 $html .= $this->getOnboardingHtml($onpayApi->authorize());
                 $GLOBALS['hide_save_button'] = true;
                 $hideForm = true;
@@ -829,9 +829,9 @@ function init_onpay() {
                             $this->get_onpay_client()->transaction()->captureTransaction($transaction->uuid, $availableAmount);
                             $order->add_order_note( __( 'Status changed to completed. Amount was automatically captured on transaction in OnPay.', 'wc-onpay' ));
                         }
-                    } catch (OnPay\API\Exception\ConnectionException $exception) { // No connection to OnPay API
+                    } catch (\WoocommerceOnpay\OnPay\API\Exception\ConnectionException $exception) { // No connection to OnPay API
                         $order->add_order_note(__('Automatic capture failed.') . ' ' . __('No connection to OnPay', 'wc-onpay'));
-                    } catch (OnPay\API\Exception\TokenException $exception) { // Something's wrong with the token, print link to reauth
+                    } catch (\WoocommerceOnpay\OnPay\API\Exception\TokenException $exception) { // Something's wrong with the token, print link to reauth
                         $order->add_order_note(__( 'Automatic capture failed.') . ' ' . __('Invalid OnPay token, please login on settings page', 'wc-onpay' ));
                     }
                 }
@@ -891,10 +891,10 @@ function init_onpay() {
 
             try {
                 $onpayApi->ping();
-            } catch (OnPay\API\Exception\ConnectionException $exception) { // No connection to OnPay API
+            } catch (\WoocommerceOnpay\OnPay\API\Exception\ConnectionException $exception) { // No connection to OnPay API
                 $this->outputString('<h3>' . __('No connection to OnPay', 'wc-onpay') . '</h3>');
                 return;
-            } catch (OnPay\API\Exception\TokenException $exception) { // Something's wrong with the token, print link to reauth
+            } catch (\WoocommerceOnpay\OnPay\API\Exception\TokenException $exception) { // Something's wrong with the token, print link to reauth
                 $this->outputString('<h3>' . __('Invalid OnPay token, please login on settings page', 'wc-onpay') . '</h3>');
                 return;
             }
@@ -909,7 +909,7 @@ function init_onpay() {
             } else {
                 try {
                     $transaction = $onpayApi->transaction()->getTransaction($transactionId);
-                } catch (OnPay\API\Exception\ApiException $exception) {
+                } catch (\WoocommerceOnpay\OnPay\API\Exception\ApiException $exception) {
                     $this->outputString(__('Error: ', 'wc-onpay') . $this->cleanOutput($exception->getMessage()));
                     exit;
                 }
@@ -1055,10 +1055,11 @@ function init_onpay() {
             // Determine that we have an order and the required data for getting transaction is available.
             // We're not interested in handling on subscriptions here
             if ($order instanceof WC_Order && !$order instanceof WC_Subscription && $this->isOnPayMethod($order->get_payment_method()) && null !== $transactionId) {
-                // Get the transaction from API
-                $transaction = $this->get_onpay_client()->transaction()->getTransaction($transactionId);
-                $currencyHelper = new wc_onpay_currency_helper();
                 try {
+                    // Get the transaction from API
+                    $transaction = $this->get_onpay_client()->transaction()->getTransaction($transactionId);
+                    $currencyHelper = new wc_onpay_currency_helper();
+                    
                     if (null !== wc_onpay_query_helper::get_post_value('onpay_capture') && null !== wc_onpay_query_helper::get_post_value('onpay_capture_amount')) { // If transaction is requested captured.                            
                         $value = str_replace(',', '.', wc_onpay_query_helper::get_post_value('onpay_capture_amount'));
                         $amount = $currencyHelper->majorToMinor($value, $transaction->currencyCode, '.');
@@ -1078,7 +1079,7 @@ function init_onpay() {
                         $order->add_order_note( __( 'Transaction finished/cancelled in OnPay.', 'wc-onpay' ));
                         $this->addAdminNotice(__( 'Transaction finished/cancelled in OnPay.', 'wc-onpay' ), 'info');
                     }
-                } catch (OnPay\API\Exception\ApiException $exception) {
+                } catch (\WoocommerceOnpay\OnPay\API\Exception\ApiException $exception) {
                     $this->addAdminNotice(__('OnPay error: ', 'wc-onpay') . $exception->getMessage(), 'error');
                 }
             }
@@ -1128,7 +1129,7 @@ function init_onpay() {
                     $surchargeEnabled,
                     $surchargeVatRate
                 );
-            } catch (WoocommerceOnpay\OnPay\API\Exception\ApiException $exception) {
+            } catch (\WoocommerceOnpay\OnPay\API\Exception\ApiException $exception) {
                 $subscriptionOrder->add_order_note(__('Authorizing new transaction failed.', 'wc-onpay'));
                 $newOrder->update_status('failed', __('Authorizing new transaction failed.', 'wc-onpay'));
                 return;
@@ -1268,7 +1269,7 @@ function init_onpay() {
         /**
          * Returns an instantiated OnPay API client
          *
-         * @return \OnPay\OnPayAPI
+         * @return \WoocommerceOnpay\OnPay\OnPayAPI
          */
         private function get_onpay_client($prepareRedirectUri = false) {
             $tokenStorage = new wc_onpay_token_storage();
@@ -1279,7 +1280,7 @@ function init_onpay() {
                 $params['tab'] = self::WC_ONPAY_ID;
             }
             $url = wc_onpay_query_helper::generate_url($params);
-            $onPayAPI = new \OnPay\OnPayAPI($tokenStorage, [
+            $onPayAPI = new \WoocommerceOnpay\OnPay\OnPayAPI($tokenStorage, [
                 'client_id' => 'Onpay WooCommerce',
                 'redirect_uri' => $url,
                 'platform' => self::WC_ONPAY_PLATFORM_STRING,
@@ -1368,7 +1369,7 @@ function init_onpay() {
                 return [];
             }
             $designs = $onpayApi->gateway()->getPaymentWindowDesigns()->paymentWindowDesigns;
-            $options = array_map(function(\OnPay\API\Gateway\SimplePaymentWindowDesign $design) {
+            $options = array_map(function(\WoocommerceOnpay\OnPay\API\Gateway\SimplePaymentWindowDesign $design) {
                 return [
                     'name' => $design->name,
                     'id' => $design->name,

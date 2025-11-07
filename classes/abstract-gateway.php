@@ -23,6 +23,15 @@
  * SOFTWARE.
  */
 
+use \WoocommerceOnpay\OnPay\OnPayAPI;
+use \WoocommerceOnpay\OnPay\API\PaymentWindow;
+use \WoocommerceOnpay\OnPay\API\PaymentWindow\Cart;
+use \WoocommerceOnpay\OnPay\API\PaymentWindow\CartItem;
+use \WoocommerceOnpay\OnPay\API\PaymentWindow\PaymentInfo;
+use \WoocommerceOnpay\OnPay\API\Exception\InvalidCartException;
+use \WoocommerceOnpay\OnPay\API\Exception\InvalidFormatException;
+use \WoocommerceOnpay\OnPay\API\Exception\TokenException;
+
 abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
     public function admin_options() {
         // Redirect to general plugin settings page
@@ -70,7 +79,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
             ];
         } catch (InvalidArgumentException $e) {
             $error = __('Invalid data provided. Unable to create OnPay payment', 'wc-onpay') . ' (' . $e->getMessage() . ')';
-        } catch (WoocommerceOnpay\OnPay\API\Exception\TokenException $e) {
+        } catch (TokenException $e) {
             $error = __('Authorized connection to OnPay failed', 'wc-onpay');
         }
 
@@ -96,12 +105,12 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
     /**
      * Returns an instantiated OnPay API client
      *
-     * @return \OnPay\OnPayAPI
+     * @return OnPayAPI
      */
     private function getOnPayClient() {
         $tokenStorage = new wc_onpay_token_storage();
         $url = wc_onpay_query_helper::generate_url([]);
-        $onPayAPI = new \OnPay\OnPayAPI($tokenStorage, [
+        $onPayAPI = new OnPayAPI($tokenStorage, [
             'client_id' => 'Onpay WooCommerce',
             'redirect_uri' => $url,
             'platform' => WC_OnPay::WC_ONPAY_PLATFORM_STRING,
@@ -134,7 +143,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         // We'll need to find out details about the currency, and format the order total amount accordingly
         
         $isoCurrency = $currencyHelper->fromAlpha3($orderData['currency']);
-        $paymentWindow = new \OnPay\API\PaymentWindow();
+        $paymentWindow = new PaymentWindow();
 
         // Check if we're dealing with a subscription order
         if ($isSubscription) {
@@ -158,7 +167,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         $discountTotal = $order->get_discount_total() + $order->get_discount_tax();
 
         // Construct cart object that we're going to send to OnPay
-        $cart = new \OnPay\API\PaymentWindow\Cart();
+        $cart = new Cart();
         $cart->setShipping(
             intval(number_format($shippingTotal, $isoCurrency->exp, '', '')),
             intval(number_format($shippingTax, $isoCurrency->exp, '', ''))
@@ -168,7 +177,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         foreach($order->get_items() as $item) {
             $itemTax = $item->get_total_tax() / $item->get_quantity(); // Tax is taxTotal divided by quantity
             $itemTotal = $itemTax + ($item->get_total() / $item->get_quantity()); // Total is total divided by quantity plus tax total from above
-            $cartItem = new \OnPay\API\PaymentWindow\CartItem(
+            $cartItem = new CartItem(
                 $item->get_name(),
                 intval(number_format($itemTotal, $isoCurrency->exp, '', '')),
                 $item->get_quantity(),
@@ -181,7 +190,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         try {
             $cart->throwOnInvalid($orderTotal); // First we check if the cart calculation will fail, if it does, an InvalidCartException will be thrown.
             $paymentWindow->setCart($cart);
-        } catch (\OnPay\API\Exception\InvalidCartException $e) {
+        } catch (InvalidCartException $e) {
             // The cart object failed calculation. In this case we will simply not add the cart object to the paymentWindow then.
         }
 
@@ -250,7 +259,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         $customer = new WC_Customer($orderData['customer_id']);
 
         // Adding available info fields
-        $paymentInfo = new \OnPay\API\PaymentWindow\PaymentInfo();
+        $paymentInfo = new PaymentInfo();
 
         $this->setPaymentInfoParameter($paymentInfo, 'AccountId', $this->sanitizeFieldValue($customer->get_id()));
         $this->setPaymentInfoParameter($paymentInfo, 'AccountDateCreated',  wc_format_datetime($customer->get_date_created(), 'Y-m-d'));
@@ -329,7 +338,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
      * @param $value
      */
     protected function setPaymentInfoParameter($paymentInfo, $parameter, $value) {
-        if ($paymentInfo instanceof \OnPay\API\PaymentWindow\PaymentInfo) {
+        if ($paymentInfo instanceof PaymentInfo) {
             $method = 'set'.$parameter;
             if (method_exists($paymentInfo, $method)) {
                 try {
@@ -338,7 +347,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
                     } else {
                         call_user_func([$paymentInfo, $method], $value);
                     }
-                } catch (\OnPay\API\Exception\InvalidFormatException $e) {
+                } catch (InvalidFormatException $e) {
                     // No need to do anything. If the value fails, we'll simply ignore the value.
                 }
             }

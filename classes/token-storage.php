@@ -22,7 +22,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-class wc_onpay_token_storage implements \OnPay\TokenStorageInterface {
+
+use \WoocommerceOnpay\OnPay\TokenStorageInterface;
+
+class wc_onpay_token_storage implements TokenStorageInterface {
     /**
      * Should return the stored token, or null if no token is stored.
      *

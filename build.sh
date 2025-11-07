@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # Get composer
-EXPECTED_SIGNATURE="566a6d1cf4be1cc3ac882d2a2a13817ffae54e60f5aa7c9137434810a5809ffc"
-php -r "copy('https://getcomposer.org/download/2.5.5/composer.phar', 'composer.phar');"
+EXPECTED_SIGNATURE="f446ea719708bb85fcbf4ef18def5d0515f1f9b4d703f6d820c9c1656e10a2f2"
+php -r "copy('https://getcomposer.org/download/2.8.12/composer.phar', 'composer.phar');"
 ACTUAL_SIGNATURE="$(php -r "echo hash_file('sha256', 'composer.phar');")"
 
 if [ "$EXPECTED_SIGNATURE" != "$ACTUAL_SIGNATURE" ]
@@ -22,7 +22,7 @@ php composer.phar install
 # Require and run php-scoper
 php composer.phar global require humbug/php-scoper
 COMPOSER_BIN_DIR="$(composer global config bin-dir --absolute)"
-"$COMPOSER_BIN_DIR"/php-scoper add-prefix
+"$COMPOSER_BIN_DIR"/php-scoper add-prefix --output-dir="build"
 
 # Dump composer autoload for build folder
 php composer.phar dump-autoload --working-dir build --classmap-authoritative
@@ -56,4 +56,5 @@ zip -r woocommerce-onpay.zip ./woocommerce-onpay
 
 # Clean up
 rm -rf woocommerce-onpay
+rm -rf vendor
 rm -rf build
