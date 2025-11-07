@@ -22,11 +22,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+use \WoocommerceOnpay\League\ISO3166\ISO3166;
+
 class wc_onpay_country_helper {
     /** @var ISO3166 $converter */
     private $converter;
     public function __construct() {
-        $this->converter = new \League\ISO3166\ISO3166();
+        $this->converter = new ISO3166();
     }
     public function alpha2toNumeric(string $alpha2) {
         if ('' === $alpha2) {

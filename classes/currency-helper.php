@@ -22,12 +22,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+use \WoocommerceOnpay\Alcohol\ISO4217;
+
 class wc_onpay_currency_helper {
     /** @var ISO4217 $converter */
     private $converter;
     public function __construct()
     {
-        $this->converter = new \Alcohol\ISO4217();
+        $this->converter = new ISO4217();
     }
     /**
      * @param int $amount
