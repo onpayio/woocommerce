@@ -1055,10 +1055,11 @@ function init_onpay() {
             // Determine that we have an order and the required data for getting transaction is available.
             // We're not interested in handling on subscriptions here
             if ($order instanceof WC_Order && !$order instanceof WC_Subscription && $this->isOnPayMethod($order->get_payment_method()) && null !== $transactionId) {
-                // Get the transaction from API
-                $transaction = $this->get_onpay_client()->transaction()->getTransaction($transactionId);
-                $currencyHelper = new wc_onpay_currency_helper();
                 try {
+                    // Get the transaction from API
+                    $transaction = $this->get_onpay_client()->transaction()->getTransaction($transactionId);
+                    $currencyHelper = new wc_onpay_currency_helper();
+                    
                     if (null !== wc_onpay_query_helper::get_post_value('onpay_capture') && null !== wc_onpay_query_helper::get_post_value('onpay_capture_amount')) { // If transaction is requested captured.                            
                         $value = str_replace(',', '.', wc_onpay_query_helper::get_post_value('onpay_capture_amount'));
                         $amount = $currencyHelper->majorToMinor($value, $transaction->currencyCode, '.');
