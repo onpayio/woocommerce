@@ -165,11 +165,11 @@ function init_onpay() {
             add_action('woocommerce_order_status_completed', [$this, 'orderStatusCompleteEvent']);
             add_action('woocommerce_subscription_cancelled_onpay_card', [$this, 'subscriptionCancellation']);
             add_action('woocommerce_order_refunded', [$this, 'refundEvent'], 10, 2);
-            add_action('admin_init', [$this, 'gateway_toggle']);
             add_action('woocommerce_process_shop_order_meta', [$this, 'handle_order_meta_box']);
             add_action('add_meta_boxes', [$this, 'meta_boxes']);
             add_action('wp_enqueue_scripts', [$this, 'register_scripts']);
             add_action('admin_notices', [$this, 'showAdminNotices']);
+            add_action('woocommerce_update_option', [$this, 'updateGateway']);
         }
 
         public function register_scripts() {
@@ -777,11 +777,14 @@ function init_onpay() {
         }
 
         /**
-         * Allows toggling of gateways from payment gateways overview
+         * Allows toggling of gateways from WooCommerce payment gateways overview
          */
-        public function gateway_toggle() {
+        public function updateGateway($option) {
             if (isset( $_POST['action'] ) && 'woocommerce_toggle_gateway_enabled' === sanitize_text_field(wp_unslash( $_POST['action']))) {
-                $gatewayId = isset( $_POST['gateway_id'] ) ? sanitize_text_field( wp_unslash( $_POST['gateway_id'] ) ) : false;
+                // Extract gateway id
+                preg_match('#\woocommerce_(.+)\_settings#s', sanitize_text_field($option['id']), $matches);
+                $gatewayId = $matches[1];
+                
                 $gatewaySettings = [
                     wc_onpay_gateway_anyday::WC_ONPAY_GATEWAY_ANYDAY_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_ANYDAY,
                     wc_onpay_gateway_card::WC_ONPAY_GATEWAY_CARD_ID => self::SETTING_ONPAY_EXTRA_PAYMENTS_CARD,
@@ -802,7 +805,7 @@ function init_onpay() {
                     } else {
                         $this->update_option($gatewaySettings[$gatewayId], 'no');
                     }
-                    die(wp_json_encode([
+                    wp_die(wp_json_encode([
                         'success' => true,
                         'data' => $enabled,
                     ]));
