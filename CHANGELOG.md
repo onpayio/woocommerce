@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 - Fixed uncaught exception when getting non-existing transaction in order meta box
 - Fixed enabling of gateways from WC list properly using correct hook
+- Added SECURITY.md
 
 ## [1.0.47] - 2025-10-30
 - Set key used to grab custom name, to protected instead of private
