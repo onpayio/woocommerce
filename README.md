@@ -8,7 +8,7 @@ The plugin adds the following functionality to WooCommerce:
 
 The plugin is tested and confirmed working on 
 - Wordpress 6.8.3
-- WooCommerce 10.3.3
+- WooCommerce 10.3.5
 
 ## Usage
 1. Install plugin as any other Wordpress plugin.
