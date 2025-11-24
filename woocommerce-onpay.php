@@ -850,22 +850,26 @@ function init_onpay() {
                 $order = wc_get_order($order_id);
                 $transactionId = $this->getOnpayId($order);
                 if ($this->isOnPayMethod($order->get_payment_method()) && null !== $transactionId) {
-                    // Get the transaction from API
-                    $transaction = $this->get_onpay_client()->transaction()->getTransaction($transactionId);
-                    // Get refund data
-                    $refund = new WC_Order_Refund($refund_id);
-                    // Get amount as minor units
-                    $currencyHelper = new wc_onpay_currency_helper();
-                    $amount = $currencyHelper->majorToMinor($refund->data['amount'], $transaction->currencyCode, '.');
-                    $refundableAmount = $transaction->charged - $transaction->refunded;
-                    // Check if amount is lower than amount available for refund.
-                    if ($amount <= $refundableAmount) {
-                        $this->get_onpay_client()->transaction()->refundTransaction($transaction->uuid, $amount);
-                        $order->add_order_note( __( 'Amount automatically refunded on transaction in OnPay.', 'wc-onpay' ));
-                        $this->addAdminNotice(__( 'Amount refunded on transaction in OnPay.', 'wc-onpay' ), 'success');
-                    } else {
-                        $order->add_order_note( __( 'Unable to automatically refund on transaction in OnPay.', 'wc-onpay' ));
-                        $this->addAdminNotice(__( 'Unable to refund on transaction in OnPay.', 'wc-onpay' ), 'success');
+                    try {
+                        // Get the transaction from API
+                        $transaction = $this->get_onpay_client()->transaction()->getTransaction($transactionId);
+                        // Get refund data
+                        $refund = new WC_Order_Refund($refund_id);
+                        // Get amount as minor units
+                        $currencyHelper = new wc_onpay_currency_helper();
+                        $amount = $currencyHelper->majorToMinor($refund->data['amount'], $transaction->currencyCode, '.');
+                        $refundableAmount = $transaction->charged - $transaction->refunded;
+                        // Check if amount is lower than amount available for refund.
+                        if ($amount <= $refundableAmount) {
+                            $this->get_onpay_client()->transaction()->refundTransaction($transaction->uuid, $amount);
+                            $order->add_order_note( __( 'Amount automatically refunded on transaction in OnPay.', 'wc-onpay' ));
+                            $this->addAdminNotice(__( 'Amount refunded on transaction in OnPay.', 'wc-onpay' ), 'success');
+                        } else {
+                            $order->add_order_note( __( 'Unable to automatically refund on transaction in OnPay.', 'wc-onpay' ));
+                            $this->addAdminNotice(__( 'Unable to refund on transaction in OnPay.', 'wc-onpay' ), 'success');
+                        }
+                    } catch (\Exception $exception) { // Handle exceptions
+                        $this->onpayExceptionHandlerAdmin($exception);
                     }
                 }
             }
@@ -1082,8 +1086,8 @@ function init_onpay() {
                         $order->add_order_note( __( 'Transaction finished/cancelled in OnPay.', 'wc-onpay' ));
                         $this->addAdminNotice(__( 'Transaction finished/cancelled in OnPay.', 'wc-onpay' ), 'info');
                     }
-                } catch (OnPay\API\Exception\ApiException $exception) {
-                    $this->addAdminNotice(__('OnPay error: ', 'wc-onpay') . $exception->getMessage(), 'error');
+                } catch (\Exception $exception) {
+                    $this->onpayExceptionHandlerAdmin($exception);
                 }
             }
         }
@@ -1103,6 +1107,7 @@ function init_onpay() {
             $currencyHelper = new wc_onpay_currency_helper();
             $orderCurrency = $currencyHelper->fromAlpha3($newOrder->get_currency());
             $orderAmount = $currencyHelper->majorToMinor($newOrder->get_total(), $orderCurrency->numeric, '.');
+            
             $onpaySubscription = $this->get_onpay_client()->subscription()->getSubscription($subscriptionId);
             
             // Fetch surcharge settings
@@ -1132,7 +1137,7 @@ function init_onpay() {
                     $surchargeEnabled,
                     $surchargeVatRate
                 );
-            } catch (WoocommerceOnpay\OnPay\API\Exception\ApiException $exception) {
+            } catch (OnPay\API\Exception\ApiException $exception) {
                 $subscriptionOrder->add_order_note(__('Authorizing new transaction failed.', 'wc-onpay'));
                 $newOrder->update_status('failed', __('Authorizing new transaction failed.', 'wc-onpay'));
                 return;
@@ -1178,13 +1183,19 @@ function init_onpay() {
                 return;
             }
 
-            // No need to do anything if no subscription is found by current Transaction ID in OnPay.
-            $onpaySubscription = $this->get_onpay_client()->subscription()->getSubscription($subscriptionId);
+            try {
+                // No need to do anything if no subscription is found by current Transaction ID in OnPay.
+                $onpaySubscription = $this->get_onpay_client()->subscription()->getSubscription($subscriptionId);
 
-            if ($onpaySubscription->status === 'cancelled') {
-                return;
+                if ($onpaySubscription->status === 'cancelled') {
+                    return;
+                }
+
+                $cancelSubscription = $this->get_onpay_client()->subscription()->cancelSubscription($onpaySubscription->uuid);
+            } catch (\Exception $exception) {
+                $this->onpayExceptionHandlerAdmin($exception);
             }
-            return $this->get_onpay_client()->subscription()->cancelSubscription($onpaySubscription->uuid);
+            return $cancelSubscription;
         }
 
         /**
@@ -1571,6 +1582,22 @@ function init_onpay() {
          */
         public static function plugin_abspath() {
             return trailingslashit( plugin_dir_path( __FILE__ ) );
+        }
+
+        /**
+         * Handle exceptions when connecting to OnPay, in admin.
+         * Adds notice with appropiate
+         */
+        public function onpayExceptionHandlerAdmin($exception) {
+            try {
+                throw $exception;
+            } catch (OnPay\API\Exception\ConnectionException $e) { // No connection to OnPay API
+                $this->addAdminNotice(__('No connection to OnPay', 'wc-onpay'));
+            } catch (OnPay\API\Exception\TokenException $e) { // Something's wrong with the token
+                $this->addAdminNotice(__('Invalid OnPay token, please login on settings page', 'wc-onpay' ));
+            } catch (OnPay\API\Exception\ApiException $e) { // Api action failed
+                $this->addAdminNotice(__('OnPay error: ', 'wc-onpay') . $exception->getMessage(), 'error');
+            }
         }
     }
 
