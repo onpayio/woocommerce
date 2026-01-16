@@ -415,7 +415,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
             $key = $this->method_settings_key . WC_OnPay::SETTING_ONPAY_EXTRA_PAYMENTS_DESCRIPTION_POSTFIX;
             $overwrite = $this->get_option($key);
             if (null !== $overwrite && '' !== $overwrite) {
-                return $this->sanitizeFieldValue($overwrite);
+                return $overwrite;
             }
         }
         return $this->method_description;
