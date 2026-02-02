@@ -49,6 +49,11 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
      * Gets payment link and redirects browser to newly created payment
      */
     public function process_payment($order_id) {
+        // If inline payment is enabled, use inline flow
+        if ($this->get_option(WC_OnPay::SETTING_ONPAY_INLINE_ENABLE) === 'yes') {
+            return $this->process_payment_inline($order_id);
+        }
+
         $order = new WC_Order($order_id);
         $updateMethod = class_exists('WC_Subscriptions_Change_Payment_Gateway') && WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment;
         $error = '';
@@ -81,6 +86,72 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         }
     
         wc_add_notice($error, 'error');
+        return [];
+    }
+
+    /**
+     * Process payment with inline SDK flow
+     */
+    protected function process_payment_inline($order_id) {
+        $order = wc_get_order($order_id);
+        if (!$order) {
+            wc_add_notice(__('Order not found.', 'wc_onpay'), 'error');
+            return [];
+        }
+
+        //Need to test if this is actually working
+        $updateMethod = class_exists('WC_Subscriptions_Change_Payment_Gateway')
+            && WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment;
+
+        if ($updateMethod) {
+            return parent::process_payment($order_id);
+        }
+
+        try {
+            $paymentWindow = $this->get_payment_window($order, $updateMethod);
+
+            $tokenStorage = new wc_onpay_token_storage();
+            $url = admin_url('admin.php?page=wc-settings&tab=checkout&section=onpay');
+
+            $onPayAPI = new \OnPay\OnPayAPI($tokenStorage, [
+                'client_id' => 'Onpay WooCommerce',
+                'redirect_uri' => $url,
+                'platform' => WC_OnPay::WC_ONPAY_PLATFORM_STRING,
+            ]);
+
+            $payment = $onPayAPI->payment()->createNewPayment($paymentWindow);
+            $paymentUuid = $payment->getUuid();
+
+            $order->update_meta_data('_onpay_inline_payment_uuid', $paymentUuid);
+            $order->save();
+
+            return [
+                'result' => 'success',
+                'redirect' => false,
+                'payment_uuid' => $paymentUuid,
+                'order_id' => $order_id,
+            ];
+
+        } catch (\InvalidArgumentException $e) {
+            wc_add_notice(__('Invalid data provided. Unable to create OnPay payment', 'wc-onpay') . ' (' . $e->getMessage() . ')', 'error');
+        } catch (\WoocommerceOnpay\OnPay\API\Exception\TokenException $e) {
+            wc_add_notice(__('Authorized connection to OnPay failed', 'wc-onpay'), 'error');
+        } catch (\Exception $e) {
+            wc_add_notice(__('Unable to initialize payment. Please try again.', 'wc-onpay'), 'error');
+        } catch (\Throwable $e) {
+            $logger = wc_get_logger();
+            $logger->error(
+                'Inline process_payment failed: ' . $e->getMessage(),
+                [
+                    'source' => 'onpay-inline',
+                    'order_id' => $order_id,
+                    'trace' => $e->getTraceAsString(),
+                ]
+            );
+            wc_add_notice(__('Payment could not be initialized. Check WooCommerce logs.', 'wc-onpay'), 'error');
+            return ['result' => 'failure'];
+        }
+
         return [];
     }
 
