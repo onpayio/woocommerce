@@ -91,6 +91,8 @@ function init_onpay() {
         const SETTING_ONPAY_SURCHARGE_ENABLE = 'surcharge_enable';
         const SETTING_ONPAY_SURCHARGE_VAT_RATE = 'surcharge_vat_rate';
         const SETTING_ONPAY_SURCHARGE_VAT_OVERRIDE = 'surcharge_vat_override';
+        const SETTING_ONPAY_INLINE_ENABLE = 'inline_enable';
+        const SETTING_ONPAY_INLINE_SDK_URL     = 'inline_sdk_url';
 
         const WC_ONPAY_ID = 'wc_onpay';
         const WC_ONPAY_SETTINGS_ID = 'onpay';
@@ -689,6 +691,20 @@ function init_onpay() {
                     'type' => 'checkbox',
                     'default' => 'no',
                     'label' => __('Overrides language chosen above, and instead use frontoffice language', 'wc-onpay'),
+                ],
+                self::SETTING_ONPAY_INLINE_ENABLE => [
+                    'title' => __('Inline Payments', 'wc-onpay'),
+                    'label' => __('Enable inline payments flow', 'wc-onpay'),
+                    'type' => 'checkbox',
+                    'default' => 'no',
+                ],
+                self::SETTING_ONPAY_INLINE_SDK_URL => [
+                    'title' => __('Inline SDK URL', 'wc-onpay'),
+                    'type' => 'text',
+                    'default' => '',
+                    'desc_tip' => true,
+                    'description' => __('Add the url or the inline SDK'),
+                    'placeholder' => 'https://…/inline-sdk/v2.js',
                 ],
                 self::SETTING_ONPAY_TESTMODE => [
                     'title' => __('Test Mode', 'wc-onpay'),
