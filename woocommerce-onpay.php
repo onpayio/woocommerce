@@ -185,8 +185,34 @@ function init_onpay() {
             ) {
                 wp_enqueue_script(WC_OnPay::WC_ONPAY_ID . '_script', plugin_dir_url(__FILE__) . 'assets/js/apple_google_pay.js');
             }
-        }
 
+            /**
+             * Inline card payments: Load SDK and scripts when inline is enabled
+             */
+            if ($this->get_option(self::SETTING_ONPAY_INLINE_ENABLE) === 'yes') {
+                $sdkUrl = trim((string) $this->get_option(self::SETTING_ONPAY_INLINE_SDK_URL));
+                if ($sdkUrl) {
+                    wp_enqueue_script(
+                        WC_OnPay::WC_ONPAY_ID .'_inline_sdk',
+                        $sdkUrl,
+                        [],
+                        self::PLUGIN_VERSION,
+                        true
+                    );
+                }
+
+                // Only enqueue on checkout pages to avoid loading unnecessarily
+                if (is_checkout() || (function_exists('is_wc_endpoint_url') && is_wc_endpoint_url('order-pay'))) {
+                    wp_enqueue_script(
+                        WC_OnPay::WC_ONPAY_ID .'_classic_inline_js',
+                        plugin_dir_url(__FILE__) . 'assets/js/classic-inline.js',
+                        ['jquery'],
+                        self::PLUGIN_VERSION,
+                        true
+                    );
+                }
+            }
+        }
         /**
          * Method used for callbacks from OnPay. Validates orders using OnPay as method.
          */
