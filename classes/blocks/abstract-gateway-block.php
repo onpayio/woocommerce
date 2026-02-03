@@ -56,6 +56,21 @@ abstract class wc_onpay_abstract_gateway_block extends AbstractPaymentMethodType
 			);
 			// Register object of methods if not already registered.
 			wp_add_inline_script(WC_OnPay::WC_ONPAY_ID . '_blocks', 'if (typeof wc_onpay_methods === \'undefined\') {var wc_onpay_methods={}}', 'before');
+
+            $onpay_instance = WC_OnPay::get_instance();
+            $inlineEnabled = false;
+            if (
+                $onpay_instance &&
+                method_exists($onpay_instance, 'get_option') &&
+                $onpay_instance->get_option(WC_OnPay::SETTING_ONPAY_INLINE_ENABLE) === 'yes'
+            ) {
+                $inlineEnabled = true;
+            }
+            wp_add_inline_script(
+                WC_OnPay::WC_ONPAY_ID . '_blocks',
+                'window.wc_onpay_inline_settings={inlineEnabled:' . ($inlineEnabled ? 'true' : 'false') . '};',
+                'before'
+            );
 			// Add method to list of objects with info
 			wp_add_inline_script(WC_OnPay::WC_ONPAY_ID . '_blocks', 'wc_onpay_methods.' . $this->name . '=' . json_encode($method), 'before');
 
