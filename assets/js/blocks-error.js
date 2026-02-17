@@ -134,7 +134,7 @@
         if (typeof window.wp.data.subscribe === 'function') {
             window.wp.data.subscribe(removeRedErrors);
         }
-        setInterval(removeRedErrors, 50);
+        setInterval(removeRedErrors, 500);
     }
 
     function setupDismissalHandler(select) {
