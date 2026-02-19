@@ -1759,6 +1759,26 @@ function init_onpay() {
         }
 
         /**
+         * Log token-related errors to WordPress debug.log
+         *
+         * @param string $message The error message
+         * @param array $context Additional context (e.g., ['order_id' => 123, 'reason' => 'refresh_failed'])
+         */
+        private function logTokenError($message, $context = []) {
+            if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
+                $contextStr = !empty($context) ? ' Context: ' . wp_json_encode($context) : '';
+                error_log('[OnPay Token Error] ' . $message . $contextStr);
+            }
+
+            //Also add to WooCommerce logs
+            if (function_exists('wc_get_logger')) {
+                $logger = wc_get_logger();
+                $context['source'] = 'onpay-token';
+                $logger->error($message, $context);
+            }
+        }
+
+        /**
          * Handle exceptions when connecting to OnPay, in admin.
          * Adds notice with appropiate
          */
@@ -1768,10 +1788,46 @@ function init_onpay() {
             } catch (OnPay\API\Exception\ConnectionException $e) { // No connection to OnPay API
                 $this->addAdminNotice(__('No connection to OnPay', 'wc-onpay'));
             } catch (OnPay\API\Exception\TokenException $e) { // Something's wrong with the token
+                $this->logTokenConnectionDropped('TokenException caught in admin', [
+                    'exception_message' => $e->getMessage(),
+                    'exception_code' => $e->getCode(),
+                    'location' => 'onpayExceptionHandlerAdmin'
+                ]);
                 $this->addAdminNotice(__('Invalid OnPay token, please login on settings page', 'wc-onpay' ));
             } catch (OnPay\API\Exception\ApiException $e) { // Api action failed
                 $this->addAdminNotice(__('OnPay error: ', 'wc-onpay') . $exception->getMessage(), 'error');
             }
+        }
+
+        /**
+         * Log when OnPay connection is dropped due to token issues
+         * This detects cases where a token was stored but is now invalid/expired
+         *
+         * @param string $reason Reason for connection drop
+         * @param array $context Additional context
+         */
+        private function logTokenConnectionDropped($reason, $context = []) {
+            $tokenStorage = new wc_onpay_token_storage();
+            $hasStoredToken = $tokenStorage->hasStoredToken();
+            
+            $logContext = array_merge([
+                'reason' => $reason,
+                'token_stored' => $hasStoredToken,
+                'timestamp' => current_time('mysql'),
+            ], $context);
+            
+            if ($hasStoredToken) {
+                // Token exists but is invalid - connection was previously established but is now broken
+                $message = 'OnPay connection dropped: Token exists in storage but is invalid or could not be refreshed. ';
+                $message .= 'This indicates the connection was previously established but is no longer valid. ';
+                $message .= 'Possible causes: refresh_token expired, token revoked, or access_token invalidated.';
+            } else {
+                // No token stored - never connected or already cleared
+                $message = 'OnPay connection failed: No valid token available. ';
+                $message .= 'Connection may have been dropped or never established.';
+            }
+            
+            $this->logTokenError($message, $logContext);
         }
     }
 
