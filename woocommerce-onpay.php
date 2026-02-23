@@ -161,6 +161,8 @@ function init_onpay() {
             add_action('woocommerce_before_checkout_form', [$this, 'returnMessage']);
             add_action('woocommerce_before_thankyou', [$this, 'returnMessage']);
             add_action('template_redirect', [$this, 'handleCheckoutNotices']);
+            add_action('woocommerce_rest_checkout_process_payment_with_context', [$this, 'processPaymentWithContext'], 5, 2);
+            add_filter('woocommerce_store_api_checkout_update_order_from_request', [$this, 'logCheckoutUpdate'], 1, 2);
             add_action('woocommerce_scheduled_subscription_payment_onpay_card', [$this, 'subscriptionPayment'], 1, 2);
             add_action('woocommerce_order_status_completed', [$this, 'orderStatusCompleteEvent']);
             add_action('woocommerce_subscription_cancelled_onpay_card', [$this, 'subscriptionCancellation']);
@@ -170,6 +172,9 @@ function init_onpay() {
             add_action('wp_enqueue_scripts', [$this, 'register_scripts']);
             add_action('admin_notices', [$this, 'showAdminNotices']);
             add_action('woocommerce_update_option', [$this, 'updateGateway']);
+            add_action('wp_ajax_onpay_clear_declined_flag', [$this, 'ajax_clear_declined_flag']);
+            add_action('wp_ajax_nopriv_onpay_clear_declined_flag', [$this, 'ajax_clear_declined_flag']);
+            add_action('woocommerce_checkout_order_processed', [$this, 'clearDeclinedFlagOnOrder'], 10, 1);
         }
 
         public function register_scripts() {
@@ -182,6 +187,74 @@ function init_onpay() {
                 $this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_GOOGLEPAY) === 'yes'
             ) {
                 wp_enqueue_script(WC_OnPay::WC_ONPAY_ID . '_script', plugin_dir_url(__FILE__) . 'assets/js/apple_google_pay.js');
+            }
+
+            // Enqueue script to handle error dismissal (clearing session flag)
+            if (function_exists('WC') && WC()->session && is_checkout()) {
+                $has_declined = WC()->session->get('onpay_declined_payment');
+                if ($has_declined) {
+                    wp_enqueue_script(
+                        WC_OnPay::WC_ONPAY_ID . '_blocks_error',
+                        plugin_dir_url(__FILE__) . 'assets/js/blocks-error.js',
+                        [], // No dependencies - we check for wp.data/wp.notices availability in JS
+                        WC_OnPay::PLUGIN_VERSION,
+                        true
+                    );
+
+                    // Pass AJAX URL, nonce, and error info
+                    wp_localize_script(
+                        WC_OnPay::WC_ONPAY_ID . '_blocks_error',
+                        'wc_onpay_ajax',
+                        [
+                            'ajax_url' => admin_url('admin-ajax.php'),
+                            'nonce' => wp_create_nonce('onpay_clear_declined_flag'),
+                            'hasDeclined' => $has_declined ? true : false,
+                            'errorMessage' => __('The payment failed. Please try again.', 'wc-onpay')
+                        ]
+                    );
+                }
+            }
+        }
+
+        /**
+         * AJAX handler to clear declined payment session flag
+         */
+        public function ajax_clear_declined_flag() {
+            check_ajax_referer('onpay_clear_declined_flag', 'nonce');
+
+            if (function_exists('WC') && WC()->session) {
+                // Clear the session flag
+                WC()->session->set('onpay_declined_payment', false);
+
+                // Also remove any existing error notices
+                $error_message = __('The payment failed. Please try again.', 'wc-onpay');
+                $all_notices = wc_get_notices();
+                wc_clear_notices();
+
+                // Re-add all notices except the declined error
+                foreach ($all_notices as $notice_type => $notices_of_type) {
+                    foreach ($notices_of_type as $notice) {
+                        if (isset($notice['notice']) && $notice['notice'] !== $error_message) {
+                            wc_add_notice($notice['notice'], $notice_type);
+                        }
+                    }
+                }
+
+                wp_send_json_success(['message' => 'Session flag cleared']);
+            } else {
+                wp_send_json_error(['message' => 'Session not available']);
+            }
+        }
+
+        /**
+         * Clear declined payment flag when order is successfully processed
+         */
+        public function clearDeclinedFlagOnOrder($order_id) {
+            if (function_exists('WC') && WC()->session) {
+                $has_declined = WC()->session->get('onpay_declined_payment');
+                if ($has_declined) {
+                    WC()->session->set('onpay_declined_payment', false);
+                }
             }
         }
 
@@ -384,8 +457,32 @@ function init_onpay() {
             
             // If we have a declined payment, show the notice regardless of other parameters
             if ($isDeclined === '1') {
-                // Always show error for declined payments
-                wc_add_notice(__('The payment failed. Please try again.', 'wc-onpay'), 'error');
+                // Store declined status in session so blocks checkout can read it later
+                if (function_exists('WC') && WC()->session) {
+                    WC()->session->set('onpay_declined_payment', true);
+                }
+
+                // Check if notice already exists to prevent duplicates
+                $existing_notices = wc_get_notices('error');
+                $error_message = __('The payment failed. Please try again.', 'wc-onpay');
+                $notice_exists = false;
+
+                foreach ($existing_notices as $notice) {
+                    $notice_text = is_array($notice) && isset($notice['notice']) ? $notice['notice'] : (string) $notice;
+                    $notice_id = is_array($notice) && isset($notice['id']) ? $notice['id'] : '';
+                    if ($notice_id === 'onpay-declined-error' || $notice_text === $error_message) {
+                        $notice_exists = true;
+                        break;
+                    }
+                }
+
+                // Only add notice if it doesn't already exist
+                if (!$notice_exists) {
+                    wc_add_notice($error_message, 'error', [
+                        'id' => 'onpay-declined-error',
+                        'dismissible' => true
+                    ]);
+                }
                 
                 // Try to update order if we have the necessary data
                 if (null !== $key) {
@@ -393,6 +490,12 @@ function init_onpay() {
                     $order = wc_get_order($orderId);
 
                     if ($order) {
+                         // Store the draft order ID in session so Blocks can reuse it
+                        if (function_exists('WC') && WC()->session) {
+                            WC()->session->set('store_api_draft_order', $orderId);
+                            WC()->session->set('order_awaiting_payment', $orderId);
+                        }
+
                         // Extend the method title with card type if present and not already applied
                         $onPayCardType = wc_onpay_query_helper::get_query_value('onpay_cardtype');
                         if ('card' === $onPayMethod && null !== $onPayCardType) {
@@ -404,6 +507,61 @@ function init_onpay() {
             }
         }
 
+        /**
+         * Process payment via Store API context (Blocks checkout).
+         * Ensures gateway errors are shown in Blocks by setting PaymentResult or throwing RouteException,
+         * instead of relying only on wc_add_notice() which is not reliable in Blocks.
+         *
+         * @param object $context PaymentContext (payment_method, order, payment_data).
+         * @param object $result  PaymentResult (set_status, set_redirect_url).
+         */
+        public function processPaymentWithContext($context, $result) {
+            $onpay_ids = [
+                'onpay_card', 'onpay_mobilepay', 'onpay_applepay', 'onpay_googlepay',
+                'onpay_viabill', 'onpay_anyday', 'onpay_vipps', 'onpay_swish', 'onpay_paypal', 'onpay_klarna',
+            ];
+            if (!in_array($context->payment_method, $onpay_ids, true)) {
+                return;
+            }
+
+            $gateways = WC()->payment_gateways()->payment_gateways();
+            if (empty($gateways[ $context->payment_method ])) {
+                return;
+            }
+
+            $gateway = $gateways[ $context->payment_method ];
+            $order_id = $context->order->get_id();
+            $has_declined = function_exists('WC') && WC()->session ? WC()->session->get('onpay_declined_payment') : false;
+
+            $payment_result = $gateway->process_payment($order_id);
+
+            if (!empty($payment_result['result']) && $payment_result['result'] === 'success' && !empty($payment_result['redirect'])) {
+                if ($has_declined) {
+                    if (function_exists('WC') && WC()->session) {
+                        WC()->session->set('onpay_declined_payment', false);
+                    }
+                }
+                $result->set_status('success');
+                $result->set_redirect_url($payment_result['redirect']);
+                return;
+            }
+
+            // Failure: get last error notice and throw so Blocks shows it
+            $notices = wc_get_notices('error');
+            $message = __('The payment failed. Please try again.', 'wc-onpay');
+            if (!empty($notices)) {
+                $last = end($notices);
+                $message = is_array($last) && isset($last['notice']) ? $last['notice'] : (string) $last;
+            }
+
+            wc_clear_notices();
+            if (class_exists('Automattic\WooCommerce\StoreApi\Exceptions\RouteException')) {
+                throw new \Automattic\WooCommerce\StoreApi\Exceptions\RouteException('payment_failed', $message, 402);
+            }
+            // Fallback if RouteException not available (older WC)
+            throw new \Exception($message);
+        }
+
         public function returnMessage($orderId) {
             // This method is kept for backward compatibility with classic checkout
             // The actual notice processing is now handled by handleCheckoutNotices/processPaymentReturnNotices
@@ -411,6 +569,22 @@ function init_onpay() {
             
             // But as a fallback, also process notices here for classic checkout
             $this->processPaymentReturnNotices();
+        }
+
+        /**
+         * Clear declined flag when checkout is attempted (allows same order to be reused)
+         */
+        public function logCheckoutUpdate($order, $request = null) {
+            if (function_exists('WC') && WC()->session) {
+                $has_declined = WC()->session->get('onpay_declined_payment');
+
+                if ($has_declined) {
+                    // Clear declined flag but keep draft order so same order can be reused
+                    WC()->session->set('onpay_declined_payment', false);
+                }
+            }
+
+            return $order;
         }
 
         /**
