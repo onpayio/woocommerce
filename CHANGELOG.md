@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Fix Blocks checkout error notice persistence after declined payment
+- Added token error logging for connection debugging
 
 ## [1.0.49] - 2026-01-19
 - Removed sanitizeFieldValue from getDescriptionString because of æøå showing as html entities
