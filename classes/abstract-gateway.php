@@ -72,7 +72,12 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
             $error = __('Invalid data provided. Unable to create OnPay payment', 'wc-onpay') . ' (' . $e->getMessage() . ')';
         } catch (WoocommerceOnpay\OnPay\API\Exception\TokenException $e) {
             // Log detailed token error information
-            $this->logTokenErrorDuringPayment($order_id, $e);
+            wc_onpay_logger_helper::logTokenProblem('OnPay payment processing failed due to token error', [
+                'order_id' => $order_id,
+                'exception_message' => $e->getMessage(),
+                'exception_code' => $e->getCode(),
+                'location' => 'process_payment'
+            ]);
             $error = __('Authorized connection to OnPay failed', 'wc-onpay');
         }
 
@@ -428,45 +433,5 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         $value = htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML401, 'UTF-8');
         $value = htmlentities($value);
         return $value;
-    }
-
-    /**
-     * Log token errors that occur during payment processing
-     *
-     * @param int $order_id Order ID
-     * @param Exception $exception The TokenException that was caught
-     */
-    protected function logTokenErrorDuringPayment($order_id, $exception) {
-        $tokenStorage = new wc_onpay_token_storage();
-        $hasStoredToken = $tokenStorage->hasStoredToken();
-        
-        $message = 'OnPay payment processing failed due to token error. ';
-        if ($hasStoredToken) {
-            $message .= 'Token exists in storage but is invalid or could not be refreshed. ';
-            $message .= 'Connection was previously established but is now broken. ';
-            $message .= 'Possible causes: refresh_token expired, token revoked, or access_token invalidated.';
-        } else {
-            $message .= 'No valid token available. Connection may have been dropped or never established.';
-        }
-        
-        $context = [
-            'order_id' => $order_id,
-            'exception_message' => $exception->getMessage(),
-            'exception_code' => $exception->getCode(),
-            'token_stored' => $hasStoredToken,
-            'location' => 'process_payment',
-            'timestamp' => current_time('mysql'),
-        ];
-
-        if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
-            $contextStr = ' Context: ' . wp_json_encode($context);
-            error_log('[OnPay Token Error] ' . $message . $contextStr);
-        }
-        
-        if (function_exists('wc_get_logger')) {
-            $logger = wc_get_logger();
-            $context['source'] = 'onpay-token';
-            $logger->error($message, $context);
-        }
-    }
+    }    
 }
