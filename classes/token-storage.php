@@ -43,4 +43,14 @@ class wc_onpay_token_storage implements \OnPay\TokenStorageInterface {
     public function saveToken($token) {
         update_option('woocommerce_onpay_token', $token);
     }
+
+    /**
+     * Check if a token exists but may be invalid
+     *
+     * @return bool True if token exists in storage
+     */
+    public function hasStoredToken() {
+        $token = $this->getToken();
+        return null !== $token && '' !== $token;
+    }
 }

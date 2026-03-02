@@ -53,6 +53,7 @@ function init_onpay() {
     include_once __DIR__ . '/classes/query-helper.php';
     include_once __DIR__ . '/classes/surcharge-helper.php';
     include_once __DIR__ . '/classes/token-storage.php';
+    include_once __DIR__ . '/classes/logger-helper.php';
 
     include_once __DIR__ . '/classes/gateway-card.php';
     include_once __DIR__ . '/classes/gateway-mobilepay.php';
@@ -610,6 +611,11 @@ function init_onpay() {
                 $this->outputString($html);
                 return;
             } catch (OnPay\API\Exception\TokenException $exception) { // Something's wrong with the token, print link to reauth
+                wc_onpay_logger_helper::logTokenProblem('TokenException during admin ping', [
+                    'exception_message' => $exception->getMessage(),
+                    'exception_code' => $exception->getCode(),
+                    'location' => 'admin_options_ping'
+                ]);
                 $html .= $this->getOnboardingHtml($onpayApi->authorize());
                 $GLOBALS['hide_save_button'] = true;
                 $hideForm = true;
@@ -1009,6 +1015,13 @@ function init_onpay() {
                     } catch (OnPay\API\Exception\ConnectionException $exception) { // No connection to OnPay API
                         $order->add_order_note(__('Automatic capture failed.') . ' ' . __('No connection to OnPay', 'wc-onpay'));
                     } catch (OnPay\API\Exception\TokenException $exception) { // Something's wrong with the token, print link to reauth
+                        wc_onpay_logger_helper::logTokenProblem('TokenException during automatic capture', [
+                            'order_id' => $orderId,
+                            'transaction_id' => $transactionId,
+                            'exception_message' => $exception->getMessage(),
+                            'exception_code' => $exception->getCode(),
+                            'location' => 'orderStatusCompleteEvent'
+                        ]);
                         $order->add_order_note(__( 'Automatic capture failed.') . ' ' . __('Invalid OnPay token, please login on settings page', 'wc-onpay' ));
                     }
                 }
@@ -1076,6 +1089,13 @@ function init_onpay() {
                 $this->outputString('<h3>' . __('No connection to OnPay', 'wc-onpay') . '</h3>');
                 return;
             } catch (OnPay\API\Exception\TokenException $exception) { // Something's wrong with the token, print link to reauth
+                $orderId = isset($meta['args']['order']) ? $meta['args']['order']->get_id() : null;
+                wc_onpay_logger_helper::logTokenProblem('TokenException in order meta box', [
+                    'order_id' => $orderId,
+                    'exception_message' => $exception->getMessage(),
+                    'exception_code' => $exception->getCode(),
+                    'location' => 'order_meta_box'
+                ]);
                 $this->outputString('<h3>' . __('Invalid OnPay token, please login on settings page', 'wc-onpay') . '</h3>');
                 return;
             }
@@ -1768,6 +1788,11 @@ function init_onpay() {
             } catch (OnPay\API\Exception\ConnectionException $e) { // No connection to OnPay API
                 $this->addAdminNotice(__('No connection to OnPay', 'wc-onpay'));
             } catch (OnPay\API\Exception\TokenException $e) { // Something's wrong with the token
+                wc_onpay_logger_helper::logTokenProblem('TokenException caught in admin', [
+                    'exception_message' => $e->getMessage(),
+                    'exception_code' => $e->getCode(),
+                    'location' => 'onpayExceptionHandlerAdmin'
+                ]);
                 $this->addAdminNotice(__('Invalid OnPay token, please login on settings page', 'wc-onpay' ));
             } catch (OnPay\API\Exception\ApiException $e) { // Api action failed
                 $this->addAdminNotice(__('OnPay error: ', 'wc-onpay') . $exception->getMessage(), 'error');
