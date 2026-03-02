@@ -433,5 +433,5 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         $value = htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML401, 'UTF-8');
         $value = htmlentities($value);
         return $value;
-    }    
+    }
 }
