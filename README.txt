@@ -33,6 +33,10 @@ Don't  have an OnPay account yet? Order one through <a href="https://dandomain.d
 2. WooCommerce >= 8.2
 
 == Changelog ==
+= [1.0.50] =
+Fix Blocks checkout error notice persistence after declined payment
+Added token error logging for connection debugging
+
 = [1.0.49] =
 Removed sanitizeFieldValue from getDescriptionString because of æøå showing as html entities
 
