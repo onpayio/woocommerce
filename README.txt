@@ -4,7 +4,7 @@ Tags: onpay, gateway, payment, payment gateway, woocommerce, psp
 Requires at least: 5.8
 Tested up to: 6.8.3
 Requires PHP: 7.4
-Stable tag: 1.0.49
+Stable tag: 1.0.50
 License: MIT
 License URI: https://mit-license.org/
 
@@ -33,6 +33,10 @@ Don't  have an OnPay account yet? Order one through <a href="https://dandomain.d
 2. WooCommerce >= 8.2
 
 == Changelog ==
+= [1.0.50] =
+Fix Blocks checkout error notice persistence after declined payment
+Added token error logging for connection debugging
+
 = [1.0.49] =
 Removed sanitizeFieldValue from getDescriptionString because of æøå showing as html entities
 
