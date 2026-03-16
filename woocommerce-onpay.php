@@ -616,6 +616,7 @@ function init_onpay() {
                     'exception_code' => $exception->getCode(),
                     'location' => 'admin_options_ping'
                 ]);
+                wp_enqueue_style('wc-onpay-source-sans-3', 'https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap', [], null );
                 $html .= $this->getOnboardingHtml($onpayApi->authorize());
                 $GLOBALS['hide_save_button'] = true;
                 $hideForm = true;
@@ -1725,15 +1726,26 @@ function init_onpay() {
         }
 
 	    private function getOnboardingHtml($authUrl) {
-            $html = '<div style="border-radius: .25rem; text-align: center; background-color: #ffffff; box-shadow: 0 15px 35px rgba(50,50,93,.1), 0 5px 15px rgba(0,0,0,.07); -webkit-box-shadow: 0 15px 35px rgba(50,50,93,.1), 0 5px 15px rgba(0,0,0,.07); padding: 1.25rem; max-width: 500px; min-height: 200px; display: flex; flex-direction: column; justify-content: space-between;">';
-            $html .= '<a href="' . $authUrl . '" style="background-color: #fb617f; color: #fff; border-color: #fb617f; font-weight: bold; padding: .75rem; font-size: 1rem; line-height: 1.5; border-radius: .25rem; text-decoration: none;">' . __('Log in with OnPay account', 'wc-onpay') . '</a>';
-            $html .= '<hr style="border-top: 1px solid rgba(0,0,0,.1); width: 100%; margin: 20px 0 20px 0;">';
-            $html .= '<h3 style="margin: 0 0 15px 0;">' . __('Don\'t have an OnPay account yet?', 'wc-onpay') . '</h3>';
-            $html .= '<span style="margin-bottom: auto;">' . __('Order one through DanDomain from DKK 0,- per month.', 'wc-onpay') . '</span>';
-            $html .= '<div style="display: flex;flex-wrap: wrap;align-content: space-between;">';
-            $html .= '<a href="https://dandomain.dk/betalingssystem/priser" style="margin: auto; width: 43%; background-color: #fb617f; color: #fff; border-color: #fb617f; font-weight: bold; padding: .375rem .75rem; line-height: 1.5; border-radius: .25rem; text-decoration: none;" target="_blank">' . __('Get OnPay now', 'wc-onpay') . '</a>';
-            $html .= '<a href="https://onpay.io/#brands" style="margin: auto; width: 43%; background-color: #fff; color: #fb617f; border: 1px solid #fb617f; font-weight: bold; padding: .375rem .75rem; line-height: 1.5; border-radius: .25rem; text-decoration: none;" target="_blank">' . __('OnPay sellers', 'wc-onpay') . '</a>';
+            $locale = determine_locale();
+            $docsUrl = (strpos($locale, 'da') === 0)
+            ? 'https://onpay.io/docs/da/woocommerce.html'
+            : 'https://onpay.io/docs/en/woocommerce.html';
+            $backgroundUrl = plugin_dir_url(__FILE__) . 'assets/img/noisy-gradients.png';
+            $onpayLogoUrl = plugin_dir_url(__FILE__) . 'assets/img/logo-OnPay.svg';
+
+            $html = '<div style="font-family: \'Source Sans 3\', sans-serif; border-radius: .25rem; background-color: #ffffff; box-shadow: 0 15px 35px rgba(50,50,93,.1), 0 5px 15px rgba(0,0,0,.07); -webkit-box-shadow: 0 15px 35px rgba(50,50,93,.1), 0 5px 15px rgba(0,0,0,.07); max-width: 681px; min-height: 200px; display: flex; flex-direction: column; justify-content: space-between;">';
+            $html .= '<div style="background-image: url(\'' . $backgroundUrl. '\'); display: flex; justify-content: center; align-items: center; padding: 1.375rem 0; border-radius: .25rem .25rem 0 0;">';
+            $html .= '<img src="' . $onpayLogoUrl . '" alt="OnPay logo" style="height: auto; width: 7.75rem;">';
+            $html .= '</div>';
+            $html .= '<div style="padding: 2rem; display: flex; flex-direction: column; justify-content: space-between;">';
+            $html .= '<h2 style="margin: 0 0 1rem 0; font-size: 1.5rem;">' . __('Get started with OnPay', 'wc-onpay') . '</h2>';
+            $html .= '<h5 style="margin: 0 0 1rem 0; font-size: 0.9375rem; font-weight: 400;">' . __('Start accepting card payments and digital wallets, with transparent fees and easy setup.', 'wc-onpay') . '</h5>';
+            $html .= '<a href="' . $authUrl . '" class="wc-onpay-connect-btn" style="background-color: #fb617f; color: #fff; font-weight: bold; padding: .5rem; font-size: 0.875rem; line-height: 1.5; border-radius: .25rem; text-decoration: none; text-align: center; display: block;">' . __('Connect your OnPay account', 'wc-onpay') . '</a>';
+            $html .= '<hr style="border-top: 1px solid rgba(0,0,0,.1); width: 100%; margin: 1rem 0;">';
+            $html .= '<p style="text-align: center; margin: 0; font-size: 0.875rem;">' . __('Need help?', 'wc-onpay') . ' <a href="' . $docsUrl . '" target="_blank" style="color: #fb617f;">' . __('Follow our setup guide', 'wc-onpay') . '</a> ' . __('for step-by-step instructions.', 'wc-onpay') . '</p>';
             $html .= '</div></div>';
+
+            $html .= '<style> .wc-onpay-connect-btn:hover { background-color: #e14f6d !important; } </style>';
 
     	    return $html;
 	    }
