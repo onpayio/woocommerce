@@ -176,6 +176,7 @@ function init_onpay() {
             add_action('wp_ajax_onpay_clear_declined_flag', [$this, 'ajax_clear_declined_flag']);
             add_action('wp_ajax_nopriv_onpay_clear_declined_flag', [$this, 'ajax_clear_declined_flag']);
             add_action('woocommerce_checkout_order_processed', [$this, 'clearDeclinedFlagOnOrder'], 10, 1);
+            add_filter('wcs_get_retry_rule', [$this, 'maybeBlockSubscriptionRetry'], 10, 3);
         }
 
         public function register_scripts() {
@@ -1294,6 +1295,14 @@ function init_onpay() {
             // Get subscription order
             $subscriptionOrder = new WC_Subscription($newOrder->get_meta('_subscription_renewal'));
             $subscriptionId = $this->getOnpayId($subscriptionOrder);
+
+            // Check if subscription has a valid OnPay ID
+            if (null === $subscriptionId) {
+                $newOrder->add_order_note(__('Subscription renewal failed: No OnPay subscription ID found. The subscription may not be linked to OnPay.', 'wc-onpay'));
+                $newOrder->update_meta_data('_onpay_retry_blocked', 'yes');
+                $newOrder->update_status('failed', __('No OnPay subscription ID found.', 'wc-onpay'));
+                return;
+            }
             
             // Get customer
             $customer = new WC_Customer($subscriptionOrder->get_customer_id());
@@ -1302,8 +1311,30 @@ function init_onpay() {
             $currencyHelper = new wc_onpay_currency_helper();
             $orderCurrency = $currencyHelper->fromAlpha3($newOrder->get_currency());
             $orderAmount = $currencyHelper->majorToMinor($newOrder->get_total(), $orderCurrency->numeric, '.');
-            
-            $onpaySubscription = $this->get_onpay_client()->subscription()->getSubscription($subscriptionId);
+
+            // Attempt to get subscription from OnPay
+            try {
+                $onpaySubscription = $this->get_onpay_client()->subscription()->getSubscription($subscriptionId);
+            } catch (OnPay\API\Exception\ConnectionException $exception) {
+                $newOrder->add_order_note(__('Subscription renewal failed: No connection to OnPay API. Please check your OnPay connection and retry.', 'wc-onpay'));
+                $newOrder->update_status('failed', __('No connection to OnPay API.', 'wc-onpay'));
+                return;
+            } catch (OnPay\API\Exception\TokenException $exception) {
+                wc_onpay_logger_helper::logTokenProblem('TokenException during subscription renewal', [
+                    'order_id' => $newOrder->get_id(),
+                    'subscription_id' => $subscriptionId,
+                    'exception_message' => $exception->getMessage(),
+                    'exception_code' => $exception->getCode(),
+                    'location' => 'subscriptionPayment'
+                ]);
+                $newOrder->add_order_note(__('Subscription renewal failed: OnPay authorization has expired or is invalid. Please reconnect to OnPay and retry.', 'wc-onpay'));
+                $newOrder->update_status('failed', __('OnPay authorization expired.', 'wc-onpay'));
+                return;
+            } catch (\Exception $exception) {
+                $newOrder->add_order_note(sprintf(__('Subscription renewal failed: Could not retrieve subscription from OnPay. Error: %s', 'wc-onpay'), $exception->getMessage()));
+                $newOrder->update_status('failed', __('Could not retrieve subscription from OnPay.', 'wc-onpay'));
+                return;
+            }
             
             // Fetch surcharge settings
             $surchargeEnabled = $this->get_option(WC_OnPay::SETTING_ONPAY_SURCHARGE_ENABLE) === 'yes';
@@ -1319,7 +1350,9 @@ function init_onpay() {
 
             // Subscription no longer active.
             if ($onpaySubscription->status !== 'active') {
+                $subscriptionOrder->add_order_note(__('Subscription is no longer active in OnPay.', 'wc-onpay'));
                 $subscriptionOrder->update_status(__('expired', 'Subscription no longer active in OnPay.', 'wc-onpay'));
+                $newOrder->update_meta_data('_onpay_retry_blocked', 'yes');
                 $newOrder->update_status('failed', __('Subscription no longer active in OnPay.', 'wc-onpay'));
                 return;
             }
@@ -1332,7 +1365,23 @@ function init_onpay() {
                     $surchargeEnabled,
                     $surchargeVatRate
                 );
+            } catch (OnPay\API\Exception\ConnectionException $exception) {
+                $newOrder->add_order_note(__('Subscription renewal failed: Lost connection to OnPay API while creating transaction. Please check your OnPay connection and retry.', 'wc-onpay'));
+                $newOrder->update_status('failed', __('No connection to OnPay API.', 'wc-onpay'));
+                return;
+            } catch (OnPay\API\Exception\TokenException $exception) {
+                wc_onpay_logger_helper::logTokenProblem('TokenException during subscription transaction creation', [
+                    'order_id' => $newOrder->get_id(),
+                    'subscription_id' => $subscriptionId,
+                    'exception_message' => $exception->getMessage(),
+                    'exception_code' => $exception->getCode(),
+                    'location' => 'subscriptionPayment_createTransaction'
+                ]);
+                $newOrder->add_order_note(__('Subscription renewal failed: OnPay authorization has expired or is invalid. Please reconnect to OnPay and retry.', 'wc-onpay'));
+                $newOrder->update_status('failed', __('OnPay authorization expired.', 'wc-onpay'));
+                return;
             } catch (OnPay\API\Exception\ApiException $exception) {
+                $newOrder->add_order_note(sprintf(__('Subscription renewal failed: Authorizing new transaction failed. Error: %s', 'wc-onpay'), $exception->getMessage()));
                 $subscriptionOrder->add_order_note(__('Authorizing new transaction failed.', 'wc-onpay'));
                 $newOrder->update_status('failed', __('Authorizing new transaction failed.', 'wc-onpay'));
                 return;
@@ -1369,6 +1418,42 @@ function init_onpay() {
             } else{
                 $subscriptionOrder->add_order_note(__('Subscription cancelled in OnPay.', 'wc-onpay'));
             }
+        }
+
+        /**
+         * Filter to block WooCommerce Subscriptions auto-retry for expired subscriptions or orders without OnPay ID.
+         * Returns null to prevent retry scheduling when the subscription is expired or not linked to OnPay.
+         *
+         * @param WCS_Retry_Rule|null $rule The retry rule to apply
+         * @param int $retry_number The retry attempt number
+         * @param int $order_id The order ID
+         * @return WCS_Retry_Rule|null
+         */
+        public function maybeBlockSubscriptionRetry($rule, $retry_number, $order_id) {
+            $order = wc_get_order($order_id);
+            
+            if (!$order) {
+                return $rule;
+            }
+
+            // Check if this order failed due to missing OnPay ID or expired OnPay subscription
+            $onpayRetryBlocked = $order->get_meta('_onpay_retry_blocked');
+            
+            if ($onpayRetryBlocked === 'yes') {
+                $order->add_order_note(__('Automatic payment retry blocked: Subscription is expired or not linked to OnPay.', 'wc-onpay'));
+                return null; // Returning null blocks the retry
+            }
+
+            // Also check if the related subscription is expired in WooCommerce
+            $subscriptions = wcs_get_subscriptions_for_renewal_order($order_id);
+            foreach ($subscriptions as $subscription) {
+                if ($subscription->has_status('expired')) {
+                    $order->add_order_note(__('Automatic payment retry blocked: Subscription is expired.', 'wc-onpay'));
+                    return null; // Returning null blocks the retry
+                }
+            }
+
+            return $rule;
         }
 
         private function cancelOnpaySubscription($subscriptionOrder) {
