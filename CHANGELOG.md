@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Change onboarding and update language files
+- Improve subscription renewal handling for OnPay connection issues
 
 ## [1.0.50] - 2026-03-03
 - Fix Blocks checkout error notice persistence after declined payment
