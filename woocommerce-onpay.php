@@ -1113,7 +1113,10 @@ function init_onpay() {
                 try {
                     $transaction = $onpayApi->transaction()->getTransaction($transactionId);
                 } catch (OnPay\API\Exception\ApiException $exception) {
-                    $this->outputString(__('Error: ', 'wc-onpay') . $this->cleanOutput($exception->getMessage()));
+                    if (function_exists('wc_get_logger')) {
+                        wc_get_logger()->error('OnPay API exception: ' . $exception->getMessage(), ['source' => 'wc-onpay']);
+                    }
+                    $this->outputString(__('Error: Unable to retrieve transaction from OnPay', 'wc-onpay'));
                     exit;
                 }
 

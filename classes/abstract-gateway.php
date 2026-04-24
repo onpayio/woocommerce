@@ -69,7 +69,10 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
                 'redirect' => $redirect
             ];
         } catch (InvalidArgumentException $e) {
-            $error = __('Invalid data provided. Unable to create OnPay payment', 'wc-onpay') . ' (' . $e->getMessage() . ')';
+            if (function_exists('wc_get_logger')) {
+                wc_get_logger()->error('OnPay invalid argument: ' . $e->getMessage(), ['source' => 'wc-onpay']);
+            }
+            $error = __('Invalid data provided. Unable to create OnPay payment', 'wc-onpay');
         } catch (WoocommerceOnpay\OnPay\API\Exception\TokenException $e) {
             // Log detailed token error information
             wc_onpay_logger_helper::logTokenProblem('OnPay payment processing failed due to token error', [
@@ -83,7 +86,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
 
         if ($updateMethod) {
             // If we're doing an update of method, manually echo error.
-            echo $error;
+            echo esc_html($error);
             exit;
         }
     
