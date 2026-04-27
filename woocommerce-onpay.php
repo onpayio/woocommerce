@@ -94,6 +94,7 @@ function init_onpay() {
         const SETTING_ONPAY_SURCHARGE_VAT_OVERRIDE = 'surcharge_vat_override';
 
         const WC_ONPAY_ID = 'wc_onpay';
+        const WC_ONPAY_ADMIN_INLINE_HANDLE = 'wc-onpay-admin-inline';
         const WC_ONPAY_SETTINGS_ID = 'onpay';
         const WC_ONPAY_PLATFORM_STRING = 'woocommerce/' . self::PLUGIN_VERSION . '/'. WC_VERSION;
 
@@ -177,6 +178,16 @@ function init_onpay() {
             add_action('wp_ajax_nopriv_onpay_clear_declined_flag', [$this, 'ajax_clear_declined_flag']);
             add_action('woocommerce_checkout_order_processed', [$this, 'clearDeclinedFlagOnOrder'], 10, 1);
             add_filter('wcs_get_retry_rule', [$this, 'maybeBlockSubscriptionRetry'], 10, 3);
+        }
+
+        /**
+         * Registers and enqueues an empty script handle used as a target for admin inline JS.
+         */
+        private function ensure_admin_inline_script_handle() {
+            if (!wp_script_is(self::WC_ONPAY_ADMIN_INLINE_HANDLE, 'registered')) {
+                wp_register_script(self::WC_ONPAY_ADMIN_INLINE_HANDLE, '', ['jquery'], self::PLUGIN_VERSION, true);
+            }
+            wp_enqueue_script(self::WC_ONPAY_ADMIN_INLINE_HANDLE);
         }
 
         public function register_scripts() {
@@ -593,6 +604,7 @@ function init_onpay() {
          * Method that renders payment gateway settings page in woocommerce
          */
         public function admin_options() {
+            $this->ensure_admin_inline_script_handle();
             $onpayApi = $this->get_onpay_client(true);
 
             $this->handle_oauth_callback();
@@ -919,8 +931,8 @@ function init_onpay() {
 
                 $html .= '</tbody></table>';
 
-                wc_enqueue_js('$("#button_onpay_apilogout").on("click", function(event) {event.preventDefault(); if(confirm(\''. __('Are you sure you want to logout from Onpay?', 'wc-onpay') . '\')) {window.location.href = window.location.href+"&detach=1";}})');
-                wc_enqueue_js('$("#button_onpay_refreshsecret").on("click", function(event) {event.preventDefault(); if(confirm(\''. __('Are you sure you want to refresh gateway ID and secret?', 'wc-onpay') . '\')) {window.location.href = window.location.href+"&refresh=1";}})');
+                wp_add_inline_script(self::WC_ONPAY_ADMIN_INLINE_HANDLE, 'jQuery(function($){$("#button_onpay_apilogout").on("click", function(event) {event.preventDefault(); if(confirm(\''. __('Are you sure you want to logout from Onpay?', 'wc-onpay') . '\')) {window.location.href = window.location.href+"&detach=1";}});});');
+                wp_add_inline_script(self::WC_ONPAY_ADMIN_INLINE_HANDLE, 'jQuery(function($){$("#button_onpay_refreshsecret").on("click", function(event) {event.preventDefault(); if(confirm(\''. __('Are you sure you want to refresh gateway ID and secret?', 'wc-onpay') . '\')) {window.location.href = window.location.href+"&refresh=1";}});});');
             
                 return $html;
         }
@@ -1083,6 +1095,7 @@ function init_onpay() {
          * Method that renders the meta box for OnPay transactions on order page.
          */
         public function order_meta_box($post, array $meta) {
+            $this->ensure_admin_inline_script_handle();
             $onpayApi = $this->get_onpay_client();
 
             try {
@@ -1196,20 +1209,20 @@ function init_onpay() {
                 $buttonsShown = false;
                 if ($transaction->charged < $transaction->amount && $transaction->status === 'active') {
                     $html .= '<button class="button-primary" id="button_onpay_capture_reveal">' . __('Capture', 'wc-onpay') . '</button>&nbsp;';
-                    wc_enqueue_js('$("#button_onpay_capture_reveal").on("click", function(event) {event.preventDefault(); $("#onpay_action_capture").slideDown(); $("#onpay_action_buttons").slideUp(); })');
+                    wp_add_inline_script(self::WC_ONPAY_ADMIN_INLINE_HANDLE, 'jQuery(function($){$("#button_onpay_capture_reveal").on("click", function(event) {event.preventDefault(); $("#onpay_action_capture").slideDown(); $("#onpay_action_buttons").slideUp(); });});');
                     $buttonsShown = true;
                 }
 
                 // Show refund button if transaction is refundable, and refund integration setting is disabled.
                 if (0 < $transaction->charged && $transaction->refunded < $transaction->charged) {
                     $html .= '<button class="button-secondary" id="button_onpay_refund_reveal">' . __('Refund in OnPay', 'wc-onpay') . '</button>&nbsp;';
-                    wc_enqueue_js('$("#button_onpay_refund_reveal").on("click", function(event) {event.preventDefault(); $("#onpay_action_refund").slideDown(); $("#onpay_action_buttons").slideUp(); })');
+                    wp_add_inline_script(self::WC_ONPAY_ADMIN_INLINE_HANDLE, 'jQuery(function($){$("#button_onpay_refund_reveal").on("click", function(event) {event.preventDefault(); $("#onpay_action_refund").slideDown(); $("#onpay_action_buttons").slideUp(); });});');
                     $buttonsShown = true;
                 }
 
                 if ($transaction->status === 'active') {
                     $html .= '<button class="button-secondary" id="button_onpay_cancel_reveal">' . ($transaction->charged === 0 ? __('Cancel transaction', 'wc-onpay') : __('Finish transaction', 'wc-onpay')) . '</button>&nbsp;';
-                    wc_enqueue_js('$("#button_onpay_cancel_reveal").on("click", function(event) {event.preventDefault(); $("#onpay_action_cancel").slideDown(); $("#onpay_action_buttons").slideUp(); })');
+                    wp_add_inline_script(self::WC_ONPAY_ADMIN_INLINE_HANDLE, 'jQuery(function($){$("#button_onpay_cancel_reveal").on("click", function(event) {event.preventDefault(); $("#onpay_action_cancel").slideDown(); $("#onpay_action_buttons").slideUp(); });});');
                     $buttonsShown = true;
                 }
                 if ($buttonsShown) {
@@ -1226,7 +1239,7 @@ function init_onpay() {
                 $html .= '<input class="button-primary" type="submit" name="onpay_capture" value="' . __('Capture', 'wc-onpay') . '">&nbsp;';
                 $html .= '<button class="button-secondary" id="button_onpay_capture_hide">' . __('Cancel', 'wc-onpay') . '</button>';
                 $html .= '</div>';
-                wc_enqueue_js('$("#button_onpay_capture_hide").on("click", function(event) {event.preventDefault(); $("#onpay_action_capture").slideUp(); $("#onpay_action_buttons").slideDown(); })');
+                wp_add_inline_script(self::WC_ONPAY_ADMIN_INLINE_HANDLE, 'jQuery(function($){$("#button_onpay_capture_hide").on("click", function(event) {event.preventDefault(); $("#onpay_action_capture").slideUp(); $("#onpay_action_buttons").slideDown(); });});');
                 
                 // Hidden refund form, revealed by button above
                 $html .= '<div id="onpay_action_refund" style="display: none;">';
@@ -1236,7 +1249,7 @@ function init_onpay() {
                 $html .= '<input class="button-primary" type="submit" name="onpay_refund" value="' . __('Refund', 'wc-onpay') . '">&nbsp;';
                 $html .= '<button class="button-secondary" id="button_onpay_refund_hide">' . __('Cancel', 'wc-onpay') . '</button>';
                 $html .= '</div>';
-                wc_enqueue_js('$("#button_onpay_refund_hide").on("click", function(event) {event.preventDefault(); $("#onpay_action_refund").slideUp(); $("#onpay_action_buttons").slideDown(); })');
+                wp_add_inline_script(self::WC_ONPAY_ADMIN_INLINE_HANDLE, 'jQuery(function($){$("#button_onpay_refund_hide").on("click", function(event) {event.preventDefault(); $("#onpay_action_refund").slideUp(); $("#onpay_action_buttons").slideDown(); });});');
 
                 // Hidden cancel/finish form, revealed by button above
                 $html .= '<div id="onpay_action_cancel" style="display: none;">';
@@ -1245,7 +1258,7 @@ function init_onpay() {
                 $html .= '<input class="button-primary" type="submit" name="onpay_cancel" value="' . ($transaction->charged === 0 ? __('Cancel transaction', 'wc-onpay') : __('Finish transaction', 'wc-onpay')) . '">&nbsp;';
                 $html .= '<button class="button-secondary" id="button_onpay_cancel_hide">' . __('Cancel', 'wc-onpay') . '</button>';
                 $html .= '</div>';
-                wc_enqueue_js('$("#button_onpay_cancel_hide").on("click", function(event) {event.preventDefault(); $("#onpay_action_cancel").slideUp(); $("#onpay_action_buttons").slideDown(); })');
+                wp_add_inline_script(self::WC_ONPAY_ADMIN_INLINE_HANDLE, 'jQuery(function($){$("#button_onpay_cancel_hide").on("click", function(event) {event.preventDefault(); $("#onpay_action_cancel").slideUp(); $("#onpay_action_buttons").slideDown(); });});');
             }
             $this->outputString($html);
         }
