@@ -1230,6 +1230,7 @@ function init_onpay() {
                 $html .= '<th>' . __('Date & Time', 'wc-onpay') . '</th>';
                 $html .= '<th>' . __('Action', 'wc-onpay') . '</th>';
                 $html .= '<th>' . __('Amount', 'wc-onpay') . '</th>';
+                $html .= '<th>' . __('Result', 'wc-onpay') . '</th>';
                 $html .= '<th>' . __('User', 'wc-onpay') . '</th>';
                 $html .= '<th>' . __('IP', 'wc-onpay') . '</th>';
                 $html .= '</thead><tbody>';
@@ -1239,6 +1240,8 @@ function init_onpay() {
                    $html .= '<td>' . $this->cleanOutput($history->dateTime->format('Y-m-d H:i:s')) . '</td>';
                    $html .= '<td>' . $this->cleanOutput($history->action) . '</td>';
                    $html .= '<td>' . $this->cleanOutput($currency->alpha3 . ' ' . $currencyHelper->minorToMajor($history->amount, $currency->numeric)) . '</td>';
+                   $resultText = $this->cleanOutput($history->resultText);
+                   $html .= '<td>' . $this->cleanOutput($history->resultCode) . ($resultText !== '' ? ' (' . $resultText . ')' : '') . '</td>';
                    $html .= '<td>' . $this->cleanOutput($history->author) . '</td>';
                    $html .= '<td>' . $this->cleanOutput($history->ip) . '</td>';
                    $html .= '</tr>';
@@ -1864,7 +1867,7 @@ function init_onpay() {
         }
 
         private function cleanOutput($string) {
-            return (string)ent2ncr(htmlentities($string));
+            return (string)ent2ncr(htmlentities((string)$string));
         }
 
         private function outputString($string) {
