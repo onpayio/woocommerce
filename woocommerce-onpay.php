@@ -24,7 +24,7 @@
  */
 
 /**
-* Plugin Name: OnPay.io for WooCommerce
+* Plugin Name: OnPay.io for WooCommerce (Github)
 * Description: OnPay.io payment plugin for WooCommerce
 * Author: OnPay.io
 * Author URI: https://onpay.io/
@@ -175,6 +175,8 @@ function init_onpay() {
             add_action('add_meta_boxes', [$this, 'meta_boxes']);
             add_action('wp_enqueue_scripts', [$this, 'register_scripts']);
             add_action('admin_notices', [$this, 'showAdminNotices']);
+            add_action('admin_enqueue_scripts', [$this, 'enqueueAdminAssetsEarly']);
+            add_filter('admin_body_class', [$this, 'addAdminBodyClass']);
             add_action('woocommerce_update_option', [$this, 'updateGateway']);
             add_action('wp_ajax_onpay_clear_declined_flag', [$this, 'ajax_clear_declined_flag']);
             add_action('wp_ajax_nopriv_onpay_clear_declined_flag', [$this, 'ajax_clear_declined_flag']);
@@ -613,17 +615,21 @@ function init_onpay() {
             $this->handle_detach();
             $this->handle_refresh();
 
-            $html = '<h3>' . __('OnPay.io', 'wc-onpay') .'</h3>';
+            // Always load brand font for cohesive look across the settings page.
+            wp_enqueue_style('wc-onpay-source-sans-3', 'https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap', [], null);
 
             $hideForm = false;
-            
+            $connectionState = 'connected';
+            $connectionError = '';
+
             // Print information if OnPay is not pingable.
             try {
                 $onpayApi->ping();
             } catch (OnPay\API\Exception\ConnectionException $exception) { // No connection to OnPay API
-                $html .= '<h3>' . __('No connection to OnPay', 'wc-onpay') . '</h3>';
+                $connectionState = 'no_connection';
+                $connectionError = __('No connection to OnPay', 'wc-onpay');
                 $GLOBALS['hide_save_button'] = true;
-                $this->outputString($html);
+                $this->outputString($this->render_settings_shell('', '<div class="onpay-card onpay-card--alert"><h3>' . esc_html($connectionError) . '</h3></div>', $connectionState));
                 return;
             } catch (OnPay\API\Exception\TokenException $exception) { // Something's wrong with the token, print link to reauth
                 wc_onpay_logger_helper::logTokenProblem('TokenException during admin ping', [
@@ -631,60 +637,161 @@ function init_onpay() {
                     'exception_code' => $exception->getCode(),
                     'location' => 'admin_options_ping'
                 ]);
-                wp_enqueue_style('wc-onpay-source-sans-3', 'https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap', [], null );
-                $html .= $this->getOnboardingHtml($onpayApi->authorize());
+                $connectionState = 'unauthorized';
                 $GLOBALS['hide_save_button'] = true;
                 $hideForm = true;
+                $body = '<div class="onpay-onboarding-wrap">' . $this->getOnboardingHtml($onpayApi->authorize()) . '</div>';
+                $this->outputString($this->render_settings_shell('', $body, $connectionState));
+                return;
             }
 
-            if (!$hideForm) {
-                // Get section
-                $section = wc_onpay_query_helper::get_query_value('section');
+            // Get section
+            $section = wc_onpay_query_helper::get_query_value('section');
 
-                // Render section menu
-                $html .= $this->admin_options_sections($section);
-                $html .= '<hr>';
+            // Init form for section
+            $this->init_section_form($section);
 
-                // Init form for section
-                $this->init_section_form($section);
+            // Section meta (title + subtitle) for the main card header.
+            $sectionMeta = $this->get_section_meta($section);
 
-                $html .= '<div class="postbox"><div class="inside">';
+            // Build main body
+            $body  = '<div class="onpay-card">';
+            $body .= '<header class="onpay-card__header">';
+            $body .= '<h3 class="onpay-card__title">' . esc_html($sectionMeta['title']) . '</h3>';
+            if (!empty($sectionMeta['subtitle'])) {
+                $body .= '<p class="onpay-card__subtitle">' . esc_html($sectionMeta['subtitle']) . '</p>';
+            }
+            $body .= '</header>';
+            $body .= '<div class="onpay-card__body">';
+            $body .= '<table class="form-table onpay-form-table">';
+            $body .= $this->generate_settings_html([], false);
+            $body .= '</table>';
+            $body .= '</div>';
+            $body .= '</div>';
 
-                // Print form fields
-                $html .= '<table class="form-table">';
-                $html .= $this->generate_settings_html([], false);
-                $html .= '</table>';
-
-                if (null === $section || '' === $section) {
-                    $html .= '<hr>';
-                    $html .= $this->init_gateway_info();
-                }
-
-                $html .= '</div></div>';
+            if (null === $section || '' === $section) {
+                $body .= $this->init_gateway_info();
             }
 
-            $this->outputString($html);
+            $this->outputString($this->render_settings_shell($section, $body, $connectionState));
+        }
+
+        /**
+         * Render the modern settings page shell (header + sidebar + main panel)
+         * around the given body HTML.
+         *
+         * @param string|null $currentSection
+         * @param string $bodyHtml
+         * @param string $connectionState  one of: connected, unauthorized, no_connection
+         * @return string
+         */
+        private function render_settings_shell($currentSection, $bodyHtml, $connectionState = 'connected') {
+            $logoUrl = plugin_dir_url(__FILE__) . 'assets/img/logo-OnPay.svg';
+            $gatewayId = $this->get_option(self::SETTING_ONPAY_GATEWAY_ID);
+            $testMode = $this->get_option(self::SETTING_ONPAY_TESTMODE) === 'yes';
+
+            $statusLabel = __('Connected', 'wc-onpay');
+            $statusClass = 'is-connected';
+            if ('unauthorized' === $connectionState) {
+                $statusLabel = __('Not connected', 'wc-onpay');
+                $statusClass = 'is-disconnected';
+            } else if ('no_connection' === $connectionState) {
+                $statusLabel = __('No connection to OnPay', 'wc-onpay');
+                $statusClass = 'is-error';
+            }
+
+            $html  = '<div class="onpay-settings">';
+            // Header
+            $html .= '<header class="onpay-settings__header">';
+            $html .= '<div class="onpay-settings__brand">';
+            $html .= '<img src="' . esc_url($logoUrl) . '" alt="OnPay" class="onpay-settings__logo">';
+            $html .= '</div>';
+            $html .= '<div class="onpay-settings__meta">';
+            $html .= '<span class="onpay-status-pill ' . esc_attr($statusClass) . '"><span class="onpay-status-dot"></span>' . esc_html($statusLabel);
+            if ('connected' === $connectionState && $gatewayId) {
+                $html .= ' <span class="onpay-status-pill__id">#' . esc_html($gatewayId) . '</span>';
+            }
+            $html .= '</span>';
+            if ('connected' === $connectionState && $testMode) {
+                $html .= '<span class="onpay-env-badge onpay-env-badge--test">' . esc_html__('Test mode', 'wc-onpay') . '</span>';
+            }
+            $html .= '</div>';
+            $html .= '</header>';
+
+            // Body
+            $bodyClass = 'onpay-settings__body';
+            if ('connected' !== $connectionState) {
+                $bodyClass .= ' onpay-settings__body--no-sidebar';
+            }
+            $html .= '<div class="' . esc_attr($bodyClass) . '">';
+            if ('connected' === $connectionState) {
+                $html .= $this->admin_options_sections($currentSection);
+            }
+            $html .= '<main class="onpay-settings__main">';
+            $html .= $bodyHtml;
+            $html .= '</main>';
+            $html .= '</div>';
+            $html .= '</div>';
+
+            return $html;
+        }
+
+        /**
+         * Returns title + subtitle for a section, used in the main card header.
+         *
+         * @param string|null $section
+         * @return array{title:string, subtitle:string}
+         */
+        private function get_section_meta($section) {
+            $map = [
+                '' => [
+                    'title'    => __('General settings', 'wc-onpay'),
+                    'subtitle' => __('Configure how OnPay handles captures, refunds and order status changes.', 'wc-onpay'),
+                ],
+                'methods' => [
+                    'title'    => __('Payment methods', 'wc-onpay'),
+                    'subtitle' => __('Enable the payment methods you want to offer at checkout.', 'wc-onpay'),
+                ],
+                'window' => [
+                    'title'    => __('Payment window', 'wc-onpay'),
+                    'subtitle' => __('Customize the look and behaviour of the OnPay payment window.', 'wc-onpay'),
+                ],
+                'surcharge_fee' => [
+                    'title'    => __('Surcharge fees', 'wc-onpay'),
+                    'subtitle' => __('Pass card processing fees on to the customer where allowed.', 'wc-onpay'),
+                ],
+            ];
+            $key = (null === $section || '' === $section) ? '' : $section;
+            return isset($map[$key]) ? $map[$key] : ['title' => __('OnPay', 'wc-onpay'), 'subtitle' => ''];
         }
 
         function admin_options_sections($currentSection) {
             if (null === $currentSection) {
                 $currentSection = '';
             }
-        
-            // Sections we would like to register
-            $sections = [
-                ''          => __('General settings', 'wc-onpay'),
-                'methods'   => __('Payment methods', 'wc-onpay'),
-                'window'    => __('Payment window', 'wc-onpay'),
-                'surcharge_fee' => __('Surcharge fees', 'wc-onpay'),
-            ];
-        
-            // Start printing list of sections
-            $html =  '<ul class="subsubsub">';
 
-            // Print individual sections
-            $i = 0;
-            foreach($sections as $id => $label) {
+            // Sections we would like to register, with inline-svg icons.
+            $sections = [
+                '' => [
+                    'label' => __('General settings', 'wc-onpay'),
+                    'icon'  => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+                ],
+                'methods' => [
+                    'label' => __('Payment methods', 'wc-onpay'),
+                    'icon'  => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>',
+                ],
+                'window' => [
+                    'label' => __('Payment window', 'wc-onpay'),
+                    'icon'  => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><circle cx="6.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="6.5" r=".5" fill="currentColor"/></svg>',
+                ],
+                'surcharge_fee' => [
+                    'label' => __('Surcharge fees', 'wc-onpay'),
+                    'icon'  => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="18" x2="18" y2="6"/><circle cx="7.5" cy="7.5" r="2"/><circle cx="16.5" cy="16.5" r="2"/></svg>',
+                ],
+            ];
+
+            $html = '<aside class="onpay-settings__sidebar"><nav class="onpay-nav" aria-label="' . esc_attr__('OnPay settings sections', 'wc-onpay') . '"><ul>';
+            foreach ($sections as $id => $section) {
                 $url = add_query_arg(
                     [
                         'page' => 'wc-settings',
@@ -693,12 +800,14 @@ function init_onpay() {
                     ],
                     admin_url('admin.php')
                 );
-                $html .= '<li>' . ($i > 0 ? '|' : '') . '<a href="' . $url .'" ' . ($currentSection === $id ? 'class="current"' : '') . '>' . $label . '</a></li>';
-                $i++;
+                $isCurrent = $currentSection === $id;
+                $html .= '<li>';
+                $html .= '<a href="' . esc_url($url) . '" class="onpay-nav__item' . ($isCurrent ? ' is-current' : '') . '"' . ($isCurrent ? ' aria-current="page"' : '') . '>';
+                $html .= '<span class="onpay-nav__icon" aria-hidden="true">' . $section['icon'] . '</span>';
+                $html .= '<span class="onpay-nav__label">' . esc_html($section['label']) . '</span>';
+                $html .= '</a></li>';
             }
-        
-            // End list
-            $html .= '</ul><br>';
+            $html .= '</ul></nav></aside>';
             return $html;
         }
 
@@ -726,6 +835,46 @@ function init_onpay() {
             parent::process_admin_options();
         }
 
+        /**
+         * Adds the `onpay-admin-active` class to <body> server-side when the
+         * OnPay settings tab is being viewed, so layout-affecting CSS rules
+         * scoped under that class apply on the very first paint (no JS race).
+         */
+        public function addAdminBodyClass($classes) {
+            global $pagenow;
+            if ('admin.php' !== $pagenow) {
+                return $classes;
+            }
+            $page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
+            $tab  = isset($_GET['tab'])  ? sanitize_text_field(wp_unslash($_GET['tab']))  : '';
+            if ('wc-settings' === $page && $tab === $this->id) {
+                $classes .= ' onpay-admin-active';
+            }
+            return $classes;
+        }
+
+        /**
+         * Hooked to admin_enqueue_scripts. Ensures OnPay admin CSS/JS are
+         * placed in <head> on our settings tab, so the page renders without
+         * a flash of unstyled content / oversized SVG icons.
+         */
+        public function enqueueAdminAssetsEarly($hook) {
+            if ('woocommerce_page_wc-settings' !== $hook) {
+                return;
+            }
+            $tab = isset($_GET['tab']) ? sanitize_text_field(wp_unslash($_GET['tab'])) : '';
+            if ($tab !== $this->id) {
+                return;
+            }
+            $cssPath = plugin_dir_path(__FILE__) . 'assets/admin/css/admin.css';
+            $jsPath  = plugin_dir_path(__FILE__) . 'assets/admin/js/admin.js';
+            $assetVersion = self::PLUGIN_VERSION . '-' . @filemtime($cssPath) . '-' . @filemtime($jsPath);
+            wp_enqueue_style(self::WC_ONPAY_ID . '_style', plugin_dir_url(__FILE__) . 'assets/admin/css/admin.css', [], $assetVersion);
+            wp_enqueue_style('wc-onpay-source-sans-3', 'https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap', [], null);
+            wp_enqueue_script(self::WC_ONPAY_ID . '_script', plugin_dir_url(__FILE__) . 'assets/admin/js/admin.js', ['jquery'], $assetVersion, true);
+            wp_add_inline_script(self::WC_ONPAY_ID . '_script', 'document.documentElement.classList.add("onpay-admin-active");document.body && document.body.classList.add("onpay-admin-active");');
+        }
+
         private function init_section_form($section) {
             // Determine what content to print according to section
             if (null === $section || '' === $section) {
@@ -737,8 +886,11 @@ function init_onpay() {
             } else if ('surcharge_fee' === $section) {
                 $this->init_surcharge_fee_settings();
             }
-            wp_enqueue_style(WC_OnPay::WC_ONPAY_ID . '_style', plugin_dir_url(__FILE__) . 'assets/admin/css/admin.css');
-            wp_enqueue_script(WC_OnPay::WC_ONPAY_ID . '_script', plugin_dir_url(__FILE__) . 'assets/admin/js/admin.js');
+            $assetVersion = self::PLUGIN_VERSION . '-' . @filemtime(plugin_dir_path(__FILE__) . 'assets/admin/css/admin.css');
+            wp_enqueue_style(WC_OnPay::WC_ONPAY_ID . '_style', plugin_dir_url(__FILE__) . 'assets/admin/css/admin.css', [], $assetVersion);
+            wp_enqueue_script(WC_OnPay::WC_ONPAY_ID . '_script', plugin_dir_url(__FILE__) . 'assets/admin/js/admin.js', ['jquery'], $assetVersion, true);
+            // Tag <body> so CSS can reach the WC submit button without relying on :has().
+            wp_add_inline_script(WC_OnPay::WC_ONPAY_ID . '_script', 'document.documentElement.classList.add("onpay-admin-active");document.body && document.body.classList.add("onpay-admin-active");');
         }
 
         private function init_general_settings() {
@@ -921,29 +1073,48 @@ function init_onpay() {
 		}
 
         private function init_gateway_info() {
-                $html = '<h3>' . __('Gateway information', 'wc-onpay') . '</h3>';
-                $html .= '<table class="form-table"><tbody>';
+                $gatewayId = $this->get_option(self::SETTING_ONPAY_GATEWAY_ID);
+                $secret    = $this->get_option(self::SETTING_ONPAY_SECRET);
 
-                $html .= '<tr valign="top">';
-                $html .= '<th class="titledesc" scope="row"><label>' . __('Gateway ID', 'wc-onpay') . '</label></th>';
-                $html .= '<td class="forminp"><fieldset><input type="text" readonly="true" value="' . $this->get_option(self::SETTING_ONPAY_GATEWAY_ID) . '"></fieldset></td>';
-                $html .= '</tr>';
+                $html  = '<div class="onpay-card onpay-card--info">';
+                $html .= '<header class="onpay-card__header">';
+                $html .= '<h3 class="onpay-card__title">' . esc_html__('Gateway information', 'wc-onpay') . '</h3>';
+                $html .= '<p class="onpay-card__subtitle">' . esc_html__('Credentials used by this site to communicate with OnPay.', 'wc-onpay') . '</p>';
+                $html .= '</header>';
 
-                $html .= '<tr valign="top">';
-                $html .= '<th class="titledesc" scope="row"><label>' . __('Secret', 'wc-onpay') . '</label></th>';
-                $html .= '<td class="forminp"><fieldset><input type="text" readonly="true" value="' . $this->get_option(self::SETTING_ONPAY_SECRET) . '"></fieldset></td>';
-                $html .= '</tr>';
+                $html .= '<div class="onpay-card__body onpay-info-grid">';
 
-                $html .= '<tr valign="top">';
-                $html .= '<th class="titledesc" scope="row"></th>';
-                $html .= '<td><button class="button-secondary" id="button_onpay_refreshsecret">' . __('Refresh', 'wc-onpay') . '</button>&nbsp;<button class="button-secondary" id="button_onpay_apilogout">' . __('Log out from OnPay', 'wc-onpay') . '</button></td>';
-                $html .= '</tr>';
+                // Gateway ID
+                $html .= '<div class="onpay-info-row">';
+                $html .= '<label class="onpay-info-row__label">' . esc_html__('Gateway ID', 'wc-onpay') . '</label>';
+                $html .= '<div class="onpay-info-row__control">';
+                $html .= '<input type="text" readonly value="' . esc_attr($gatewayId) . '" class="onpay-input onpay-input--readonly">';
+                $html .= '<button type="button" class="onpay-icon-button onpay-copy" data-copy-target="prev" aria-label="' . esc_attr__('Copy', 'wc-onpay') . '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
+                $html .= '</div>';
+                $html .= '</div>';
 
-                $html .= '</tbody></table>';
+                // Secret (masked)
+                $html .= '<div class="onpay-info-row">';
+                $html .= '<label class="onpay-info-row__label">' . esc_html__('Secret', 'wc-onpay') . '</label>';
+                $html .= '<div class="onpay-info-row__control">';
+                $html .= '<input type="password" readonly value="' . esc_attr($secret) . '" class="onpay-input onpay-input--readonly onpay-secret-input">';
+                $html .= '<button type="button" class="onpay-icon-button onpay-toggle-secret" aria-label="' . esc_attr__('Show secret', 'wc-onpay') . '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>';
+                $html .= '<button type="button" class="onpay-icon-button onpay-copy" data-copy-target="prev-prev" aria-label="' . esc_attr__('Copy', 'wc-onpay') . '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
+                $html .= '</div>';
+                $html .= '</div>';
+
+                $html .= '</div>'; // /body
+
+                $html .= '<footer class="onpay-card__footer">';
+                $html .= '<button class="onpay-button onpay-button--secondary" id="button_onpay_refreshsecret">' . esc_html__('Refresh', 'wc-onpay') . '</button>';
+                $html .= '<button class="onpay-button onpay-button--ghost" id="button_onpay_apilogout">' . esc_html__('Log out from OnPay', 'wc-onpay') . '</button>';
+                $html .= '</footer>';
+
+                $html .= '</div>';
 
                 wp_add_inline_script(self::WC_ONPAY_ADMIN_INLINE_HANDLE, 'jQuery(function($){$("#button_onpay_apilogout").on("click", function(event) {event.preventDefault(); if(confirm(\''. __('Are you sure you want to logout from Onpay?', 'wc-onpay') . '\')) {window.location.href = window.location.href+"&detach=1";}});});');
                 wp_add_inline_script(self::WC_ONPAY_ADMIN_INLINE_HANDLE, 'jQuery(function($){$("#button_onpay_refreshsecret").on("click", function(event) {event.preventDefault(); if(confirm(\''. __('Are you sure you want to refresh gateway ID and secret?', 'wc-onpay') . '\')) {window.location.href = window.location.href+"&refresh=1";}});});');
-            
+
                 return $html;
         }
 

@@ -1,24 +1,601 @@
-.woocommerce .form-table tr:has(.field-deselect-hide) {
-    display: none;
+/* ==========================================================================
+   OnPay — modern WooCommerce settings page
+   All rules below are scoped under .onpay-settings to avoid leakage into
+   other WooCommerce admin screens.
+   ========================================================================== */
+
+:root {
+    --onpay-brand: #fb617f;
+    --onpay-brand-hover: #e14f6d;
+    --onpay-brand-soft: #fff1f4;
+    --onpay-text: #1d2327;
+    --onpay-text-muted: #6b7280;
+    --onpay-border: #e5e7eb;
+    --onpay-border-strong: #d1d5db;
+    --onpay-bg: #f6f7fb;
+    --onpay-card-bg: #ffffff;
+    --onpay-success: #16a34a;
+    --onpay-warning: #d97706;
+    --onpay-danger: #dc2626;
+    --onpay-shadow-sm: 0 1px 2px rgba(16, 24, 40, .06);
+    --onpay-shadow: 0 4px 16px rgba(50, 50, 93, .06), 0 2px 6px rgba(0, 0, 0, .04);
+    --onpay-radius: 12px;
+    --onpay-radius-sm: 8px;
 }
-.woocommerce .form-table tr:has(.field-deselect-hide) td,
-.woocommerce .form-table tr:has(.field-deselect-hide) th,
-.woocommerce .form-table tr:has(+ tr .field-deselect-hide.show) td,
-.woocommerce .form-table tr:has(+ tr .field-deselect-hide.show) th {
-    background: #f0f0f1;
-    padding-left: 10px;
-    padding-right: 10px;
+
+/* Soften the WooCommerce wrapper when the OnPay tab is active. */
+body.onpay-admin-active #mainform {
+    background: var(--onpay-bg);
+}
+/* Hide the legacy WC subsubsub when it leaks through. */
+.onpay-settings + .subsubsub,
+.onpay-settings ~ .subsubsub,
+body.onpay-admin-active .subsubsub {
+    display: none !important;
+}
+
+/* ----- Root container --------------------------------------------------- */
+.onpay-settings {
+    font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, sans-serif;
+    color: var(--onpay-text);
+    margin: 16px 0 32px;
+    width: 100%;
+    line-height: 1.5;
+}
+/* Fallback dimensions for inline SVG icons in case CSS hasn't fully cascaded yet */
+.onpay-settings svg { max-width: 100%; max-height: 100%; }
+
+.onpay-settings *,
+.onpay-settings *::before,
+.onpay-settings *::after {
+    box-sizing: border-box;
+}
+
+/* ----- Header ----------------------------------------------------------- */
+.onpay-settings__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 24px;
+    background: var(--onpay-card-bg);
+    border: 1px solid var(--onpay-border);
+    border-radius: var(--onpay-radius);
+    box-shadow: var(--onpay-shadow-sm);
+    margin-bottom: 16px;
+}
+.onpay-settings__brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.onpay-settings__logo {
+    height: 28px;
+    width: auto;
+    display: block;
+}
+.onpay-settings__meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Status pill */
+.onpay-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    background: #f3f4f6;
+    color: var(--onpay-text);
+    border: 1px solid var(--onpay-border);
+}
+.onpay-status-pill__id {
+    color: var(--onpay-text-muted);
+    font-weight: 500;
+    margin-left: 4px;
+}
+.onpay-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #9ca3af;
+    box-shadow: 0 0 0 3px rgba(156, 163, 175, .18);
+}
+.onpay-status-pill.is-connected { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
+.onpay-status-pill.is-connected .onpay-status-dot { background: var(--onpay-success); box-shadow: 0 0 0 3px rgba(22, 163, 74, .18); }
+.onpay-status-pill.is-disconnected { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+.onpay-status-pill.is-disconnected .onpay-status-dot { background: var(--onpay-warning); box-shadow: 0 0 0 3px rgba(217, 119, 6, .18); }
+.onpay-status-pill.is-error { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+.onpay-status-pill.is-error .onpay-status-dot { background: var(--onpay-danger); box-shadow: 0 0 0 3px rgba(220, 38, 38, .18); }
+
+.onpay-env-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+}
+.onpay-env-badge--test {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+/* ----- Layout: sidebar + main ------------------------------------------ */
+.onpay-settings__body {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 16px;
+    align-items: start;
+}
+.onpay-settings__body--no-sidebar {
+    grid-template-columns: 1fr;
+}
+@media (max-width: 900px) {
+    .onpay-settings__body { grid-template-columns: 1fr; }
+}
+
+.onpay-settings__sidebar {
+    background: var(--onpay-card-bg);
+    border: 1px solid var(--onpay-border);
+    border-radius: var(--onpay-radius);
+    box-shadow: var(--onpay-shadow-sm);
+    padding: 0;
+    overflow: hidden;
+    position: sticky;
+    top: 46px; /* below WP admin bar */
+}
+/* Override WC's `body.woocommerce_page_wc-settings #mainform nav { margin: 0 -30px 24px -30px }`
+   which would pull our sidebar <nav> outside its card and clip the icons. */
+body.woocommerce_page_wc-settings #mainform .onpay-settings__sidebar .onpay-nav {
+    margin: 0 !important;
+}
+
+.onpay-settings .onpay-nav ul {
+    list-style: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+.onpay-settings .onpay-nav li {
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+}
+.onpay-settings .onpay-nav li::marker { content: none; }
+.onpay-settings .onpay-nav li + li .onpay-nav__item {
+    border-top: 1px solid var(--onpay-border);
+}
+
+.onpay-nav__item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    color: var(--onpay-text);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color .15s ease, color .15s ease;
+    border-radius: 0;
+}
+.onpay-nav__item:hover,
+.onpay-nav__item:focus {
+    background: #f9fafb;
+    color: var(--onpay-text);
+    box-shadow: none;
+    outline: none;
+}
+.onpay-nav__item.is-current {
+    background: var(--onpay-brand-soft);
+    color: var(--onpay-brand-hover);
+    font-weight: 600;
+}
+.onpay-nav__item.is-current::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--onpay-brand);
+}
+.onpay-nav__icon {
+    display: inline-flex;
+    width: 20px;
+    height: 20px;
+    color: currentColor;
+    flex-shrink: 0;
+}
+.onpay-nav__icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* ----- Main panel ------------------------------------------------------- */
+.onpay-settings__main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* ----- Cards ------------------------------------------------------------ */
+.onpay-card {
+    background: var(--onpay-card-bg);
+    border: 1px solid var(--onpay-border);
+    border-radius: var(--onpay-radius);
+    box-shadow: var(--onpay-shadow-sm);
+    overflow: hidden;
+}
+.onpay-card__header {
+    padding: 18px 24px 12px;
+    border-bottom: 1px solid var(--onpay-border);
+}
+.onpay-card__title {
+    margin: 0 0 4px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--onpay-text);
+}
+.onpay-card__subtitle {
+    margin: 0;
+    color: var(--onpay-text-muted);
+    font-size: 13px;
+}
+.onpay-card__body { padding: 12px 24px; }
+.onpay-card__footer {
+    display: flex;
+    gap: 8px;
+    padding: 12px 24px 16px;
+    border-top: 1px solid var(--onpay-border);
+    background: #fafbfc;
+}
+.onpay-card--alert {
+    border-color: #fecaca;
+    background: #fef2f2;
+}
+.onpay-card--alert h3 {
+    margin: 0;
+    padding: 18px 24px;
+    color: #991b1b;
+}
+
+/* ----- Settings form-table styling -------------------------------------- */
+/* The table lives inside .onpay-card__body which already has 12px 24px padding,
+   but we want a bit more vertical breathing room for the form-table itself. */
+.onpay-settings .onpay-card__body > .onpay-form-table,
+.onpay-settings .onpay-form-table {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    border-collapse: collapse;
+}
+.onpay-settings .onpay-form-table th,
+.onpay-settings .onpay-form-table td {
+    padding: 16px 0 !important;
+    margin: 0 !important;
+    vertical-align: middle !important;
+    border: 0;
+    background: transparent;
+    line-height: 1.5;
+}
+.onpay-settings .onpay-form-table th {
+    width: 240px;
+    font-weight: 600;
+    color: var(--onpay-text);
+    padding-right: 16px !important;
+}
+.onpay-settings .onpay-form-table td {
+    padding-left: 16px !important;
+}
+/* Make sure the help-tip stays above neighbouring elements so it's hoverable. */
+.onpay-settings .onpay-form-table .woocommerce-help-tip {
+    z-index: 2;
+}
+.onpay-settings .onpay-form-table tr + tr th,
+.onpay-settings .onpay-form-table tr + tr td {
+    border-top: 1px solid var(--onpay-border);
+}
+
+/* Td: the inline label wrapping the toggle + descriptive text. Use flex so
+   the toggle and text are aligned on a single row. */
+.onpay-settings .onpay-form-table td label {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    line-height: 22px;
     margin: 0;
 }
-.woocommerce .form-table tr:has(.field-deselect-hide) span.woocommerce-help-tip,
-.woocommerce .form-table tr:has(+ tr .field-deselect-hide.show) span.woocommerce-help-tip,
-.woocommerce .form-table tr:has(.field-deselect-hide.show) span.woocommerce-help-tip {
-    margin: 0px -11px 0 0;
-}
-.woocommerce .form-table tr:has(.field-deselect-hide.show) {
-    display: table-row;
-    border-bottom: 12px solid transparent;
-}
-.woocommerce .form-table tr:has(+ tr .field-deselect-hide.show) {
+.onpay-settings .onpay-form-table td fieldset {
+    margin: 0;
+    padding: 0;
     border: 0;
+}
+
+/* Inputs */
+.onpay-settings input[type="text"],
+.onpay-settings input[type="number"],
+.onpay-settings input[type="password"],
+.onpay-settings input[type="email"],
+.onpay-settings input[type="url"],
+.onpay-settings select,
+.onpay-settings textarea {
+    border: 1px solid var(--onpay-border-strong);
+    border-radius: var(--onpay-radius-sm);
+    padding: 8px 12px;
+    font-size: 14px;
+    background: #fff;
+    transition: border-color .15s ease, box-shadow .15s ease;
+    max-width: 480px;
+    width: 100%;
+}
+.onpay-settings input[type="text"]:focus,
+.onpay-settings input[type="number"]:focus,
+.onpay-settings input[type="password"]:focus,
+.onpay-settings select:focus,
+.onpay-settings textarea:focus {
+    border-color: var(--onpay-brand);
+    box-shadow: 0 0 0 3px rgba(251, 97, 127, .15);
+    outline: none;
+}
+
+/* Modern toggle-styled checkboxes
+   Uses high specificity + !important to beat WooCommerce's default
+   .woocommerce table.form-table input[type=checkbox] rules. */
+.woocommerce .onpay-settings .onpay-form-table input[type="checkbox"],
+.onpay-settings .onpay-form-table input[type="checkbox"] {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    width: 38px !important;
+    height: 22px !important;
+    min-width: 38px;
+    min-height: 22px;
+    max-width: 38px;
+    background: #d1d5db !important;
+    border-radius: 999px !important;
+    position: relative !important;
+    cursor: pointer;
+    transition: background-color .2s ease;
+    border: 0 !important;
+    margin: 0 10px 0 0 !important;
+    padding: 0 !important;
+    vertical-align: middle;
+    flex-shrink: 0;
+    box-shadow: none !important;
+    display: inline-block !important;
+}
+.woocommerce .onpay-settings .onpay-form-table input[type="checkbox"]::before,
+.onpay-settings .onpay-form-table input[type="checkbox"]::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 2px !important;
+    left: 2px !important;
+    width: 18px !important;
+    height: 18px !important;
+    border-radius: 50% !important;
+    background: #fff !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .2) !important;
+    transition: transform .2s ease !important;
+    transform: translateX(0) !important;
+    margin: 0 !important;
+    color: transparent !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    border: 0 !important;
+}
+.woocommerce .onpay-settings .onpay-form-table input[type="checkbox"]:checked,
+.onpay-settings .onpay-form-table input[type="checkbox"]:checked {
+    background: var(--onpay-brand) !important;
+}
+.woocommerce .onpay-settings .onpay-form-table input[type="checkbox"]:checked::before,
+.onpay-settings .onpay-form-table input[type="checkbox"]:checked::before {
+    transform: translateX(16px) !important;
+}
+.onpay-settings .onpay-form-table input[type="checkbox"]:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(251, 97, 127, .3) !important;
+}
+.onpay-settings .onpay-form-table label {
+    font-size: 14px;
+    color: var(--onpay-text);
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Description / help */
+.onpay-settings .onpay-form-table .description {
+    color: var(--onpay-text-muted);
+    font-size: 13px;
+    margin-top: 6px;
+    font-style: normal;
+}
+
+/* ----- Gateway info card ------------------------------------------------ */
+.onpay-info-grid {
+    display: grid;
+    gap: 14px;
+    padding: 18px 24px;
+}
+.onpay-info-row {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    align-items: center;
+    gap: 12px;
+}
+@media (max-width: 720px) {
+    .onpay-info-row { grid-template-columns: 1fr; }
+}
+.onpay-info-row__label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--onpay-text-muted);
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+.onpay-info-row__control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.onpay-input--readonly {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 13px;
+    background: #f9fafb !important;
+    color: var(--onpay-text);
+    cursor: text;
+    flex: 1;
+    min-width: 0;
+}
+
+/* Buttons */
+.onpay-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border-radius: var(--onpay-radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+    text-decoration: none;
+    line-height: 1.2;
+}
+.onpay-button--primary {
+    background: var(--onpay-brand);
+    color: #fff;
+}
+.onpay-button--primary:hover { background: var(--onpay-brand-hover); }
+.onpay-button--secondary {
+    background: #fff;
+    color: var(--onpay-text);
+    border-color: var(--onpay-border-strong);
+}
+.onpay-button--secondary:hover { background: #f9fafb; border-color: var(--onpay-text-muted); }
+.onpay-button--ghost {
+    background: transparent;
+    color: var(--onpay-danger);
+    border-color: transparent;
+}
+.onpay-button--ghost:hover { background: #fef2f2; }
+
+.onpay-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    background: #fff;
+    border: 1px solid var(--onpay-border-strong);
+    border-radius: var(--onpay-radius-sm);
+    color: var(--onpay-text-muted);
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+.onpay-icon-button:hover {
+    color: var(--onpay-brand);
+    border-color: var(--onpay-brand);
+    background: var(--onpay-brand-soft);
+}
+.onpay-icon-button svg { width: 16px; height: 16px; }
+.onpay-icon-button.is-copied {
+    color: var(--onpay-success);
+    border-color: #a7f3d0;
+    background: #ecfdf5;
+}
+
+/* ----- Save bar (sticky) ------------------------------------------------ */
+body.onpay-admin-active #mainform p.submit,
+body.onpay-admin-active .woocommerce-save-button-wrapper {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    margin: 16px 0 0 !important;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, .95);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--onpay-border);
+    border-radius: var(--onpay-radius);
+    box-shadow: 0 -4px 16px rgba(16, 24, 40, .06);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+}
+body.onpay-admin-active #mainform p.submit::before {
+    content: attr(data-onpay-hint);
+    margin-right: auto;
+    color: var(--onpay-text-muted);
+    font-size: 13px;
+}
+body.onpay-admin-active #mainform p.submit .button-primary,
+body.onpay-admin-active .woocommerce-save-button {
+    background: var(--onpay-brand) !important;
+    border-color: var(--onpay-brand) !important;
+    color: #fff !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    padding: 8px 24px !important;
+    height: auto !important;
+    line-height: 1.2 !important;
+    border-radius: var(--onpay-radius-sm) !important;
+    font-weight: 600 !important;
+}
+body.onpay-admin-active #mainform p.submit .button-primary:hover,
+body.onpay-admin-active .woocommerce-save-button:hover {
+    background: var(--onpay-brand-hover) !important;
+    border-color: var(--onpay-brand-hover) !important;
+}
+
+/* ----- Onboarding wrap -------------------------------------------------- */
+.onpay-onboarding-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 24px 0;
+}
+
+/* ==========================================================================
+   Conditional method-description rows. Hidden until the method is enabled.
+   When shown, the activator row + its sub-rows are visually grouped via a
+   subtle 3px brand-pink accent bar on the left of the first cell — no grey
+   background, no awkward padding hacks.
+   ========================================================================== */
+.onpay-settings .form-table tr:has(.field-deselect-hide) {
+    display: none;
+}
+.onpay-settings .form-table tr:has(.field-deselect-hide.show) {
+    display: table-row;
+}
+
+/* The activator row (the one that immediately precedes a shown sub-row)
+   and the sub-row(s) themselves get a left accent bar on their first cell. */
+.onpay-settings .form-table tr:has(.field-deselect-hide.show) > th:first-child,
+.onpay-settings .form-table tr:has(+ tr .field-deselect-hide.show) > th:first-child {
+    box-shadow: inset 3px 0 0 var(--onpay-brand);
+    padding-left: 14px !important;
+}
+/* When a sub-row has no <th> label (the "Overwrite method description" row
+   has only a help-tip in its first cell as a <td>), apply the bar to the
+   first <td> instead. */
+.onpay-settings .form-table tr:has(.field-deselect-hide.show) > td:first-child {
+    box-shadow: inset 3px 0 0 var(--onpay-brand);
+    padding-left: 14px !important;
+}
+
+/* Keep the existing help-tip margin tweak so it lines up nicely in nested rows. */
+.onpay-settings .form-table tr:has(.field-deselect-hide.show) span.woocommerce-help-tip,
+.onpay-settings .form-table tr:has(+ tr .field-deselect-hide.show) span.woocommerce-help-tip {
+    margin: 0 0 0 6px !important;
 }
