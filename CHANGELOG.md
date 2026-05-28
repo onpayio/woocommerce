@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Added auto-cancel option
+- Added result to transaction history
 
 ## [1.0.51] - 2026-04-28
 - Change onboarding and update language files
