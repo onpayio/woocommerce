@@ -22,3 +22,14 @@
 .woocommerce .form-table tr:has(+ tr .field-deselect-hide.show) {
     border: 0;
 }
+/* Group a non-description row with the description two siblings below it (Apple Pay toggle + Apple Pay Web + description). */
+.woocommerce .form-table tr:not(:has(.field-deselect-hide)):has(+ tr + tr .field-deselect-hide.show) td,
+.woocommerce .form-table tr:not(:has(.field-deselect-hide)):has(+ tr + tr .field-deselect-hide.show) th {
+    background: #f0f0f1;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin: 0;
+}
+.woocommerce .form-table tr:not(:has(.field-deselect-hide)):has(+ tr + tr .field-deselect-hide.show) {
+    border: 0;
+}

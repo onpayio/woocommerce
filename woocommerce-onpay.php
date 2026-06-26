@@ -73,6 +73,7 @@ function init_onpay() {
         const SETTING_ONPAY_SECRET = 'secret';
         const SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY = 'extra_payments_mobilepay';
         const SETTING_ONPAY_EXTRA_PAYMENTS_APPLEPAY = 'extra_payments_applepay';
+        const SETTING_ONPAY_EXTRA_PAYMENTS_APPLEPAY_WEB = 'extra_payments_applepay_web';
         const SETTING_ONPAY_EXTRA_PAYMENTS_GOOGLEPAY = 'extra_payments_googlepay';
         const SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL = 'extra_payments_viabill';
         const SETTING_ONPAY_EXTRA_PAYMENTS_ANYDAY = 'extra_payments_anyday_split';
@@ -202,6 +203,13 @@ function init_onpay() {
                 $this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_GOOGLEPAY) === 'yes'
             ) {
                 wp_enqueue_script(WC_OnPay::WC_ONPAY_ID . '_script', plugin_dir_url(__FILE__) . 'assets/js/apple_google_pay.js');
+                wp_localize_script(
+                    WC_OnPay::WC_ONPAY_ID . '_script',
+                    'wc_onpay_settings',
+                    [
+                        'applePayWeb' => $this->get_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_APPLEPAY_WEB) === 'yes',
+                    ]
+                );
             }
 
             // Enqueue script to handle error dismissal (clearing session flag)
@@ -807,6 +815,18 @@ function init_onpay() {
                     'label' => __('Enable Apple Pay as payment method (Only shown if customer browser supports method)', 'wc-onpay'),
                     'type' => 'checkbox',
                     'default' => 'no',
+                ],
+                self::SETTING_ONPAY_EXTRA_PAYMENTS_APPLEPAY_WEB => [
+                    'title' => __('Apple Pay Web', 'wc-onpay'),
+                    'label' => __('Show Apple Pay in all browsers (enable only if Apple Pay Web is enabled on the gateway and the shop domain is registered with OnPay)', 'wc-onpay'),
+                    'type' => 'checkbox',
+                    'default' => 'no',
+                    'description' => __('When enabled, the browser support probe is skipped and Apple Pay is offered as a payment method in every browser. Requires that the gateway has Apple Pay Web enabled at OnPay and that this shop domain has been registered for Apple Pay Web. If those are not configured, customers in non-Safari browsers will see Apple Pay but will not be able to complete payment.', 'wc-onpay'),
+                    'desc_tip' => true,
+                    'class' => 'field-deselect-hide' . ($this->isMethodEnabled(self::SETTING_ONPAY_EXTRA_PAYMENTS_APPLEPAY) ? ' show' : ''),
+                    'custom_attributes' => [
+                        'data-selection-source' => '#woocommerce_' . $this->id . '_' . self::SETTING_ONPAY_EXTRA_PAYMENTS_APPLEPAY,
+                    ],
                 ],
                 // Overwrite description field
                 $this->getMethodDescriptionKey(self::SETTING_ONPAY_EXTRA_PAYMENTS_APPLEPAY) => $this->getMethodDescriptionField(self::SETTING_ONPAY_EXTRA_PAYMENTS_APPLEPAY),
@@ -1678,6 +1698,7 @@ function init_onpay() {
                 $this->update_option(self::SETTING_ONPAY_SECRET, null);
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_MOBILEPAY, null);
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_APPLEPAY, null);
+                $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_APPLEPAY_WEB, null);
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_GOOGLEPAY, null);
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_VIABILL, null);
                 $this->update_option(self::SETTING_ONPAY_EXTRA_PAYMENTS_ANYDAY, null);
