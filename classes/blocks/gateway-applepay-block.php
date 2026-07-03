@@ -31,4 +31,18 @@ class wc_onpay_gateway_applepay_block extends wc_onpay_abstract_gateway_block {
 	public function initialize() {
 		$this->gateway = new wc_onpay_gateway_applepay();
 	}
+
+	public function get_payment_method_script_handles() {
+		$handles = parent::get_payment_method_script_handles();
+
+		// Append Apple Pay Web flag to the method object exposed to blocks.js.
+		$applePayWeb = $this->gateway->get_option(WC_OnPay::SETTING_ONPAY_EXTRA_PAYMENTS_APPLEPAY_WEB) === 'yes';
+		wp_add_inline_script(
+			WC_OnPay::WC_ONPAY_ID . '_blocks',
+			'if (typeof wc_onpay_methods !== \'undefined\' && wc_onpay_methods.' . $this->name . ') { wc_onpay_methods.' . $this->name . '.applePayWeb = ' . ($applePayWeb ? 'true' : 'false') . '; }',
+			'before'
+		);
+
+		return $handles;
+	}
 }

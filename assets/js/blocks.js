@@ -14,13 +14,18 @@ for (let key in wc_onpay_methods) {
             }
         });
     } else if ('onpay_applepay' === method.id && typeof window['Promise'] === 'function') {
-        // Check if Apple Pay is supported, and renable method if so.
-        let applePayAvailablePromise = OnPayIO.applePay.available();
-        applePayAvailablePromise.then(function(result) {
-            if (result) {
-                registerMethod(method);
-            }
-        });
+        // If Apple Pay Web is enabled on the gateway, skip the browser support probe and register the method in every browser.
+        if (method.applePayWeb) {
+            registerMethod(method);
+        } else {
+            // Check if Apple Pay is supported, and renable method if so.
+            let applePayAvailablePromise = OnPayIO.applePay.available();
+            applePayAvailablePromise.then(function(result) {
+                if (result) {
+                    registerMethod(method);
+                }
+            });
+        }
     } else {
         registerMethod(method);
     }

@@ -26,17 +26,25 @@ jQuery(function($) {
 
     function renableSupportedGAPay() {
         if (typeof window['Promise'] === 'function') {
-            // Check if Apple Pay is supported, and renable method if so.
-            let applePayAvailablePromise = OnPayIO.applePay.available();
-            applePayAvailablePromise.then(function(result) {
+            // If Apple Pay Web is enabled on the gateway, skip the browser support probe and re-enable the method in every browser.
+            let applePayWeb = typeof wc_onpay_settings !== 'undefined' && wc_onpay_settings.applePayWeb;
+            if (applePayWeb) {
                 let applePayMethod = $('#payment .wc_payment_methods li.payment_method_onpay_applepay');
-                if (result) {
-                    applePayMethod.find('input').attr('disabled', false).removeClass('disabled');
-                    applePayMethod.addClass('show');
-                } else {
-                    applePayMethod.remove();
-                }
-            });
+                applePayMethod.find('input').attr('disabled', false).removeClass('disabled');
+                applePayMethod.addClass('show');
+            } else {
+                // Check if Apple Pay is supported, and renable method if so.
+                let applePayAvailablePromise = OnPayIO.applePay.available();
+                applePayAvailablePromise.then(function(result) {
+                    let applePayMethod = $('#payment .wc_payment_methods li.payment_method_onpay_applepay');
+                    if (result) {
+                        applePayMethod.find('input').attr('disabled', false).removeClass('disabled');
+                        applePayMethod.addClass('show');
+                    } else {
+                        applePayMethod.remove();
+                    }
+                });
+            }
 
             // Check if Google Pay is supported, and renable method if so.
             let googlePayAvailablePromise = OnPayIO.googlePay.available();
