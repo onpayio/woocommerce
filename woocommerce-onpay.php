@@ -330,8 +330,8 @@ function init_onpay() {
                         $subscription->save();
                     }
 
-                    // If we're dealing with an renewal, we need to create a new transaction from the subscription
-                    if ($orderHelper->isOrderSubscriptionRenewal($order) || $orderHelper->isOrderSubscriptionEarlyRenewal($order)) {
+                    // If we're dealing with a renewal and no transaction was created yet, we need to create a new transaction from the subscription
+                    if (null === $onpayTransactionNumber && ($orderHelper->isOrderSubscriptionRenewal($order) || $orderHelper->isOrderSubscriptionEarlyRenewal($order))) {
                         // Fetch surcharge settings
                         $surchargeEnabled = $this->get_option(WC_OnPay::SETTING_ONPAY_SURCHARGE_ENABLE) === 'yes';
                         $surchargeVatRate = 0;
@@ -345,15 +345,21 @@ function init_onpay() {
                         }
 
                         $orderAmount = $currencyHelper->majorToMinor($order->get_total(), $orderCurrency->numeric, '.');
-                        
-                        $onpaySubscription = $this->get_onpay_client()->subscription()->getSubscription($onpayNumber);
-                        $createdTransaction = $this->get_onpay_client()->subscription()->createTransactionFromSubscription(
-                            $onpaySubscription->uuid, 
-                            $orderAmount, 
-                            strval($order->get_order_number()),
-                            $surchargeEnabled,
-                            $surchargeVatRate
-                        );
+
+                        try {
+                            $onpaySubscription = $this->get_onpay_client()->subscription()->getSubscription($onpayNumber);
+                            $createdTransaction = $this->get_onpay_client()->subscription()->createTransactionFromSubscription(
+                                $onpaySubscription->uuid,
+                                $orderAmount,
+                                strval($order->get_order_number()),
+                                $surchargeEnabled,
+                                $surchargeVatRate
+                            );
+                        } catch (OnPay\API\Exception\ApiException $exception) {
+                            // Fail order and stop before order is wrongly completed without a transaction
+                            $order->update_status('failed', __('Creating transaction from subscription in OnPay failed: ', 'wc-onpay') . $exception->getMessage());
+                            $this->json_response('Transaction creation failed', true, 500);
+                        }
 
                         // Set transaction number to the one returned from OnPay authorization
                         $onpayTransactionNumber = $createdTransaction->transactionNumber;
