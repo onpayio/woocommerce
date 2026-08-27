@@ -27,33 +27,31 @@ class wc_onpay_surcharge_helper {
     const VAT_CLASS_META_KEY = '_onpay_surcharge_tax_class';
 
     /**
-     * Returns VAT rate according to customer billing, and the selected tax rate in settings
+     * Returns VAT rate according to order billing, and the selected tax rate in settings.
      * 
      * @param string|null $vatRateOption
-     * @param WC_Customer $customer
      * @param WC_Order $order
      * @return float
      */
-    public static function getSurchargeVatRate($vatRateOption, $customer, $order) {
-        if ($vatRateOption !== null) {
-            if ('none' === $vatRateOption) {
-                $rate = 0.0;
-            } else {
-                // Get tax class name from order and option
-                $taxClass = self::getWCTaxClassName($vatRateOption, $order);
-                // Find rates that apply
-                $rates = array_values(WC_Tax::find_rates(
-                    [
-                        'country' => $customer->get_billing_country(),
-                        'state' => $customer->get_billing_state(),
-                        'city' => $customer->get_billing_postcode(),
-                        'postcode' => $customer->get_billing_city,
-                        'tax_class' => $taxClass
-                    ]
-                ));
-                // Pick first one, since they are sorted by priority, most important first
-                $firstRate = array_shift($rates);
+    public static function getSurchargeVatRate($vatRateOption, $order) {
+        $rate = 0.0;
+        if ($vatRateOption !== null && 'none' !== $vatRateOption) {
+            // Get tax class name from order and option
+            $taxClass = self::getWCTaxClassName($vatRateOption, $order);
+            // Find rates that apply, using data from the order itself, so guest checkouts also work.
+            $rates = array_values(WC_Tax::find_rates(
+                [
+                    'country' => $order->get_billing_country(),
+                    'state' => $order->get_billing_state(),
+                    'city' => $order->get_billing_city(),
+                    'postcode' => $order->get_billing_postcode(),
+                    'tax_class' => $taxClass
+                ]
+            ));
+            // Pick first one, since they are sorted by priority, most important first
+            $firstRate = array_shift($rates);
 
+            if (null !== $firstRate && isset($firstRate['rate'])) {
                 $rate = (float)$firstRate['rate'];
             }
         }
@@ -91,10 +89,9 @@ class wc_onpay_surcharge_helper {
      * 
      * @param int $fee
      * @param WC_Order $order
-     * @param WC_Customer $customer
      * @return WC_Order_Item_Fee
      */
-    public static function getSurchargeItemFee($fee, $order, $customer) {
+    public static function getSurchargeItemFee($fee, $order) {
         $currencyHelper = new wc_onpay_currency_helper();
         $orderCurrency = $currencyHelper->fromAlpha3($order->get_currency());
         // Grab fee amount and calculate tax amount using stored tax rate on order
@@ -106,7 +103,7 @@ class wc_onpay_surcharge_helper {
 
         if ("" !== $orderTaxClass && "none" !== $orderTaxClass) { // If the stored tax class is not empty, and not "none"
             // Grab the taxrate in the format that was sent to OnPay, so the calculation is precise.
-            $taxClassRate = self::formatSurchargeRate(self::getSurchargeVatRate($orderTaxClass, $customer, $order));  
+            $taxClassRate = self::formatSurchargeRate(self::getSurchargeVatRate($orderTaxClass, $order));  
             // Calculate original fee without taxes using the tax rate
             $feeNoTaxAmount = $feeAmount / (1 + ($taxClassRate / 10000));
             // Calculate the tax amount of the fee

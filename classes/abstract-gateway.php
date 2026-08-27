@@ -257,17 +257,21 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
             $paymentWindow->setLanguage($language);
         }
 
+        // Load the customer, if there is one. On guest checkouts customer_id is 0 and the WC_Customer
+        // object will be empty, so we rely on the order data for the fields below.
         $customer = new WC_Customer($orderData['customer_id']);
 
         // Adding available info fields
         $paymentInfo = new \OnPay\API\PaymentWindow\PaymentInfo();
 
-        $this->setPaymentInfoParameter($paymentInfo, 'AccountId', $this->sanitizeFieldValue($customer->get_id()));
-        $this->setPaymentInfoParameter($paymentInfo, 'AccountDateCreated',  wc_format_datetime($customer->get_date_created(), 'Y-m-d'));
-        $this->setPaymentInfoParameter($paymentInfo, 'AccountDateChange', wc_format_datetime($customer->get_date_modified(), 'Y-m-d'));
+        if ($customer->get_id()) {
+            $this->setPaymentInfoParameter($paymentInfo, 'AccountId', $this->sanitizeFieldValue($customer->get_id()));
+            $this->setPaymentInfoParameter($paymentInfo, 'AccountDateCreated',  wc_format_datetime($customer->get_date_created(), 'Y-m-d'));
+            $this->setPaymentInfoParameter($paymentInfo, 'AccountDateChange', wc_format_datetime($customer->get_date_modified(), 'Y-m-d'));
+        }
 
-        $billingName = $customer->get_billing_first_name() . ' ' . $customer->get_billing_last_name();
-        $shippingName = $customer->get_shipping_first_name() . ' ' . $customer->get_shipping_last_name();
+        $billingName = $order->get_billing_first_name() . ' ' . $order->get_billing_last_name();
+        $shippingName = $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name();
 
         if ($billingName === $shippingName) {
             $this->setPaymentInfoParameter($paymentInfo, 'AccountShippingIdenticalName', 'Y');
@@ -275,30 +279,30 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
             $this->setPaymentInfoParameter($paymentInfo, 'AccountShippingIdenticalName', 'N');
         }
 
-        if ($this->isAddressesIdentical($customer->get_billing(), $customer->get_shipping())) {
+        if ($this->isAddressesIdentical($order->get_address('billing'), $order->get_address('shipping'))) {
             $this->setPaymentInfoParameter($paymentInfo, 'AddressIdenticalShipping', 'Y');
         } else {
             $this->setPaymentInfoParameter($paymentInfo, 'AddressIdenticalShipping', 'N');
         }
 
-        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressCity', $this->sanitizeFieldValue($customer->get_billing_city()));
-        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressCountry', $this->sanitizeFieldValue($countryHelper->alpha2toNumeric($customer->get_billing_country())));
-        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressLine1', $this->sanitizeFieldValue($customer->get_billing_address_1()));
-        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressLine2', $this->sanitizeFieldValue($customer->get_billing_address_2()));
-        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressPostalCode', $this->sanitizeFieldValue($customer->get_billing_postcode()));
-        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressState', $this->sanitizeFieldValue($customer->get_billing_state()));
+        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressCity', $this->sanitizeFieldValue($order->get_billing_city()));
+        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressCountry', $this->sanitizeFieldValue($countryHelper->alpha2toNumeric($order->get_billing_country())));
+        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressLine1', $this->sanitizeFieldValue($order->get_billing_address_1()));
+        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressLine2', $this->sanitizeFieldValue($order->get_billing_address_2()));
+        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressPostalCode', $this->sanitizeFieldValue($order->get_billing_postcode()));
+        $this->setPaymentInfoParameter($paymentInfo, 'BillingAddressState', $this->sanitizeFieldValue($order->get_billing_state()));
 
-        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressCity', $this->sanitizeFieldValue($customer->get_shipping_city()));
-        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressCountry', $this->sanitizeFieldValue($countryHelper->alpha2toNumeric($customer->get_shipping_country())));
-        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressLine1', $this->sanitizeFieldValue($customer->get_shipping_address_1()));
-        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressLine2', $this->sanitizeFieldValue($customer->get_shipping_address_2()));
-        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressPostalCode', $this->sanitizeFieldValue($customer->get_shipping_postcode()));
-        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressState', $this->sanitizeFieldValue($customer->get_shipping_state()));
+        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressCity', $this->sanitizeFieldValue($order->get_shipping_city()));
+        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressCountry', $this->sanitizeFieldValue($countryHelper->alpha2toNumeric($order->get_shipping_country())));
+        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressLine1', $this->sanitizeFieldValue($order->get_shipping_address_1()));
+        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressLine2', $this->sanitizeFieldValue($order->get_shipping_address_2()));
+        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressPostalCode', $this->sanitizeFieldValue($order->get_shipping_postcode()));
+        $this->setPaymentInfoParameter($paymentInfo, 'ShippingAddressState', $this->sanitizeFieldValue($order->get_shipping_state()));
 
         $this->setPaymentInfoParameter($paymentInfo, 'Name', $this->sanitizeFieldValue($billingName));
-        $this->setPaymentInfoParameter($paymentInfo, 'Email', $this->sanitizeFieldValue($customer->get_billing_email()));
-        $this->setPaymentInfoParameter($paymentInfo, 'PhoneHome',  [null, $this->sanitizeFieldValue($customer->get_billing_phone())]);
-        $this->setPaymentInfoParameter($paymentInfo, 'DeliveryEmail', $this->sanitizeFieldValue($customer->get_billing_email()));
+        $this->setPaymentInfoParameter($paymentInfo, 'Email', $this->sanitizeFieldValue($order->get_billing_email()));
+        $this->setPaymentInfoParameter($paymentInfo, 'PhoneHome',  [null, $this->sanitizeFieldValue($order->get_billing_phone())]);
+        $this->setPaymentInfoParameter($paymentInfo, 'DeliveryEmail', $this->sanitizeFieldValue($order->get_billing_email()));
 
         $paymentWindow->setInfo($paymentInfo);
 
@@ -308,7 +312,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
 
             // Time to get rate
             $surchargeVatRateOption = $this->get_option(WC_OnPay::SETTING_ONPAY_SURCHARGE_VAT_RATE);
-            $rate = wc_onpay_surcharge_helper::getSurchargeVatRate($surchargeVatRateOption, $customer, $order);
+            $rate = wc_onpay_surcharge_helper::getSurchargeVatRate($surchargeVatRateOption, $order);
             $formattedRate = wc_onpay_surcharge_helper::formatSurchargeRate($rate);
             if (null !== $rate && 0 < $rate) {
                 $paymentWindow->setSurchargeVatRate($formattedRate);
