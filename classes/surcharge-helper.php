@@ -35,28 +35,24 @@ class wc_onpay_surcharge_helper {
      */
     public static function getSurchargeVatRate($vatRateOption, $order) {
         $rate = 0.0;
-        if ($vatRateOption !== null) {
-            if ('none' === $vatRateOption) {
-                $rate = 0.0;
-            } else {
-                // Get tax class name from order and option
-                $taxClass = self::getWCTaxClassName($vatRateOption, $order);
-                // Find rates that apply, using data from the order itself, so guest checkouts also work.
-                $rates = array_values(WC_Tax::find_rates(
-                    [
-                        'country' => $order->get_billing_country(),
-                        'state' => $order->get_billing_state(),
-                        'city' => $order->get_billing_city(),
-                        'postcode' => $order->get_billing_postcode(),
-                        'tax_class' => $taxClass
-                    ]
-                ));
-                // Pick first one, since they are sorted by priority, most important first
-                $firstRate = array_shift($rates);
+        if ($vatRateOption !== null && 'none' !== $vatRateOption) {
+            // Get tax class name from order and option
+            $taxClass = self::getWCTaxClassName($vatRateOption, $order);
+            // Find rates that apply, using data from the order itself, so guest checkouts also work.
+            $rates = array_values(WC_Tax::find_rates(
+                [
+                    'country' => $order->get_billing_country(),
+                    'state' => $order->get_billing_state(),
+                    'city' => $order->get_billing_city(),
+                    'postcode' => $order->get_billing_postcode(),
+                    'tax_class' => $taxClass
+                ]
+            ));
+            // Pick first one, since they are sorted by priority, most important first
+            $firstRate = array_shift($rates);
 
-                if (null !== $firstRate && isset($firstRate['rate'])) {
-                    $rate = (float)$firstRate['rate'];
-                }
+            if (null !== $firstRate && isset($firstRate['rate'])) {
+                $rate = (float)$firstRate['rate'];
             }
         }
         return $rate;
