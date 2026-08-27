@@ -340,7 +340,7 @@ function init_onpay() {
                         if(true === $surchargeEnabled) {
                             // Get surcharge VAT rate and format it.
                             $surchargeVatRateOption = $this->get_option(WC_OnPay::SETTING_ONPAY_SURCHARGE_VAT_RATE);
-                            $surchargeVatRate = wc_onpay_surcharge_helper::formatSurchargeRate(wc_onpay_surcharge_helper::getSurchargeVatRate($surchargeVatRateOption, $customer, $order));
+                            $surchargeVatRate = wc_onpay_surcharge_helper::formatSurchargeRate(wc_onpay_surcharge_helper::getSurchargeVatRate($surchargeVatRateOption, $order));
                             wc_onpay_surcharge_helper::saveOrderTaxClass($order, $surchargeVatRateOption); // Save rate to order meta for later use
                         }
 
@@ -372,7 +372,7 @@ function init_onpay() {
 
                 // Apply fee if present
                 if (null !== $onpayFee) {
-                    $itemFee = wc_onpay_surcharge_helper::getSurchargeItemFee((int)$onpayFee, $order, $customer);
+                    $itemFee = wc_onpay_surcharge_helper::getSurchargeItemFee((int)$onpayFee, $order);
                     // Add Fee item to the order and recalculate totals
                     $order->add_item($itemFee);
                     $order->calculate_totals(true);
@@ -1428,7 +1428,7 @@ function init_onpay() {
             if(true === $surchargeEnabled) {
                 // Get surcharge VAT rate and format it.
                 $surchargeVatRateOption = $this->get_option(WC_OnPay::SETTING_ONPAY_SURCHARGE_VAT_RATE);
-                $surchargeVatRate = wc_onpay_surcharge_helper::formatSurchargeRate(wc_onpay_surcharge_helper::getSurchargeVatRate($surchargeVatRateOption, $customer, $subscriptionOrder));
+                $surchargeVatRate = wc_onpay_surcharge_helper::formatSurchargeRate(wc_onpay_surcharge_helper::getSurchargeVatRate($surchargeVatRateOption, $subscriptionOrder));
                 wc_onpay_surcharge_helper::saveOrderTaxClass($subscriptionOrder, $surchargeVatRateOption); // Save rate to order meta for later use
             }
 
@@ -1480,7 +1480,7 @@ function init_onpay() {
 
             // Check if a fee is reported back
             if (null !== $createdOnpayTransaction->fee) {
-                $itemFee = wc_onpay_surcharge_helper::getSurchargeItemFee($createdOnpayTransaction->fee, $newOrder, $customer);
+                $itemFee = wc_onpay_surcharge_helper::getSurchargeItemFee($createdOnpayTransaction->fee, $newOrder);
                 // Add Fee item to the order and recalculate totals
                 $newOrder->add_item($itemFee);
                 $newOrder->calculate_totals(true);
