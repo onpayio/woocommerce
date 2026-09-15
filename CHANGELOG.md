@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Add php version to platform string
+- Use needs_payment() to accept failed renewal orders in callback
 
 ## [1.0.53] - 2026-09-03
 - Added support for Apple Pay Web
