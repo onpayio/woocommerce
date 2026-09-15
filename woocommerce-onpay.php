@@ -318,8 +318,14 @@ function init_onpay() {
             $currencyHelper = new wc_onpay_currency_helper();
             $orderCurrency = $currencyHelper->fromAlpha3($order->get_currency());
 
-            // Is order in pending state
-            if ($order->has_status('pending')) {
+            // Is order awaiting payment (pending or failed by default in WC)
+            if ($order->needs_payment()) {
+                // Skip if this exact OnPay id is already stored on the order (duplicate/late callback)
+                $incomingOnpayId = null !== $onpayTransactionNumber ? $onpayTransactionNumber : $onpayNumber;
+                if ($this->getOnpayId($order) === $incomingOnpayId) {
+                    $this->json_response('Order already processed');
+                }
+
                 // If we're dealing with a subscription
                 if ($onpayType === 'subscription') {
                     // Write subscription id to subscription order and save it. This is the created subscription
