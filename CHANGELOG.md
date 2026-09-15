@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Add php version to platform string
+- Show amount in payment window for subscription renewal orders
 
 ## [1.0.53] - 2026-09-03
 - Added support for Apple Pay Web

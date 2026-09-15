@@ -133,12 +133,10 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
 
         // Check for subscription presence
         $isSubscription = false;
+        $isSubscriptionRenewal = false;
         if ($this->supports('subscriptions')) { // No need to perform subscription related checks, if methods does not support it.
             $isSubscription = $orderHelper->isOrderSubscription($order);
-            // Enforce method update if order is subscription renewal
-            if (!$updateMethod) { // If not already instructed to update method, find out if we need to
-                $updateMethod = $orderHelper->isOrderSubscriptionEarlyRenewal($order) || $orderHelper->isOrderSubscriptionRenewal($order);
-            }
+            $isSubscriptionRenewal = $orderHelper->isOrderSubscriptionEarlyRenewal($order) || $orderHelper->isOrderSubscriptionRenewal($order);
         }
 
         // We'll need to find out details about the currency, and format the order total amount accordingly
@@ -212,7 +210,8 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         // Add parameters to callback URL
         $callbackUrl = WC()->api_request_url('wc_onpay' . '_callback');
         $callbackUrl = add_query_arg('order_key', $order->get_order_key(), $callbackUrl);
-        if ($updateMethod) {
+        // Instruct callback to update payment method on subscription, when changing method or paying a renewal order
+        if ($updateMethod || $isSubscriptionRenewal) {
             $callbackUrl = add_query_arg('update_method', true, $callbackUrl);
         }
 
