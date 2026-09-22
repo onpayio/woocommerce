@@ -86,6 +86,7 @@ function init_onpay() {
         const SETTING_ONPAY_PAYMENTWINDOW_DESIGN = 'paymentwindow_design';
         const SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE = 'paymentwindow_language';
         const SETTING_ONPAY_PAYMENTWINDOW_LANGUAGE_AUTO = 'paymentwindow_language_auto';
+        const SETTING_ONPAY_PAYMENTWINDOW_EXPIRATION = 'paymentwindow_expiration';
         const SETTING_ONPAY_TESTMODE = 'testmode_enabled';
         const SETTING_ONPAY_CARDLOGOS = 'card_logos';
         const SETTING_ONPAY_STATUS_AUTOCAPTURE = 'status_autocapture';
@@ -913,6 +914,16 @@ function init_onpay() {
                     'type' => 'checkbox',
                     'default' => 'no',
                     'label' => __('Overrides language chosen above, and instead use frontoffice language', 'wc-onpay'),
+                ],
+                self::SETTING_ONPAY_PAYMENTWINDOW_EXPIRATION => [
+                    'title' => __('Payment window expiration (minutes)', 'wc-onpay'),
+                    'type' => 'number',
+                    'default' => '',
+                    'custom_attributes' => [
+                        'min' => '0',
+                        'step' => '1',
+                    ],
+                    'description' => __('Number of minutes the payment window will be available before expiring. Leave empty to use the OnPay default (7 days).', 'wc-onpay'),
                 ],
                 self::SETTING_ONPAY_TESTMODE => [
                     'title' => __('Test Mode', 'wc-onpay'),
