@@ -216,8 +216,8 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
             $callbackUrl = add_query_arg('update_method', true, $callbackUrl);
         }
 
-        $paymentWindow->setGatewayId($this->get_option(WC_OnPay::SETTING_ONPAY_GATEWAY_ID));
-        $paymentWindow->setSecret($this->get_option(WC_OnPay::SETTING_ONPAY_SECRET));
+        $paymentWindow->setGatewayId((string) $this->get_option(WC_OnPay::SETTING_ONPAY_GATEWAY_ID));
+        $paymentWindow->setSecret((string) $this->get_option(WC_OnPay::SETTING_ONPAY_SECRET));
         $paymentWindow->setCurrency($isoCurrency->alpha3);
         $paymentWindow->setReference($reference);
         $paymentWindow->setAcceptUrl($order->get_checkout_order_received_url());
@@ -227,25 +227,25 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         $paymentWindow->setPlatform('woocommerce', WC_OnPay::PLUGIN_VERSION, WC_VERSION . '/' . PHP_VERSION);
 
         if($order->get_payment_method() === 'onpay_card') {
-            $paymentWindow->setMethod($paymentWindow::METHOD_CARD);
+            $paymentWindow->setMethod(\OnPay\API\Enum\PaymentMethod::CARD);
         } else if($order->get_payment_method() === 'onpay_mobilepay') {
-            $paymentWindow->setMethod($paymentWindow::METHOD_MOBILEPAY);
+            $paymentWindow->setMethod(\OnPay\API\Enum\PaymentMethod::MOBILEPAY);
         } else if($order->get_payment_method() === 'onpay_applepay') {
-            $paymentWindow->setMethod($paymentWindow::METHOD_APPLEPAY);
+            $paymentWindow->setMethod(\OnPay\API\Enum\PaymentMethod::APPLE_PAY);
         } else if($order->get_payment_method() === 'onpay_googlepay') {
-            $paymentWindow->setMethod($paymentWindow::METHOD_GOOGLEPAY);
+            $paymentWindow->setMethod(\OnPay\API\Enum\PaymentMethod::GOOGLE_PAY);
         } else if($order->get_payment_method() === 'onpay_viabill') {
-            $paymentWindow->setMethod($paymentWindow::METHOD_VIABILL);
+            $paymentWindow->setMethod(\OnPay\API\Enum\PaymentMethod::VIABILL);
         } else if($order->get_payment_method() === 'onpay_anyday') {
-            $paymentWindow->setMethod($paymentWindow::METHOD_ANYDAY);
+            $paymentWindow->setMethod(\OnPay\API\Enum\PaymentMethod::ANYDAY);
         } else if($order->get_payment_method() === 'onpay_vipps') {
-            $paymentWindow->setMethod($paymentWindow::METHOD_VIPPS);
+            $paymentWindow->setMethod(\OnPay\API\Enum\PaymentMethod::VIPPS);
         } else if($order->get_payment_method() === 'onpay_swish') {
-            $paymentWindow->setMethod($paymentWindow::METHOD_SWISH);
+            $paymentWindow->setMethod(\OnPay\API\Enum\PaymentMethod::SWISH);
         } else if($order->get_payment_method() === 'onpay_paypal') {
-            $paymentWindow->setMethod($paymentWindow::METHOD_PAYPAL);
+            $paymentWindow->setMethod(\OnPay\API\Enum\PaymentMethod::PAYPAL);
         } else if($order->get_payment_method() === 'onpay_klarna') {
-            $paymentWindow->setMethod($paymentWindow::METHOD_KLARNA);
+            $paymentWindow->setMethod(\OnPay\API\Enum\PaymentMethod::KLARNA);
         }
 
         if($this->get_option(WC_OnPay::SETTING_ONPAY_PAYMENTWINDOW_DESIGN) && $this->get_option(WC_OnPay::SETTING_ONPAY_PAYMENTWINDOW_DESIGN) !== 'ONPAY_DEFAULT_WINDOW') {
@@ -328,11 +328,7 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
         }        
         
         // Enable testmode
-        if($this->get_option(WC_OnPay::SETTING_ONPAY_TESTMODE) === 'yes') {
-            $paymentWindow->setTestMode(1);
-        } else {
-            $paymentWindow->setTestMode(0);
-        }
+        $paymentWindow->setTestModeEnabled($this->get_option(WC_OnPay::SETTING_ONPAY_TESTMODE) === 'yes');
         return $paymentWindow;
     }
 
