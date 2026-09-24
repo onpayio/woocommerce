@@ -257,6 +257,13 @@ abstract class wc_onpay_gateway_abstract extends WC_Payment_Gateway {
             $paymentWindow->setLanguage($language);
         }
 
+        // Setting is stored in minutes for consistency with WooCommerce's "Hold stock (minutes)" option,
+        // but the OnPay SDK expects the value in seconds.
+        $expiration = $this->get_option(WC_OnPay::SETTING_ONPAY_PAYMENTWINDOW_EXPIRATION);
+        if (is_numeric($expiration) && intval($expiration) > 0) {
+            $paymentWindow->setExpiration(intval($expiration) * 60);
+        }
+
         // Load the customer, if there is one. On guest checkouts customer_id is 0 and the WC_Customer
         // object will be empty, so we rely on the order data for the fields below.
         $customer = new WC_Customer($orderData['customer_id']);
