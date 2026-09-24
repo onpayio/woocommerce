@@ -31,6 +31,7 @@
 * Text Domain: wc-onpay
 * Domain Path: /languages
 * Version: 1.0.53
+* Requires PHP: 8.2
 **/
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -1682,10 +1683,11 @@ function init_onpay() {
          */
         private function handle_oauth_callback() {
             $onpayApi = $this->get_onpay_client(true);
-            if(null !== wc_onpay_query_helper::get_query_value('code') && !$onpayApi->isAuthorized()) {
-                // We're not authorized with the API, and we have a 'code' value at hand. 
+            $code = wc_onpay_query_helper::get_query_value('code');
+            if (is_string($code) && $code !== '' && !$onpayApi->isAuthorized()) {
+                // We're not authorized with the API, and we have a 'code' value at hand.
                 // Let's authorize, and save the gatewayID and secret accordingly.
-                $onpayApi->finishAuthorize(wc_onpay_query_helper::get_query_value('code'));
+                $onpayApi->finishAuthorize($code);
                 if ($onpayApi->isAuthorized()) {
                     $this->update_option(self::SETTING_ONPAY_GATEWAY_ID, $onpayApi->gateway()->getInformation()->gatewayId);
                     $this->update_option(self::SETTING_ONPAY_SECRET, $onpayApi->gateway()->getPaymentWindowIntegrationSettings()->secret);

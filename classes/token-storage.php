@@ -28,8 +28,8 @@ class wc_onpay_token_storage implements \OnPay\TokenStorageInterface {
      *
      * @return null|string
      */
-    public function getToken() {
-        return get_option('woocommerce_onpay_token', null);
+    public function getToken(): ?string {
+        return get_option('woocommerce_onpay_token', null) ?: null;
     }
     /**
      * This method is responsible for saving the token to permanent storage.
@@ -40,7 +40,7 @@ class wc_onpay_token_storage implements \OnPay\TokenStorageInterface {
      * @param string $token
      * @return mixed
      */
-    public function saveToken($token) {
+    public function saveToken(string $token): void {
         update_option('woocommerce_onpay_token', $token);
     }
 

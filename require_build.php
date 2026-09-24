@@ -45,6 +45,8 @@
     class_alias('WoocommerceOnpay\OnPay\API\Util\Converter', 'OnPay\API\Util\Converter');
     class_alias('WoocommerceOnpay\OnPay\API\Util\Link', 'OnPay\API\Util\Link');
     class_alias('WoocommerceOnpay\OnPay\API\Util\Pagination', 'OnPay\API\Util\Pagination');
+    
+    class_alias('WoocommerceOnpay\OnPay\API\Enum\PaymentMethod', 'OnPay\API\Enum\PaymentMethod');
 
     /**
      * Other Classes
