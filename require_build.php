@@ -12,6 +12,7 @@
     class_alias('WoocommerceOnpay\OnPay\OnPayAPI', 'OnPay\OnPayAPI');
 
     class_alias('WoocommerceOnpay\OnPay\TokenStorageInterface', 'OnPay\TokenStorageInterface');
+    class_alias('WoocommerceOnpay\OnPay\AuthStateStorageInterface', 'OnPay\AuthStateStorageInterface');
 
     class_alias('WoocommerceOnpay\OnPay\API\GatewayService', 'OnPay\API\GatewayService');
     class_alias('WoocommerceOnpay\OnPay\API\PaymentWindow', 'OnPay\API\PaymentWindow');
