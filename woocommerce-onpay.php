@@ -54,6 +54,7 @@ function init_onpay() {
     include_once __DIR__ . '/classes/query-helper.php';
     include_once __DIR__ . '/classes/surcharge-helper.php';
     include_once __DIR__ . '/classes/token-storage.php';
+    include_once __DIR__ . '/classes/auth-state-storage.php';
     include_once __DIR__ . '/classes/logger-helper.php';
 
     include_once __DIR__ . '/classes/gateway-card.php';
@@ -1663,6 +1664,7 @@ function init_onpay() {
          */
         private function get_onpay_client($prepareRedirectUri = false) {
             $tokenStorage = new wc_onpay_token_storage();
+            $authStateStorage = new wc_onpay_auth_state_storage();
             $params = [];
             // AdminToken cannot be generated on payment pages
             if($prepareRedirectUri) {
@@ -1670,11 +1672,15 @@ function init_onpay() {
                 $params['tab'] = self::WC_ONPAY_ID;
             }
             $url = wc_onpay_query_helper::generate_url($params);
-            $onPayAPI = new \OnPay\OnPayAPI($tokenStorage, [
-                'client_id' => 'Onpay WooCommerce',
-                'redirect_uri' => $url,
-                'platform' => self::WC_ONPAY_PLATFORM_STRING,
-            ]);
+            $onPayAPI = new \OnPay\OnPayAPI(
+                $tokenStorage,
+                [
+                    'client_id' => 'Onpay WooCommerce',
+                    'redirect_uri' => $url,
+                    'platform' => self::WC_ONPAY_PLATFORM_STRING,
+                ],
+                $authStateStorage
+            );
             return $onPayAPI;
         }
 
@@ -1687,7 +1693,8 @@ function init_onpay() {
             if (is_string($code) && $code !== '' && !$onpayApi->isAuthorized()) {
                 // We're not authorized with the API, and we have a 'code' value at hand.
                 // Let's authorize, and save the gatewayID and secret accordingly.
-                $onpayApi->finishAuthorize($code);
+                $state = wc_onpay_query_helper::get_query_value('state');
+                $onpayApi->finishAuthorize($code, is_string($state) && $state !== '' ? $state : null);
                 if ($onpayApi->isAuthorized()) {
                     $this->update_option(self::SETTING_ONPAY_GATEWAY_ID, $onpayApi->gateway()->getInformation()->gatewayId);
                     $this->update_option(self::SETTING_ONPAY_SECRET, $onpayApi->gateway()->getPaymentWindowIntegrationSettings()->secret);
