@@ -2,9 +2,9 @@
 Contributors: onpayio
 Tags: onpay, gateway, payment, payment gateway, woocommerce, psp
 Requires at least: 6.7
-Tested up to: 7.1
+Tested up to: 7.1.2
 Requires PHP: 8.2
-Stable tag: 1.0.53
+Stable tag: 1.0.54
 License: MIT
 License URI: https://mit-license.org/
 
@@ -33,6 +33,12 @@ Don't  have an OnPay account yet? Order one through <a href="https://dandomain.d
 2. WooCommerce >= 8.2
 
 == Changelog ==
+
+= [1.0.54] =
+Add php version to platform string
+Add payment window expiration setting and update translations
+Upgrade to php sdk 2.0 and updated required php version
+Fix pay-for-order on failed subscription renewals and 0 DKK auto-capture
 
 = [1.0.53] =
 Added support for Apple Pay Web
