@@ -321,8 +321,9 @@ function init_onpay() {
             $currencyHelper = new wc_onpay_currency_helper();
             $orderCurrency = $currencyHelper->fromAlpha3($order->get_currency());
 
-            // Is order in pending state
-            if ($order->has_status('pending')) {
+            // Only process the callback if the order is still awaiting payment: new orders are
+            // 'pending', renewal orders being retried via pay-for-order are 'failed'.
+            if ($order->has_status(['pending', 'failed'])) {
                 // If we're dealing with a subscription
                 if ($onpayType === 'subscription') {
                     // Write subscription id to subscription order and save it. This is the created subscription
@@ -333,8 +334,8 @@ function init_onpay() {
                         $subscription->save();
                     }
 
-                    // If we're dealing with an renewal, we need to create a new transaction from the subscription
-                    if ($orderHelper->isOrderSubscriptionRenewal($order) || $orderHelper->isOrderSubscriptionEarlyRenewal($order)) {
+                    // If we're dealing with a renewal and no transaction was created yet, we need to create a new transaction from the subscription
+                    if (null === $onpayTransactionNumber && ($orderHelper->isOrderSubscriptionRenewal($order) || $orderHelper->isOrderSubscriptionEarlyRenewal($order))) {
                         // Fetch surcharge settings
                         $surchargeEnabled = $this->get_option(WC_OnPay::SETTING_ONPAY_SURCHARGE_ENABLE) === 'yes';
                         $surchargeVatRate = 0;
@@ -348,15 +349,21 @@ function init_onpay() {
                         }
 
                         $orderAmount = $currencyHelper->majorToMinor($order->get_total(), $orderCurrency->numeric, '.');
-                        
-                        $onpaySubscription = $this->get_onpay_client()->subscription()->getSubscription($onpayNumber);
-                        $createdTransaction = $this->get_onpay_client()->subscription()->createTransactionFromSubscription(
-                            $onpaySubscription->uuid, 
-                            $orderAmount, 
-                            strval($order->get_order_number()),
-                            $surchargeEnabled,
-                            $surchargeVatRate
-                        );
+
+                        try {
+                            $onpaySubscription = $this->get_onpay_client()->subscription()->getSubscription($onpayNumber);
+                            $createdTransaction = $this->get_onpay_client()->subscription()->createTransactionFromSubscription(
+                                $onpaySubscription->uuid,
+                                $orderAmount,
+                                strval($order->get_order_number()),
+                                $surchargeEnabled,
+                                $surchargeVatRate
+                            );
+                        } catch (OnPay\API\Exception\ApiException $exception) {
+                            // Fail order and stop before order is wrongly completed without a transaction
+                            $order->update_status('failed', __('Creating transaction from subscription in OnPay failed: ', 'wc-onpay') . $exception->getMessage());
+                            $this->json_response('Transaction creation failed', true, 500);
+                        }
 
                         // Set transaction number to the one returned from OnPay authorization
                         $onpayTransactionNumber = $createdTransaction->transactionNumber;
@@ -1057,6 +1064,10 @@ function init_onpay() {
         public function orderStatusCompleteEvent($orderId) {
             $order = new WC_Order($orderId);
             $transactionId = $this->getOnpayId($order);
+            // Skip zero-amount orders
+            if ($order->get_total() <= 0) {
+                return;
+            }
             // Check if order payment method is OnPay
             if ($this->isOnPayMethod($order->get_payment_method()) && null !== $transactionId) {
                 // If autocapture is not enabled, no need to do anything
@@ -1080,6 +1091,8 @@ function init_onpay() {
                             'location' => 'orderStatusCompleteEvent'
                         ]);
                         $order->add_order_note(__( 'Automatic capture failed.') . ' ' . __('Invalid OnPay token, please login on settings page', 'wc-onpay' ));
+                    } catch (OnPay\API\Exception\ApiException $exception) { // Generic API failure (e.g. transaction not found)
+                        $order->add_order_note(__('Automatic capture failed.', 'wc-onpay') . ' ' . $exception->getMessage());
                     }
                 }
             } 

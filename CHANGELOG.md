@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add php version to platform string
 - Add payment window expiration setting and update translations
 - Upgrade to php sdk 2.0 and updated required php version
+- Fix pay-for-order on failed subscription renewals and 0 DKK auto-capture
 
 ## [1.0.53] - 2026-09-03
 - Added support for Apple Pay Web
